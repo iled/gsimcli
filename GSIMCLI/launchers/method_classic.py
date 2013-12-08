@@ -550,8 +550,8 @@ if __name__ == '__main__':
         dsspar.load_old(gscpar.dss_par)
         dsspar.update(['trimming', 'tails', 'lowert', 'uppert', 'nstruct',
                        'struct'], [[hdmin, hdmax], [hdmin, hdmax], [1, hdmin],
-                                   [1, hdmax], [1, dsspar.nstruct[1]/hdvar],
-                                   [2, dsspar.struct[1]/hdvar, 0, 0, 0]],
+                                   [1, hdmax], [1, dsspar.nstruct[1] / hdvar],
+                                   [2, dsspar.struct[1] / hdvar, 0, 0, 0]],
                       save=True)
         print 'Loading settings at {}'.format(par)
         run_par(par)
