@@ -394,7 +394,8 @@ def convert_gslib(files, merge=False, md=-999.9):
                 pset_file = os.path.join(savedir, str(network_number) + '_' +
                                          var + '_pset.prn')
                 pset.name = str(network_number) + '_pset'
-                pset.values = np.zeros((0, nvar))
+                # pset.values = np.zeros((0, nvar))
+                pset.values = pd.DataFrame(np.zeros((0, nvar)))  # TODO: testar
 
         station_x, station_y = station_coord(network, file_path)
         temp = (cost2gslib(station_x, station_y,
@@ -407,7 +408,8 @@ def convert_gslib(files, merge=False, md=-999.9):
                                           temp.shape[0]), temp[:, -1]))
         # np.savetxt(pset_file, temp,
         #          fmt=['%-10.6f', '%10.6f', '%10i', '%10.4f', '%06i', '%08i'])
-        pset.values = np.vstack((pset.values, temp))
+        # pset.values = np.vstack((pset.values, temp))
+        pset.values = pset.values.append(temp, ignore_index=True)
 
     # pset_file.close()
     pset.save(pset_file, header=True)

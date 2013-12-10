@@ -5,6 +5,8 @@ Created on 07/10/2013
 @author: jcaineta
 '''
 
+import tools.grid as gr
+
 
 class DssParam:
     """DSS parameters
@@ -276,6 +278,19 @@ class DssParam:
                 setattr(self, keyword, values[i])
         if save:
             self.save_old()  # TODO: old manager
+            
+    def data2update(self, dataset, no_data=-999.9, header=True):
+        """Try to update the parameters according to a data set in the PointSet
+        format.
+        
+        """
+        if not isinstance(dataset, gr.PointSet):
+            pset = dataset
+        else:
+            pset = gr.PointSet()
+            pset.load(dataset, no_data, header)
+        
+        
 
     def ask_update_default(self):
         """Asks to update or keep existing values.

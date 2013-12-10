@@ -260,7 +260,7 @@ def ask_stations_method(pset, header=True):
 
 def gsimcli(stations_file, stations_h, no_data, stations_order, detect_method,
          detect_prob, detect_flag, detect_save, exe_path, par_file, outfolder,
-         purge_sims):
+         purge_sims, detect_skew=None):
     """Main cycle to run GSIMCLI homogenization procedure in a set of stations
 
     """
@@ -291,7 +291,7 @@ def gsimcli(stations_file, stations_h, no_data, stations_order, detect_method,
         print ('Processing candidate {} out of {} with ID {}.'.
                format(i + 1, len(stations_order), stations_order[i]))
         # prepare and launch DSS
-        basename = ntpath.splitext(ntpath.basename(dsspar.output))
+        basename = ntpath.splitext(ntpath.basename(dsspar.output))[0]
         refname = basename + '_references_' + str(i) + '.prn'
         outname = basename + '_dss_map_st' + str(i) + '_sim.out'
         parname = basename + '_dss_par_st' + str(i) + '.par'
@@ -323,8 +323,8 @@ def gsimcli(stations_file, stations_h, no_data, stations_order, detect_method,
 
         # raw_input('Go and run DSS with these parameters: {}'.format(parfile))
         # prepare detection
-        intermediary_files = os.path.join(outfolder, 'homogenized_' + str(i)
-                                          + '.prn')
+        intermediary_files = os.path.join(outfolder, basename + '_homogenized_'
+                                          + str(i) + '.prn')
         dims = [dsspar.xx[0], dsspar.yy[0], dsspar.zz[0]]
         first_coord = [dsspar.xx[1], dsspar.yy[1], dsspar.zz[1]]
         cells_size = [dsspar.xx[2], dsspar.yy[2], dsspar.zz[2]]
@@ -333,11 +333,12 @@ def gsimcli(stations_file, stations_h, no_data, stations_order, detect_method,
                       no_data, headerin=0)
         print 'Detecting inhomogeneities...'
         # detect and fix inhomogeneities
+        # TODO: varcol opt
         homogenization = hmg.detect(grids=sim_maps, obs_file=candidate,
                                  method=detect_method, prob=detect_prob,
                                  flag=detect_flag, save=detect_save,
                                  outfile=intermediary_files, header=True,
-                                 varcol=stacol + 1)  # TODO: varcol opt
+                                 varcol=stacol + 1, skewness=detect_skew)
         homogenized, detected_number, filled_number = homogenization
         print 'Inhomogeneities detected: {}'.format(detected_number)
         dnumber_list.append(detected_number)
@@ -374,7 +375,7 @@ def run_par(par_path):
     dsspar.load_old(gscpar.dss_par)  # TODO: old como parâmetro
     stations_pset = gr.PointSet()
     no_data = dsspar.nd
-    
+
     # overwrite data path
     dsspar.datapath = gscpar.data
 
@@ -393,12 +394,16 @@ def run_par(par_path):
                                        stations_set)
 
     detect_flag = True
+    if gscpar.detect_method != 'skewness':
+        skew = None
+    else:
+        skew = gscpar.skewness
 
     print 'Set up complete. Running GSIMCLI...'
     gsimcli(stations_pset, gscpar.data_header, no_data, stations_order,
             gscpar.detect_method, gscpar.detect_prob, detect_flag,
             gscpar.detect_save, gscpar.dss_exe, dsspar, gscpar.results,
-            gscpar.sim_purge)
+            gscpar.sim_purge, skew)
 
 
 def main():
@@ -539,7 +544,8 @@ if __name__ == '__main__':
 
     settings = ['/home/julio/Testes/gsimcli.par',
                 '/home/julio/Testes/gsimcli2.par']
-        
+
+    """    
     for par in settings:
         gscpar = pgc.GsimcliParam(par)
         hd = np.loadtxt(gscpar.data, usecols=4)
@@ -555,4 +561,7 @@ if __name__ == '__main__':
                       save=True)
         print 'Loading settings at {}'.format(par)
         run_par(par)
-        print 'done'
+    """
+    par = '/Users/julio/Desktop/testes/gsimcli.par'
+    run_par(par)
+    print 'done'

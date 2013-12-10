@@ -49,8 +49,12 @@ def execute(command):
 
 
 def exec_ssdir(dss_path, par_path, dbg=None):
-    #print 'Running {}...'.format(os.path.basename(dss_path))
-    command = dss_path + ' ' + par_path
+    # print 'Running {}...'.format(os.path.basename(dss_path))
+    if os.name == 'posix':
+        env = 'wine '
+    else:
+        env = str()
+    command = env + dss_path + ' ' + par_path
     wd = os.path.dirname(dss_path)
     process = sp.Popen(command, shell=True, stdout=sp.PIPE, stderr=sp.STDOUT,
                        cwd=wd)
@@ -67,8 +71,8 @@ def exec_ssdir(dss_path, par_path, dbg=None):
             print nextline.strip()
             # sys.stdout.write(nextline)
             # sys.stdout.flush()
-        #if 'progress' in nextline:
-            #print 'Progress: {}'.format(nextline.split()[-1])
+        # if 'progress' in nextline:
+            # print 'Progress: {}'.format(nextline.split()[-1])
             # sys.stdout.write(nextline)
             # sys.stdout.flush()
         if 'error' in nextline.lower():

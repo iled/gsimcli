@@ -13,21 +13,26 @@ import pandas as pd
 from tools.utils import skip_lines
 
 
-class PointSet:
+class PointSetOLD:
     """Class for storing point-set data.
     """
     def __init__(self, name='', nodata=-999.9, nvars=0, varnames=list(),
-                 values=np.zeros(0)):
-        self.name = name
-        self.nvars = nvars
-        self.nodata = nodata
-        self.varnames = varnames
-        self.values = values
+                 values=np.zeros(0), psetpath=str(), header=True):
+        self.path = psetpath
+        if os.path.isfile(self.path):
+            self.load(self.path, nodata, header)
+        else:
+            self.name = name
+            self.nvars = nvars
+            self.nodata = nodata
+            self.varnames = varnames
+            self.values = values
 
     def load(self, psetfile, nd=-999.9, header=True):
         """Loads a point-set from a file in GSLIB format.
+        
         """
-
+        self.path = psetfile
         fid = open(psetfile, 'r')
         if header:
             self.name = fid.readline().strip()
@@ -42,10 +47,13 @@ class PointSet:
                              for i in xrange(1, self.nvars + 1)]
         fid.close()
 
-    def save(self, psetfile, header=True):
+    def save(self, psetfile=None, header=True):
         """Writes a point-set to a file in GSLIB format.
         """
-
+        if not psetfile:
+            psetfile = self.path
+        else:
+            self.path = psetfile
         fid = open(psetfile, 'w')
         if header:
             fid.write(self.name + '\n' + str(self.nvars) + '\n' +
@@ -54,7 +62,7 @@ class PointSet:
         fid.close()
 
 
-class PointSetDF:
+class PointSet:
     """Class for storing point-set data.
     """
     def __init__(self, name='', nodata=-999.9, nvars=0, varnames=list(),
@@ -63,7 +71,13 @@ class PointSetDF:
         self.nvars = nvars
         self.nodata = nodata
         self.varnames = varnames
-        self.values = pd.DataFrame(values, columns=self.varnames)
+        self.values = pd.DataFrame(values)  # , columns=self.varnames)
+        # self.values = values
+        if len(self.values.columns) == len(self.varnames):
+            try:
+                self.values.columns = self.varnames
+            except:
+                pass
 
     def load(self, psetfile, nd=-999.9, header=True):
         """Loads a point-set from a file in GSLIB format.
@@ -96,6 +110,15 @@ class PointSetDF:
         # self.values.to_csv(fid, header=False, index=False, sep=' ')
         np.savetxt(fid, self.values, fmt='%-10.6f')
         fid.close()
+
+    def flush_varnames(self, varnames=None):
+        """Update the DataFrame column labels with the current varnames list.
+        
+        """
+        if varnames:
+            self.values.columns = varnames
+        else:
+            self.values.columns = self.varnames
 
 
 class GridArr:
@@ -154,17 +177,18 @@ class GridArr:
         well.nodata = self.nodata
         well.nvars = 4
         well.varnames = ['x', 'y', 'z', 'var']
-        well.values = np.zeros((self.dz, 4))
-        well.values[:, :3] = np.column_stack(((np.repeat
-                                              (np.array(wellxy)[np.newaxis, :],
-                                                self.dz, axis=0)),
-                                             np.arange(1, self.dz + 1)))
+        well.values = pd.DataFrame(np.zeros((self.dz, 4)))  # TODO: testar
+        well.values.iloc[:, :3] = (np.column_stack
+                                   (((np.repeat(np.array(wellxy)
+                                                [np.newaxis, :], self.dz,
+                                                axis=0)),
+                                     np.arange(1, self.dz + 1))))
         xy_nodes = coord_to_grid(wellxy, [self.cellx, self.celly, self.cellz],
                       [self.xi, self.yi, self.zi])
         for z in xrange(self.dz):
             p = (xy_nodes[0] + self.dx * (xy_nodes[1] - 1) +
                  self.dx * self.dy * z)
-            well.values[z, 3] = self.val[p]
+            well.values.iloc[z, 3] = self.val[p]
         if save and outfile is not None:
             well.save(outfile, header)
         return well
@@ -365,9 +389,10 @@ class GridFiles:
                                       'sim values at ({}, {}, {}).prn'.
                                    format(loc[0], loc[1], j * self.cellz
                                           + self.zi))
-                arrpset.values[:, 2] = arr
-                arrpset.values[:, :2] = np.repeat(np.array(loc)[np.newaxis, :],
-                                               self.nfiles, axis=0)
+                arrpset.values.iloc[:, 2] = arr
+                arrpset.values.iloc[:, :2] = np.repeat(np.array(loc)
+                                                       [np.newaxis, :],
+                                                       self.nfiles, axis=0)
                 arrpset.save(arrout, header=True)
 
         ncols = sum((lmean, lmed, lvar, lstd, lcoefvar, lskew))
@@ -378,42 +403,44 @@ class GridFiles:
                              nvars=3 + ncols, varnames=['x', 'y', 'z'],
                              values=np.zeros((self.dz, 3 + ncols)))
 
-        statspset.values[:, :3] = (np.column_stack
-                                  (((np.repeat(np.array(loc)[np.newaxis, :],
-                                               self.dz, axis=0)),
-                                    np.arange(self.zi, self.zi +
-                                              self.cellz * self.dz))))
+        statspset.values.iloc[:, :3] = (np.column_stack
+                                        (((np.repeat(np.array(loc)
+                                                     [np.newaxis, :], self.dz,
+                                                     axis=0)),
+                                          np.arange(self.zi, self.zi +
+                                                    self.cellz * self.dz))))
 
         j = 3
         if lmean:
             statspset.varnames.append('mean')
-            statspset.values[:, j] = meanline
+            statspset.values.iloc[:, j] = meanline
             j += 1
         if lmed:
             statspset.varnames.append('median')
-            statspset.values[:, j] = medline
+            statspset.values.iloc[:, j] = medline
             j += 1
         if lskew:
             statspset.varnames.append('skewness')
-            statspset.values[:, j] = skewline
+            statspset.values.iloc[:, j] = skewline
             j += 1
         if lvar:
             statspset.varnames.append('variance')
-            statspset.values[:, j] = varline
+            statspset.values.iloc[:, j] = varline
             j += 1
         if lstd:
             statspset.varnames.append('std')
-            statspset.values[:, j] = stdline
+            statspset.values.iloc[:, j] = stdline
             j += 1
         if lcoefvar:
             statspset.varnames.append('coefvar')
-            statspset.values[:, j] = coefvarline
+            statspset.values.iloc[:, j] = coefvarline
             j += 1
         if lperc:
             statspset.varnames.append('lperc')
             statspset.varnames.append('rperc')
-            statspset.values[:, -2:] = percline
+            statspset.values.iloc[:, -2:] = percline
 
+        statspset.flush_varnames()
         return statspset
 
 
@@ -448,8 +475,6 @@ def wrap1():
     # print 'drilling'
     vline = meangrid.drill((5, 5), True, os.path.join(outpath,
                                                       'psetout.prn'))
-    # print 'done'
-    # print vline.values[:, 3]
     return vline
 
 
@@ -460,7 +485,6 @@ def wrap2():
     vstats = grids.stats_vline((5, 5), lmean=True, lvar=True, lperc=True,
                                p=0.95)
     grids.dump()
-    # print vstats.values[:, 3]
     return vstats
 
 

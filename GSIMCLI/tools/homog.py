@@ -59,14 +59,14 @@ def detect(grids, obs_file, method='mean', prob=0.95, varcol=-1, skewness=None,
         lmed = True
         lskew = True
     else:
-        raise ValueError('Method {} invalid.'.format(method))
+        raise ValueError('Method {} invalid or incomplete.'.format(method))
     if isinstance(obs_file, gr.PointSet):
         obs = obs_file
     else:
         obs = gr.PointSet()
         obs.load(obs_file, header)
 
-    obs_xy = obs.values[0, :2]
+    obs_xy = list(obs.values.iloc[0, :2])
     # calculate stats
     """ # grid stats, more than 100 times slower that vline stats!
     avmed, per = grids.stats(lmean, lmed, lperc=True, p=prob)
@@ -94,13 +94,14 @@ def detect(grids, obs_file, method='mean', prob=0.95, varcol=-1, skewness=None,
     # find and fill missing values
     fn = 0
     if obs.values.shape[0] < grids.dz:
-        obs, fn = fill_station(obs, vline_stats.values[:, 3], varcol, grids.zi,
-                           grids.zi + grids.dz, grids.cellz, header)
+        obs, fn = fill_station(obs, vline_stats.values.iloc[:, 3], varcol,
+                               grids.zi, grids.zi + grids.dz, grids.cellz,
+                               header)
 
     # detect irregularities
-    hom_where = np.logical_or(obs.values[:, varcol] < vline_stats.
-                              values[:, -2], obs.values[:, varcol] >
-                                         vline_stats.values[:, -1])
+    hom_where = np.logical_or(obs.values.iloc[:, varcol] < vline_stats.
+                              values.iloc[:, -2], obs.values.iloc[:, varcol] >
+                                         vline_stats.values.iloc[:, -1])
     detected_number = hom_where.sum()  # + fn
 
     # homogenize irregularities
@@ -111,28 +112,31 @@ def detect(grids, obs_file, method='mean', prob=0.95, varcol=-1, skewness=None,
     if method == 'skewness' and skewness:
         imed = vline_stats.varnames.index('median')
         iskew = vline_stats.varnames.index('skewness')
-        fixvalues = np.where(vline_stats.values[:, iskew] > 1.5, vline_stats.
-                              values[:, imed], vline_stats.values[:, imean])
+        fixvalues = np.where(vline_stats.values.iloc[:, iskew] > 1.5,
+                             vline_stats. values.iloc[:, imed],
+                             vline_stats.values.iloc[:, imean])
     else:
-        fixvalues = vline_stats.values[:, imean]
+        fixvalues = vline_stats.values.iloc[:, imean]
 
-    homogenized.values[:, varcol] = np.where(hom_where, fixvalues,
-                                             obs.values[:, varcol])
+    homogenized.values.iloc[:, varcol] = np.where(hom_where, fixvalues,
+                                             obs.values.iloc[:, varcol])
     if flag:
-        flag_col = np.where(hom_where, obs.values[:, varcol], obs.nodata)
+        flag_col = np.where(hom_where, obs.values.iloc[:, varcol], obs.nodata)
         if homogenized.varnames[-1].lower() != 'flag':
             homogenized.nvars += 1
             homogenized.varnames.append('Flag')
-            homogenized.values = np.column_stack((homogenized.values,
-                                                  flag_col))
+            # homogenized.values = np.column_stack((homogenized.values,
+            #                                      flag_col))
+            homogenized.values = (homogenized.values.join
+                                  (pd.Series(flag_col, name='Flag')))
         else:
-            homogenized.values[:, -1] = flag_col
+            homogenized.values = homogenized.values.iloc[:, -1] = flag_col
     # corrections = list()  # opt for pd.DataFrame ?
     # for cell in xrange(grid.dz):
     #    if obs < per[cell, 0] or obs > per[cell, 1]:
     #        corrections.append([cell, avmed[cell]])
 
-    if save and outfile is not None:
+    if save and outfile:
         homogenized.save(outfile, header)
 
     return homogenized, detected_number, fn
@@ -153,16 +157,17 @@ def fill_station(pset_file, values, varcol, time_min, time_max, time_step=1,
     timeserie = np.arange(time_min, time_max, time_step)
     filled = np.zeros((timeserie.shape[0], pset.values.shape[1]))
     for i, itime in enumerate(timeserie):
-        if j < len(pset.values[:, 2]) and itime == pset.values[j, 2]:
-            filled[i, :] = pset.values[j, :]
+        if j < len(pset.values.iloc[:, 2]) and itime == pset.values.iloc[j, 2]:
+            filled[i, :] = pset.values.iloc[j, :]
             j += 1
         else:
-            filled[i, :] = [pset.values[0, 0], pset.values[0, 1], itime,
-                            pset.values[0, 3:varcol], values[i],
-                            pset.values[0, varcol + 1:]][:pset.values.shape[1]]
+            filled[i, :] = [pset.values.iloc[0, 0], pset.values.iloc[0, 1],
+                            itime, pset.values.iloc[0, 3:varcol], values[i],
+                            pset.values.iloc[0, varcol + 1:]
+                            ][:pset.values.shape[1]]
             filled_count += 1
 
-    pset.values = filled
+    pset.values = pd.DataFrame(filled)  # TODO: testar
 
     return pset, filled_count
 
@@ -199,7 +204,7 @@ def list_stations(pset_file, stcol, h=True):
         pset = gr.PointSet()
         pset.load(pset_file, header=h)
 
-    stations = np.unique(pset.values[:, stcol])
+    stations = np.unique(pset.values.iloc[:, stcol])
     return stations
 
 
@@ -218,8 +223,10 @@ def take_candidate(pset_file, station, stcol, h=True, save=False):
         pset = gr.PointSet()
         pset.load(pset_file, header=h)
 
-    candidate = pset.values[pset.values[:, stcol] == int(station)]
-    neighbours = pset.values[pset.values[:, stcol] != int(station)]
+    # candidate = pset.values[pset.values[:, stcol] == int(station)]
+    candidate = pset.values[pset.values.iloc[:, stcol] == int(station)]
+    # neighbours = pset.values[pset.values[:, stcol] != int(station)]
+    neighbours = pset.values[pset.values.iloc[:, stcol] != int(station)]
 
     candidate_pset = gr.PointSet('Candidate_' + str(station),
                                  pset.nodata, pset.nvars,
@@ -261,13 +268,17 @@ def append_homog_station(pset_file, station, header=True):
     if pset.varnames[-1].lower() != 'flag':
         pset.varnames.append('Flag')
         pset.nvars += 1
-        pset.values = np.column_stack((pset.values, np.repeat
-                                       (pset.nodata, pset.values.shape[0])))
+        # pset.values = np.column_stack((pset.values, np.repeat
+        #                               (pset.nodata, pset.values.shape[0])))
+        pset.values = (pset.values.join
+                       (pd.Series(np.repeat(pset.nodata, pset.values.shape[0]),
+                                  name='Flag')))
     elif pset.nvars != station.nvars:
         raise ValueError('PointSets {} and {} have different number of '
                          'variables.'.format(pset.name, station.name))
 
-    pset.values = np.vstack((pset.values, station.values))
+    # pset.values = np.vstack((pset.values, station.values))
+    pset.values = pset.values.append(station.values, ignore_index=True)
     return pset
 
 
@@ -335,7 +346,7 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
                 out.writerows(pset.values)
             else:
                 out.writerow([pset.varnames[i] for i in lvars])
-                out.writerows(pset.values[:, np.array(lvars)])
+                out.writerows(pset.values.iloc[:, np.array(lvars)])
 
     elif fformat == 'gsimcli':
         # year, time (month)
@@ -351,14 +362,17 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
                            str(stations[i]) + '_FLAG']
                           for i in xrange(len(stations))]
             csvheader += itertools.chain.from_iterable(headerline)
-            outdf = pd.DataFrame(index=np.arange(pset.values[:, 2].min(),
-                                                 pset.values[:, 2].max() + 1),
+            outdf = pd.DataFrame(index=np.arange(pset.values.iloc[:, 2].min(),
+                                                 pset.values.iloc[:, 2].max()
+                                                 + 1),
                                  columns=csvheader[1:])
-            for i in xrange(len(stations)):
-                temp = pset.values[np.where(pset.values[:, st_col] ==
-                                               stations[i])][:, [2, -2, -1]]
-                tempdf = pd.DataFrame(temp[:, 1:], index=temp[:, 0],
-                                      columns=csvheader[2 * i + 1:2 * i + 3])
+            for i in xrange(len(stations)):  # TODO: rever para pd.DF
+                # temp = pset.values.iloc[np.where(pset.values.iloc[:, st_col] ==
+                #                               stations[i])][:, [2, -2, -1]]
+                temp = pset.values[pset.values.iloc[:, st_col] == stations[i]].iloc[:, [2, -2, -1]]
+                tempdf = pd.DataFrame(temp.iloc[:, 1:])
+                tempdf.index = temp.iloc[:, 0]
+                tempdf.columns = csvheader[2 * i + 1:2 * i + 3]
                 outdf.update(tempdf)
         else:  # TODO: falta sem station_split; vale a pena?
             # year, time (month), station, VAR, FLAG (if flagged)
@@ -377,7 +391,7 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
 
     elif fformat.lower() == 'gslib':
         if network_split and pset.varnames[4] == 'network':
-            networks = np.unique(pset.values[:, 4])
+            networks = np.unique(pset.values.iloc[:, 4])
             temp_varnames = pset.varnames[:]
             temp_varnames.remove('network')
             for nw in networks:
@@ -386,7 +400,9 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
                                    varnames=temp_varnames)
                 outfile = (os.path.splitext(outfile)[0] + '_' + str(nw) +
                            os.path.splitext(outfile)[1])
-                temp.values = pset.values[np.where(pset.values[:, 4] == nw), :]
+                # TODO: rever para pd.DF
+                temp.values = pset.values.iloc[np.where(pset.values.iloc
+                                                        [:, 4] == nw), :]
                 temp.save(outfile, header=True)
         else:
             pset.save(outfile, header=True)
@@ -401,8 +417,10 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
                                       columns=pset.varnames[:2])
 
         for i, st in enumerate(stations):
-            stationsdf.iloc[i] = pset.values[np.where(pset.values[:, st_col] ==
-                                                      st)[0][0], :2]
+            # stationsdf.iloc[i] = pset.values[np.where(pset.values[:, st_col] ==
+            #                                          st)[0][0], :2]
+            stationsdf.iloc[i] = pset.values[pset.values.iloc[:, st_col] == st
+                                             ].iloc[0, :2]
         if keys:
             keysdf = pd.read_csv(keys, sep='\t', index_col=0)
 
