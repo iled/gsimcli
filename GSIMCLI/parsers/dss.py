@@ -40,7 +40,7 @@ class DssParam:
                 number of multiple grids
         octant: samples number per octant (0 = no octant)
         srchradius: search radius (dir. 1, dir. 2., dir. 3), in the data scale
-        srchangles: search anisotropy angles, in the data scale
+        srchangles: search anisotropy angles
         krig: kriging type, global correlation index if = 4
         corrpath: path and filename of local correlation indexes
         secpath: path and filename of secondary information
