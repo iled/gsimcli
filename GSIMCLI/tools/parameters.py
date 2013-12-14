@@ -31,7 +31,8 @@ class ParametersFile:
             raise ValueError('Incomplete list of ordered fields.')
 
     def template(self, par_path):
-        """Write a parameter file with the template to follow.
+        """Write a parameter file with the template to follow, which must have
+        been defined as a docstring.
 
         """
         self.parpath = par_path

@@ -5,6 +5,9 @@ Created on 07/10/2013
 @author: jcaineta
 '''
 
+import ntpath
+import os
+
 import tools.grid as gr
 
 
@@ -48,14 +51,17 @@ class DssParam:
         ranges: ranges (dir. 1, dir. 2, dir. 3), in the data scale
 
     """
-    def __init__(self):
-        self.parpath = str()
+    def __init__(self, savepath=None):
+        """Initialise with the default parameters for GSIMCLI.
+        
+        """
+        self.path = str()
         self.datapath = str()
         self.columns = 4
         self.columns_set = [1, 2, 3, 4, 0, 0]
         self.trimming = [0, 0]
-        self.transflag = 0
-        self.transfile = 'no file'
+        self.transflag = 1
+        self.transfile = 'cluster.trn'
         self.tails = [0, 0]
         self.lowert = [1, 0]
         self.uppert = [1, 0]
@@ -63,13 +69,13 @@ class DssParam:
         self.debugfile = 'dss.dbg'
         self.output = 'dss.out'
         self.nsim = 1
-        self.bias = [10, 0, 0]
+        self.bias = [10, 1, 1]
         self.xx = [1, 1, 1]
         self.yy = [1, 1, 1]
         self.zz = [1, 1, 1]
         self.nd = -999.9
         self.seed = 69069
-        self.nsamples = [1, 64]
+        self.nsamples = [1, 16]
         self.maxsim = 16
         self.strategy = 1
         self.simset = [0, 1]
@@ -83,10 +89,13 @@ class DssParam:
         self.nstruct = [1, 0]
         self.struct = [1, 1, 0, 0, 0]
         self.ranges = [1, 1, 1]
+        if savepath:
+            self.path = savepath
+            self.save_old()
 
     def load(self, par_path):
         """Reads the parameters file of DSS parallel version (Nunes, R.)"""
-        self.parpath = par_path
+        self.path = par_path
         with open(par_path, 'r') as f:
             par = f.readlines()
         self.datapath = par[4].strip()
@@ -129,7 +138,7 @@ class DssParam:
     def save(self, par_path=None):
         """Writes the parameters file of DSS parallel version (Nunes, R.)"""
         if not par_path:
-            par_path = self.parpath
+            par_path = self.path
         par = open(par_path, 'w')
         par_header = ['Direct Sequential Simulation',
                       '****************************',
@@ -174,7 +183,7 @@ class DssParam:
 
     def load_old(self, par_path):
         """Reads the parameters file of DSS old version"""
-        self.parpath = par_path
+        self.path = par_path
         with open(par_path, 'r') as f:
             par = f.readlines()
         self.datapath = par[4].strip()
@@ -223,7 +232,7 @@ class DssParam:
     def save_old(self, par_path=None):
         """Writes the parameters file of DSS old version"""
         if not par_path:
-            par_path = self.parpath
+            par_path = self.path
         par = open(par_path, 'w')
         par_header = ['Direct Sequential Simulation',
                       '****************************',
@@ -273,24 +282,41 @@ class DssParam:
     def update(self, keywords, values, save=False, par_path=None):
         """Updates a list of keywords with the corresponding values.
         """
+        if not par_path:
+            par_path = self.path
         for i, keyword in enumerate(keywords):
             if hasattr(self, keyword):
                 setattr(self, keyword, values[i])
         if save:
-            self.save_old()  # TODO: old manager
-            
-    def data2update(self, dataset, no_data=-999.9, header=True):
+            self.save_old(par_path)  # TODO: old manager
+
+    def data2update(self, dataset, no_data=-999.9, header=True, save=True,
+                    par_path=None):
         """Try to update the parameters according to a data set in the PointSet
         format.
-        
+
+        FIXME: assuming the study variable is in the last column
         """
-        if not isinstance(dataset, gr.PointSet):
+        if isinstance(dataset, gr.PointSet):
             pset = dataset
         else:
             pset = gr.PointSet()
             pset.load(dataset, no_data, header)
-        
-        
+
+        keywords = ['datapath', 'columns', 'columns_set', 'trimming', 'tails',
+                    'lowert', 'uppert', 'nd']
+        if os.name == 'posix':
+            wine = 'z:'
+        else:
+            wine = str()
+        hdpath = ntpath.join(wine, ntpath.abspath(pset.path))
+        ncols = pset.values.shape[1]
+        datamin = pset.values.iloc[:, -1].min()
+        datamax = pset.values.iloc[:, -1].max()
+        values = [hdpath, ncols, [1, 2, 3, ncols, 0, 0],
+                  [datamin, datamax], [datamin, datamax], [1, datamin],
+                  [1, datamax], pset.nodata]
+        self.update(keywords, values, save, par_path)
 
     def ask_update_default(self):
         """Asks to update or keep existing values.
@@ -550,11 +576,13 @@ class DssParam:
 
 
 if __name__ == '__main__':
-    parfile = '/home/julio/Transferências/tmp/assdir.par'
-    newpar = '/home/julio/Transferências/tmp/teste.par'
+    parfile = '/home/julio/Testes/DSSim.par'
+    newpar = '/home/julio/Testes/teste_update.par'
+    dataset = '/home/julio/Testes/snirh.prn'
     pars = DssParam()
-    pars.load(parfile)
-    pars.update(['output'], ['yeah.out'])
+    pars.load_old(parfile)
+    # pars.update(['output'], ['yeah.out'])
     # pars.ask_new()
+    pars.data2update(dataset, -999.9, False)
     pars.save(newpar)
     print 'done'
