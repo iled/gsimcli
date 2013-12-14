@@ -1,6 +1,6 @@
 # Custom stuff
-*.project
-*.pydevproject
+#*.project
+#*.pydevproject
 *.settings
 *.pyc
 *.DS_Store
