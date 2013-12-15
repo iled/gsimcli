@@ -13,10 +13,11 @@ class ParametersFile:
 
     def __init__(self, sep, par_set=str(), par_file=str(), text=list(),
                  real_n=list(), int_n=list(), boolean=list(), optional=list(),
-                 order=None):
+                 parpath=None, order=None):
         """Constructor.
 
         """
+        self.path = parpath
         self.sep = sep
         self.par_set = par_set
         self.par_file = par_file
@@ -29,13 +30,15 @@ class ParametersFile:
         self.order = order
         if order and len(order) != len(self.fields + self.optional):
             raise ValueError('Incomplete list of ordered fields.')
+        if parpath:
+            self.load(parpath)
 
     def template(self, par_path):
         """Write a parameter file with the template to follow, which must have
         been defined as a docstring.
 
         """
-        self.parpath = par_path
+        self.path = par_path
         par_file = open(par_path, 'w')
         lines = self.__doc__.splitlines()
         for line in lines:
@@ -47,8 +50,8 @@ class ParametersFile:
 
         TODO: load ordered
         """
-        self.parpath = par_path
-        with open(self.parpath) as fid:
+        self.path = par_path
+        with open(self.path) as fid:
             lines = fid.readlines()
         checklist = list(self.fields)
 
@@ -83,7 +86,7 @@ class ParametersFile:
 
         """
         if not par_path:
-            par_path = self.parpath
+            par_path = self.path
         par = open(par_path, 'w')
         par.write('·' * (25 + len(self.par_set)) + '\n')
         par.write('·····  {} parameters  ·····\n'.format(self.par_set))

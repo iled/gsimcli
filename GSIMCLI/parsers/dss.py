@@ -51,7 +51,7 @@ class DssParam:
         ranges: ranges (dir. 1, dir. 2, dir. 3), in the data scale
 
     """
-    def __init__(self, savepath=None):
+    def __init__(self, parpath=None):
         """Initialise with the default parameters for GSIMCLI.
         
         """
@@ -89,9 +89,8 @@ class DssParam:
         self.nstruct = [1, 0]
         self.struct = [1, 1, 0, 0, 0]
         self.ranges = [1, 1, 1]
-        if savepath:
-            self.path = savepath
-            self.save_old()
+        if parpath:
+            self.load_old(parpath)
 
     def load(self, par_path):
         """Reads the parameters file of DSS parallel version (Nunes, R.)"""
@@ -290,12 +289,11 @@ class DssParam:
         if save:
             self.save_old(par_path)  # TODO: old manager
 
-    def data2update(self, dataset, no_data=-999.9, header=True, save=True,
-                    par_path=None):
+    def data2update(self, dataset, no_data=-999.9, varcol=-1, header=True,
+                    save=True, par_path=None):
         """Try to update the parameters according to a data set in the PointSet
         format.
 
-        FIXME: assuming the study variable is in the last column
         """
         if isinstance(dataset, gr.PointSet):
             pset = dataset
@@ -303,19 +301,18 @@ class DssParam:
             pset = gr.PointSet()
             pset.load(dataset, no_data, header)
 
-        keywords = ['datapath', 'columns', 'columns_set', 'trimming', 'tails',
-                    'lowert', 'uppert', 'nd']
+        keywords = ['datapath', 'columns', 'trimming', 'tails', 'lowert',
+                    'uppert', 'nd']
         if os.name == 'posix':
             wine = 'z:'
         else:
             wine = str()
         hdpath = ntpath.join(wine, ntpath.abspath(pset.path))
         ncols = pset.values.shape[1]
-        datamin = pset.values.iloc[:, -1].min()
-        datamax = pset.values.iloc[:, -1].max()
-        values = [hdpath, ncols, [1, 2, 3, ncols, 0, 0],
-                  [datamin, datamax], [datamin, datamax], [1, datamin],
-                  [1, datamax], pset.nodata]
+        datamin = pset.values.iloc[:, varcol].min()
+        datamax = pset.values.iloc[:, varcol].max()
+        values = [hdpath, ncols, [datamin, datamax], [datamin, datamax],
+                  [1, datamin], [1, datamax], pset.nodata]
         self.update(keywords, values, save, par_path)
 
     def ask_update_default(self):

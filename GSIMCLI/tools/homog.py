@@ -367,9 +367,10 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
                                                  + 1),
                                  columns=csvheader[1:])
             for i in xrange(len(stations)):  # TODO: rever para pd.DF
-                # temp = pset.values.iloc[np.where(pset.values.iloc[:, st_col] ==
-                #                               stations[i])][:, [2, -2, -1]]
-                temp = pset.values[pset.values.iloc[:, st_col] == stations[i]].iloc[:, [2, -2, -1]]
+                # temp = pset.values.iloc[np.where(pset.values.iloc[:, st_col]
+                #                            == stations[i])][:, [2, -2, -1]]
+                temp = pset.values[pset.values.iloc[:, st_col] == stations[i]
+                                   ].iloc[:, [2, -2, -1]]
                 tempdf = pd.DataFrame(temp.iloc[:, 1:])
                 tempdf.index = temp.iloc[:, 0]
                 tempdf.columns = csvheader[2 * i + 1:2 * i + 3]
@@ -417,8 +418,8 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
                                       columns=pset.varnames[:2])
 
         for i, st in enumerate(stations):
-            # stationsdf.iloc[i] = pset.values[np.where(pset.values[:, st_col] ==
-            #                                          st)[0][0], :2]
+            # stationsdf.iloc[i] = pset.values[np.where(pset.values[:, st_col]
+            #                                       == st)[0][0], :2]
             stationsdf.iloc[i] = pset.values[pset.values.iloc[:, st_col] == st
                                              ].iloc[0, :2]
         if keys:
