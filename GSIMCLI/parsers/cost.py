@@ -318,17 +318,17 @@ def start_pset(filepath):
 
 
 def station_coord(network, path):
-    """Extracts station coordinates from network file.
+    """Extracts station coordinates (lat, long) from network file.
     """
     station_coord = (network[network.Station == os.path.
                         basename(path)].iloc[0, 1:-2])
 
     if len(station_coord) == 6:
-        x = ut.dms2dec(station_coord[0], station_coord[1], station_coord[2])
-        y = ut.dms2dec(station_coord[3], station_coord[4], station_coord[5])
+        y = ut.dms2dec(station_coord[0], station_coord[1], station_coord[2])
+        x = ut.dms2dec(station_coord[3], station_coord[4], station_coord[5])
     else:
-        x = station_coord[0]
-        y = station_coord[1]
+        y = station_coord[0]
+        x = station_coord[1]
 
     return x, y
 
