@@ -10,12 +10,12 @@ It uses geostatistical simulation approach with classic DSS.
 '''
 import ntpath
 import os
-import sys
+#import sys
 
-sys.path.append('/home/julio/Dropbox/workspace/isegi/GSIMCLI')
+# sys.path.append('/home/julio/Dropbox/workspace/isegi/GSIMCLI')
 
 import launchers.dss as dss
-import numpy as np
+# import numpy as np
 import parsers.cost as pcost
 import parsers.dss as pdss
 import parsers.gsimcli as pgc
@@ -545,7 +545,7 @@ if __name__ == '__main__':
     settings = ['/home/julio/Testes/gsimcli.par',
                 '/home/julio/Testes/gsimcli2.par']
 
-    """    
+    """
     for par in settings:
         gscpar = pgc.GsimcliParam(par)
         hd = np.loadtxt(gscpar.data, usecols=4)
