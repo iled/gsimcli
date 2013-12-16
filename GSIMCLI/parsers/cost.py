@@ -317,23 +317,31 @@ def start_pset(filepath):
     return pset
 
 
-def station_coord(network, path):
+def station_coord(network, station_path, coordinates_file=None):
     """Extracts station coordinates (lat, long) from network file.
     """
-    station_coord = (network[network.Station == os.path.
-                        basename(path)].iloc[0, 1:-2])
+    if coordinates_file:
+        network = pd.read_csv(coordinates_file)
 
-    if len(station_coord) == 6:
-        y = ut.dms2dec(station_coord[0], station_coord[1], station_coord[2])
-        x = ut.dms2dec(station_coord[3], station_coord[4], station_coord[5])
+    station_coord = network[network.Station == os.path.basename(station_path)]
+
+    if coordinates_file:
+        x = station_coord.coordx
+        y = station_coord.coordy
+    elif station_coord.shape[1] == 9:
+        y = ut.dms2dec(station_coord.LatDeg, station_coord.LatMin,
+                       station_coord.LatSec)
+        x = ut.dms2dec(station_coord.LonDeg, station_coord.LonMin,
+                       station_coord.LonSec)
     else:
-        y = station_coord[0]
-        x = station_coord[1]
+        y = station_coord.Lat
+        x = station_coord.Lon
 
-    return x, y
+    return float(x), float(y)
 
 
-def convert_gslib(files, merge=False, md=-999.9, sum_year=False):
+def convert_gslib(files, merge=False, md=-999.9, sum_year=False,
+                  coordinates_file=None):
     """Load selected files type, previously parsed. Then converts them
     to GSLIB format. By default it generates one file per network.
 
@@ -352,7 +360,8 @@ def convert_gslib(files, merge=False, md=-999.9, sum_year=False):
     network_number = files[0][1][0]
     network_path = find_netwfile(files[0][0])
     network = networkfile(network_path)
-    station_x, station_y = station_coord(network, files[0][0])
+    station_x, station_y = station_coord(network, files[0][0],
+                                         coordinates_file)
     var = files[0][1][3]
     # resol = files[0][1][4]
 
@@ -395,13 +404,17 @@ def convert_gslib(files, merge=False, md=-999.9, sum_year=False):
                 pset_file = start_pset(os.path.join(os.path.dirname(file_path),
                                   str(network_number) + '_pset.prn'))"""
                 pset.save(pset_file, header=True)
+                pset = gr.PointSet(name=str(network_number) + '_pset',
+                                   nodata=md, nvars=nvar,
+                                   varnames=['lon', 'lat', 'time', 'station',
+                                             var])
                 pset_file = os.path.join(savedir, str(network_number) + '_' +
                                          var + '_pset.prn')
-                pset.name = str(network_number) + '_pset'
                 # pset.values = np.zeros((0, nvar))
-                pset.values = pd.DataFrame(np.zeros((0, nvar)))
+                # pset.values = pd.DataFrame(np.zeros((0, nvar)))
 
-        station_x, station_y = station_coord(network, file_path)
+        station_x, station_y = station_coord(network, file_path,
+                                             coordinates_file)
         temp = pd.DataFrame((cost2gslib(station_x, station_y,
                                         datafile(file_path, file_type[4]), md,
                                         sum_year)),
