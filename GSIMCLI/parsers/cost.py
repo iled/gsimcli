@@ -333,7 +333,7 @@ def station_coord(network, path):
     return x, y
 
 
-def convert_gslib(files, merge=False, md=-999.9):
+def convert_gslib(files, merge=False, md=-999.9, sum_year=False):
     """Load selected files type, previously parsed. Then converts them
     to GSLIB format. By default it generates one file per network.
 
@@ -346,6 +346,7 @@ def convert_gslib(files, merge=False, md=-999.9):
     .considerar a hipótese de carregar mais do que um tipo simultaneamente
     .permitir fazer diferentes variáveis (ou inserir isso no interface)
     .deal with leap years.
+    .now its dropping the column with the year; put back again for res != 'y'
     """
     # collect info from the first network
     network_number = files[0][1][0]
@@ -353,7 +354,7 @@ def convert_gslib(files, merge=False, md=-999.9):
     network = networkfile(network_path)
     station_x, station_y = station_coord(network, files[0][0])
     var = files[0][1][3]
-    resol = files[0][1][4]
+    # resol = files[0][1][4]
 
     savedir = os.path.dirname(os.path.dirname(files[0][0]))
     if merge:
@@ -363,9 +364,8 @@ def convert_gslib(files, merge=False, md=-999.9):
         # savedir = os.path.dirname(files[0][0])
         fname = str(network_number)
 
-    # pset_file = start_pset(os.path.join(savedir, fname +
-    #                                    '_pset.prn'))
     pset_file = os.path.join(savedir, fname + '_' + var + '_pset.prn')
+    """
     # temporary, depends on leap years
     if resol in ['y', 'm']:
         nvar = 7
@@ -377,6 +377,10 @@ def convert_gslib(files, merge=False, md=-999.9):
         pset = gr.PointSet(name=fname + '_pset', nodata=md, nvars=nvar,
                        varnames=['lat', 'lon', 'time', 'network', 'station',
                                  var], values=np.zeros((0, nvar)))
+    """
+    nvar = 5
+    pset = gr.PointSet(name=fname + '_pset', nodata=md, nvars=nvar,
+                       varnames=['lon', 'lat', 'time', 'station', var])
 
     for x in files:
         file_path = x[0]
@@ -395,17 +399,28 @@ def convert_gslib(files, merge=False, md=-999.9):
                                          var + '_pset.prn')
                 pset.name = str(network_number) + '_pset'
                 # pset.values = np.zeros((0, nvar))
-                pset.values = pd.DataFrame(np.zeros((0, nvar)))  # TODO: testar
+                pset.values = pd.DataFrame(np.zeros((0, nvar)))
 
         station_x, station_y = station_coord(network, file_path)
-        temp = (cost2gslib(station_x, station_y,
-                           datafile(file_path, file_type[4]).
-                           fillna(md)))
+        temp = pd.DataFrame((cost2gslib(station_x, station_y,
+                                        datafile(file_path, file_type[4]), md,
+                                        sum_year)),
+                            columns=['lon', 'lat', 'time', 'year', var])
+
         # temp[np.isnan(temp)] == md
+        """
         temp = np.column_stack((temp[:, :-1], np.repeat(int(network_number),
                                                 temp.shape[0]),
                                 np.repeat(int(filename_parse(file_path)[4]),
                                           temp.shape[0]), temp[:, -1]))
+        """
+        # temp = (temp.iloc[:, :3].
+        #        join(pd.Series(np.repeat(int(filename_parse(file_path)[4]),
+        #                                 temp.shape[0]), name='station')))
+        temp = temp.drop('year', 1)
+        temp.insert(3, 'station', np.repeat(int(filename_parse(file_path)[4]),
+                                         temp.shape[0]))
+        # temp = temp.join(pd.Series(temp.iloc[:, -1], name=var))
         # np.savetxt(pset_file, temp,
         #          fmt=['%-10.6f', '%10.6f', '%10i', '%10.4f', '%06i', '%08i'])
         # pset.values = np.vstack((pset.values, temp))
@@ -415,7 +430,7 @@ def convert_gslib(files, merge=False, md=-999.9):
     pset.save(pset_file, header=True)
 
 
-def cost2gslib(x, y, data):
+def cost2gslib(x, y, data, nd=-999.9, sum_year=False):
     """Converts data from one station to the GSLIB standard (point-set).
 
     @x, y: station coordinates
@@ -431,15 +446,21 @@ def cost2gslib(x, y, data):
         var = np.array(data)
         m = 1
     elif data.shape[1] == 12:  # monthly
-        # years with months in decimal place
-        # z = [data.index[i] + float(j)/12 for i in xrange(0,data.shape[0])
-        #     for j in xrange(0,12)]
+        if sum_year:
+            z = data.index
+            # var = data.mask(data == nd).sum(axis=1)
+            var = data.sum(axis=1)
+            m = 1
+        else:
+            # years with months in decimal place
+            # z = [data.index[i] + float(j)/12 for i in xrange(0,data.shape[0])
+            #     for j in xrange(0,12)]
 
-        # converted to months
-        z = [data.index[i] * 12 + j for i in xrange(0, data.shape[0])
-             for j in xrange(0, 12)]
-        var = np.array(data).flatten()
-        m = 12
+            # converted to months
+            z = [data.index[i] * 12 + j for i in xrange(0, data.shape[0])
+                 for j in xrange(0, 12)]
+            var = np.array(data).flatten()
+            m = 12
     # daily -- converted to days (not considering leap years)
     elif data.shape[1] == 3:
         z = [data.index[0] * 365 + 365 * i +
@@ -459,11 +480,11 @@ def cost2gslib(x, y, data):
 
     if m == 0:  # temporary
         return (np.column_stack((np.repeat(x, var.size),
-                                 np.repeat(y, var.size), z, var)))
+                                 np.repeat(y, var.size), z, var.fillna(nd))))
     else:
         return (np.column_stack((np.repeat(x, var.size),
                                  np.repeat(y, var.size), z,
-                                 np.repeat(data.index, m), var)))
+                                 np.repeat(data.index, m), var.fillna(nd))))
 
 
 def files_select(parsed, network=None, ftype=None, status=None, variable=None,
@@ -500,8 +521,8 @@ if __name__ == '__main__':
     convert_gslib(selected, merge=False)
     """
 
-    benchmark = '/home/julio/Transferências/benchmark'
-    # benchmark = '/home/julio/Transferências/benchmark/inho/precip/sur1'
+    # benchmark = '/home/julio/Transferências/benchmark'
+    benchmark = '/Users/julio/Downloads/benchmark/inho/precip/sur1'
 
     for root, dirs, files in os.walk(benchmark):  # @UnusedVariable
         if len(dirs) > 0 and all([len(d) == 6 and d.isdigit() for d in dirs]):
@@ -510,6 +531,6 @@ if __name__ == '__main__':
             selected_files = files_select(parsed_files, ftype='data',
                                           variable='rr', content='d')
             if selected_files:
-                convert_gslib(selected_files, merge=False)
+                convert_gslib(selected_files, merge=False, sum_year=True)
 
     print 'done'
