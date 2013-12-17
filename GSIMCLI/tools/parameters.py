@@ -87,6 +87,8 @@ class ParametersFile:
         """
         if not par_path:
             par_path = self.path
+        else:
+            self.path = par_path
         par = open(par_path, 'w')
         par.write('·' * (25 + len(self.par_set)) + '\n')
         par.write('·····  {} parameters  ·····\n'.format(self.par_set))
