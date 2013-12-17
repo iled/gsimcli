@@ -461,8 +461,7 @@ def cost2gslib(x, y, data, nd=-999.9, sum_year=False):
     elif data.shape[1] == 12:  # monthly
         if sum_year:
             z = data.index
-            # var = data.mask(data == nd).sum(axis=1)
-            var = data.sum(axis=1)
+            var = data.sum(axis=1, skipna=False)
             m = 1
         else:
             # years with months in decimal place
@@ -534,8 +533,8 @@ if __name__ == '__main__':
     convert_gslib(selected, merge=False)
     """
 
-    # benchmark = '/home/julio/Transferências/benchmark'
-    benchmark = '/Users/julio/Downloads/benchmark/inho/precip/sur1'
+    benchmark = '/home/julio/Testes/benchmark/inho/precip/sur1'
+    # benchmark = '/Users/julio/Downloads/benchmark/inho/precip/sur1'
 
     for root, dirs, files in os.walk(benchmark):  # @UnusedVariable
         if len(dirs) > 0 and all([len(d) == 6 and d.isdigit() for d in dirs]):
