@@ -445,6 +445,7 @@ def batch_networks():
     
     """
     #  redes, grid
+    
     pass
 
 
