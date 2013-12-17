@@ -445,6 +445,7 @@ def batch_networks():
     
     """
     #  redes, grid
+
     pass
 
 
@@ -609,4 +610,8 @@ if __name__ == '__main__':
 
     decvars = '/home/julio/Testes/rede000005/resumo_variografia_rede05_csv.csv'
     batch_decade(par, decvars)
+<<<<<<< HEAD
     print 'done'
+=======
+    print 'done'
+>>>>>>> refs/heads/decadebatch
