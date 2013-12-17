@@ -21,21 +21,21 @@ class GsimcliParam(ParametersFile):
         if not, specify
         name: data set name
         variables: variables name (e.g, 'x, y, time, station, var1, var2')
-        The following variables are mandatory, here or in the header line of
+        The following variables are mandatory, here or in the header lines of
         the data file:
         - 'x' coordinate X
         - 'y' coordinate Y
         - 'time' unit of time
         - 'station' stations IDs
         - 'clim' climatic variable to homogenize
-        
+
         --- DETECTION ---
         st_order: method for setting candidates order:
                 - 'random' all stations are randomly sorted;
                 - 'sorted' sorts all stations in ascending order;
                 - 'variance' sorts all stations by greater variance;
                 - 'user' the user specifies which stations and their order.
-        st_user: stations IDs in order if storder == 'user' (e.g., '3 10 1 2')
+        st_user: stations IDs in order if st_order == 'user' (e.g., '3 10 1 2')
         detect_method: detection method (comparison between upper and lower
                        percentiles and the simulated values):
                         - 'mean' compares with the mean
@@ -44,7 +44,7 @@ class GsimcliParam(ParametersFile):
                                      it compares with the mean or the median
         skewness: samples skewness threshold, used if detecm == 'skewness'
         detect_prob: probability to build an interval centered in the local pdf
-        
+
         --- RESULTS ---
         detect_save: save intermediary files ('y'/'n'), which are:
                     - candidates point-set
@@ -55,21 +55,21 @@ class GsimcliParam(ParametersFile):
                     - dss debug
         sim_purge: delete simulated maps ('y'/'n')
         results: path to the folder where results will be saved
-        
+
         --- DSS ---
         dss_par: path to the DSS parameters file (optional; if none, default
                  values will be used)
         dss_exe: path to the DSS executable
         number_simulations: number of simulations
-        krig_type: krigging type
-        
+        krig_type: krigging type (OK, SK)
+
         --- DSS: variogram ---
         model: model type (S = spherical, E = exponential, G = gaussian)
         nugget: nugget effect (C0) in normalised variance
         sill: sill in normalised variance
         ranges: ranges (dir. 1, dir. 2, dir. 3), in the data scale
         angles: direction angles
-        
+
         --- DSS: grid ---
         max_search_nodes: maximum number of nodes to be found
         XX_nodes_number: number of nodes in x-axis
@@ -81,24 +81,25 @@ class GsimcliParam(ParametersFile):
         ZZ_nodes_number: number of nodes in z-axis
         ZZ_minimum: minimum coordinate in z-axis
         ZZ_spacing: distance between nodes (or node size) in z-axis
-        
+
     """
     def __init__(self, par_path=None):
         """Constructor. Include wrapper for the DSS parameters.
-        
+
         TODO: - for now it just supports one structure in the variogram
               - consider every dss parameters as optional?
         """
         par_set = 'GSIMCLI'
-        text = ['data', 'st_order', 'detect_method', 'results',
-                'dss_exe', 'krig_type', 'model']
-        real_n = ['detect_prob', 'nugget', 'sill', 'ranges', 'no_data']
+        text = ['data', 'st_order', 'detect_method', 'results', 'dss_exe']
+        real_n = ['detect_prob', 'no_data']
         boolean = ['data_header', 'detect_save', 'sim_purge']
         optional = ['dss_par', 'name', 'variables', 'st_user', 'skewness']
-        int_n = ['number_simulations', 'max_search_nodes', 'angles',
-                 'XX_nodes_number', 'XX_minimum', 'XX_spacing',
-                 'YY_nodes_number', 'YY_minimum', 'YY_spacing',
-                 'ZZ_nodes_number', 'ZZ_minimum', 'ZZ_spacing']
+        optional_dss = ['krig_type', 'model', 'nugget', 'sill', 'ranges',
+                        'number_simulations', 'max_search_nodes', 'angles',
+                         'XX_nodes_number', 'XX_minimum', 'XX_spacing',
+                         'YY_nodes_number', 'YY_minimum', 'YY_spacing',
+                         'ZZ_nodes_number', 'ZZ_minimum', 'ZZ_spacing']
+        int_n = []
         order = ['data', 'no_data', 'data_header', 'name',
                  'variables', 'st_order', 'st_user', 'detect_method',
                  'skewness', 'detect_prob', 'detect_save', 'sim_purge',
@@ -110,11 +111,11 @@ class GsimcliParam(ParametersFile):
                  'ZZ_nodes_number', 'ZZ_minimum', 'ZZ_spacing']
         ParametersFile.__init__(self, sep=':', par_set=par_set, text=text,
                                 int_n=int_n, real_n=real_n, boolean=boolean,
-                                optional=optional, order=order)
+                                optional=optional + optional_dss, order=order)
 
         if par_path:
             self.load(par_path)
-    
+
     def load(self, par_path):
         ParametersFile.load(self, par_path)
         if not hasattr(self, 'variables') and self.data_header.lower == 'n':
@@ -124,7 +125,7 @@ class GsimcliParam(ParametersFile):
     def update_dsspar(self, save=False, par_path=None):
         """Update the DSS parameters file according to the set of parameters
         given in the GSIMCLI parameters file.
-    
+
         """
         if hasattr(self, 'dss_par'):
             dsspar = pdss.DssParam.load_old(self.dss_par)  # TODO: old arg
@@ -133,16 +134,14 @@ class GsimcliParam(ParametersFile):
 
         dsspar.path = os.path.join(os.path.dirname(self.path), 'DSSim.PAR')
 
-        if self.data_header.lower() == 'y':
-            header = True
-        else:
-            header = False
-            
-        if hasattr(self, 'name') and hasattr(self, 'variables'):
+        if hasattr(self, 'name'):
             name = self.name
+        if hasattr(self, 'variables'):
             varnames = self.variables.split()
-        elif header:
+        elif self.data_header:
             pset = gr.PointSet(psetpath=self.data, header=True)
+            self.name = pset.name
+            self.variables = pset.varnames
             name = pset.name
             varnames = pset.varnames
         else:
@@ -152,13 +151,18 @@ class GsimcliParam(ParametersFile):
         radius = [self.XX_nodes_number * self.XX_spacing,
                   self.YY_nodes_number * self.YY_spacing,
                   self.ZZ_nodes_number * self.ZZ_spacing]
-                  
+
         if self.model.lower().strip() == 's':
             model = 1
         elif self.model.lower().strip() == 'e':
             model = 2
         elif self.model.lower().strip() == 'g':
             model = 3
+
+        if self.krig_type.lower().strip() == 'ok':
+            krig = 0
+        elif self.krig_type.lower().strip() == 'sk':
+            krig = 1  # TODO: faltam outros tipos
 
         keywords = ['column_set', 'output', 'nsim', 'xx', 'yy', 'zz', 'nd',
                     'nsamples', 'maxsim', 'srchradius', 'srchangles', 'krig',
@@ -169,14 +173,14 @@ class GsimcliParam(ParametersFile):
                   [self.ZZ_nodes_number, self.ZZ_minimum, self.ZZ_spacing],
                   self.no_data, [1, self.max_search_nodes],
                   self.max_search_nodes, radius, self.angles,
-                  [self.krig_type, 0], [dsspar.nstruct[0], self.nugget],
+                  [krig, 0], [dsspar.nstruct[0], self.nugget],
                   [model, self.sill, self.angles], self.ranges, self.data]
 
         dsspar.update(keywords, values)
         dsspar.data2update(self.data, self.no_data, varnames.index('clim'),
-                           header, save, par_path)
+                           self.data_header, save, par_path)
         return dsspar
-    
+
 
 if __name__ == '__main__':
     # ta = '/home/julio/Testes/gsimcli.par'
