@@ -535,14 +535,17 @@ if __name__ == '__main__':
 
     benchmark = '/home/julio/Testes/benchmark/inho/precip/sur1'
     # benchmark = '/Users/julio/Downloads/benchmark/inho/precip/sur1'
+    coords = '/home/julio/Dropbox/ISEGI/cost-home/rede000016/tab_coordenadas_projetadas_rede000016.txt'
 
     for root, dirs, files in os.walk(benchmark):  # @UnusedVariable
         if len(dirs) > 0 and all([len(d) == 6 and d.isdigit() for d in dirs]):
             print 'processing ' + root
             parsed_files = directory_walk_v1(root)
-            selected_files = files_select(parsed_files, ftype='data',
-                                          variable='rr', content='d')
+            selected_files = files_select(parsed=parsed_files, ftype='data',
+                                          variable='rr', content='d',
+                                          network='000016')
             if selected_files:
-                convert_gslib(selected_files, merge=False, sum_year=True)
+                convert_gslib(selected_files, merge=False, sum_year=True,
+                              coordinates_file=coords)
 
     print 'done'
