@@ -138,6 +138,8 @@ class DssParam:
         """Writes the parameters file of DSS parallel version (Nunes, R.)"""
         if not par_path:
             par_path = self.path
+        else:
+            self.path = par_path
         par = open(par_path, 'w')
         par_header = ['Direct Sequential Simulation',
                       '****************************',
@@ -232,6 +234,8 @@ class DssParam:
         """Writes the parameters file of DSS old version"""
         if not par_path:
             par_path = self.path
+        else:
+            self.path = par_path
         par = open(par_path, 'w')
         par_header = ['Direct Sequential Simulation',
                       '****************************',
