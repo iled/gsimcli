@@ -419,34 +419,53 @@ def batch_decade(par_path, variograms_file):
           .receber variância já normalizada
     """
     gscpar = pgc.GsimcliParam(par_path)
-    if gscpar.data_header.lower() == 'y':
-        header = True
-    else:
-        header = False
     variograms = pd.read_csv(variograms_file)
     os.chdir(os.path.dirname(variograms_file))
 
     for i, decade in enumerate(variograms.iterrows()):
-        data_file = glob.glob(decade[1].ix['decada'].split()[0] + '*')
+        first_year = decade[1].ix['Decade'].split('-')[0].strip()
+        data_folder = os.path.join(os.getcwd(), glob.glob('dec*')[0])
+        data_file = os.path.join(data_folder, glob.glob(data_folder + '/*' +
+                                                            first_year + '*')[0])
 
-        pset = gr.PointSet(psetpath=data_file, header=header)
-        variance = pset.clim.var()
-        fields = ['data', 'model', 'nugget', 'sill', 'ranges']
-        values = [data_file, decade[1].ix['modelo'][0],
-                  decade[1].ix['nugget'] / variance,
+        pset = gr.PointSet(psetpath=data_file, header=gscpar.data_header)
+        climcol = gscpar.variables.split().index('clim')
+        variance = pset.values.iloc[:, climcol].var()
+        fields = ['data', 'model', 'nugget', 'sill', 'ranges', 'ZZ_minimum']
+        values = [data_file, decade[1].ix['Model'][0],
+                  decade[1].ix['Nugget'] / variance,
                   decade[1].ix['Partial Sill'] / variance,
-                  [decade[1].ix['Range'], decade[1].ix['Range'], 1]]
+                  [decade[1].ix['Range'], decade[1].ix['Range'], 1],
+                  first_year]
         gscpar.update(fields, values, True, ut.filename_numbering(par_path, i))
-        run_par(gscpar)
-        
-        
-def batch_networks():
-    """Batch process to run gscimcli at different networks.
-    
-    """
-    #  redes, grid
+        # run_par(gscpar)
 
-    pass
+
+def batch_networks(par_path, networks, decades=False):
+    """Batch process to run gscimcli at different networks.
+
+    """
+    gscpar = pgc.GsimcliParam(par_path)
+
+    for i, network in enumerate(networks):
+        os.chdir(network)
+        specfile = os.path.join(network, glob.glob('*grid*.csv')[0])
+        grid = pd.read_csv(specfile)
+        fields = ['XX_nodes_number', 'XX_minimum', 'XX_spacing',
+                 'YY_nodes_number', 'YY_minimum', 'YY_spacing',
+                 'ZZ_nodes_number', 'ZZ_spacing']
+        # TODO: ParametersFile com tipos no opt
+        values = [str(int(grid.xnodes)), str(int(grid.xmin)), str(int(grid.xsize)),
+                  str(int(grid.ynodes)), str(int(grid.ymin)), str(int(grid.ysize)),
+                  str(10), str(1)]
+        gscpar.update(fields, values, True, ut.filename_numbering(par_path, i))
+
+        if decades:
+            variogram_file = os.path.join(network,
+                                          glob.glob('*variog*.csv')[0])
+            batch_decade(par_path, variogram_file)
+        else:
+            run_par(par_path)
 
 
 def main():
@@ -605,9 +624,16 @@ if __name__ == '__main__':
         print 'Loading settings at {}'.format(par)
         run_par(par)
     """
-    par = '/home/julio/Testes/gsimcli.par'
+    par = '/home/julio/Testes/cost-home/gsimcli.par'
     # run_par(par)
 
-    decvars = '/home/julio/Testes/rede000005/resumo_variografia_rede05_csv.csv'
-    batch_decade(par, decvars)
+    # decvars = '/home/julio/Testes/rede000005/resumo_variografia_rede05_csv.csv'
+    # batch_decade(par, decvars)
+    base = '/home/julio/Testes/cost-home'
+    networks = [os.path.join(base, 'rede000004'),
+                os.path.join(base, 'rede000005'),
+                os.path.join(base, 'rede000008'),
+                os.path.join(base, 'rede000010'),
+                os.path.join(base, 'rede000020')]
+    batch_networks(par, networks, decades=True)
     print 'done'
