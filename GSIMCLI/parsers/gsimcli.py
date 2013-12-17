@@ -127,7 +127,7 @@ class GsimcliParam(ParametersFile):
     
         """
         if hasattr(self, 'dss_par'):
-            dsspar = pdss.DssParam.load_old(self.dss_par)
+            dsspar = pdss.DssParam.load_old(self.dss_par)  # TODO: old arg
         else:
             dsspar = pdss.DssParam()
 
@@ -152,10 +152,17 @@ class GsimcliParam(ParametersFile):
         radius = [self.XX_nodes_number * self.XX_spacing,
                   self.YY_nodes_number * self.YY_spacing,
                   self.ZZ_nodes_number * self.ZZ_spacing]
+                  
+        if self.model.lower().strip() == 's':
+            model = 1
+        elif self.model.lower().strip() == 'e':
+            model = 2
+        elif self.model.lower().strip() == 'g':
+            model = 3
 
         keywords = ['column_set', 'output', 'nsim', 'xx', 'yy', 'zz', 'nd',
                     'nsamples', 'maxsim', 'srchradius', 'srchangles', 'krig',
-                    'nstruct', 'struct', 'ranges']
+                    'nstruct', 'struct', 'ranges', 'datapath']
         values = [column_set, name + '.prn', self.number_simulations,
                   [self.XX_nodes_number, self.XX_minimum, self.XX_spacing],
                   [self.YY_nodes_number, self.YY_minimum, self.YY_spacing],
@@ -163,19 +170,21 @@ class GsimcliParam(ParametersFile):
                   self.no_data, [1, self.max_search_nodes],
                   self.max_search_nodes, radius, self.angles,
                   [self.krig_type, 0], [dsspar.nstruct[0], self.nugget],
-                  [self.model, self.sill, self.angles], self.ranges]
+                  [model, self.sill, self.angles], self.ranges, self.data]
 
         dsspar.update(keywords, values)
         dsspar.data2update(self.data, self.no_data, varnames.index('clim'),
                            header, save, par_path)
+        return dsspar
+    
 
 if __name__ == '__main__':
     # ta = '/home/julio/Testes/gsimcli.par'
-    # ta2 = '/home/julio/Testes/gsimcli2.par'
-    tb = '/Users/julio/Desktop/testes/gsimcli.par'
-    tb2 = '/Users/julio/Desktop/testes/gsimcli2.par'
+    ta2 = '/home/julio/Testes/gsimcli2.par'
+    # tb = '/Users/julio/Desktop/testes/gsimcli.par'
+    # tb2 = '/Users/julio/Desktop/testes/gsimcli2.par'
     bla = GsimcliParam()
-    bla.template(tb2)
+    bla.template(ta2)
     # bla.load(ta2)
     # bla.update(['skewness'], ['kuku'], save=True, par_path=tb2)
     # bla.save(tb)

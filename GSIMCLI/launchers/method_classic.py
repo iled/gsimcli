@@ -8,20 +8,23 @@ Basic command line interface for launching homogenization method as of
 Costa, C. (2008).
 It uses geostatistical simulation approach with classic DSS.
 '''
+import glob
 import ntpath
 import os
-#import sys
+# import sys
 
 # sys.path.append('/home/julio/Dropbox/workspace/isegi/GSIMCLI')
 
 import launchers.dss as dss
-# import numpy as np
+# import numpy as n
+import pandas as pd
 import parsers.cost as pcost
 import parsers.dss as pdss
 import parsers.gsimcli as pgc
 import parsers.spreadsheet as ss
 import tools.grid as gr
 import tools.homog as hmg
+import tools.utils as ut
 
 
 def ask_add_header(pset):
@@ -369,19 +372,22 @@ def run_par(par_path):
     """Run GSIMCLI using the settings included in a parameters file.
 
     """
-    gscpar = pgc.GsimcliParam(par_path)
+    if isinstance(par_path, pgc.GsimcliParam):
+        gscpar = par_path
+    else:
+        gscpar = pgc.GsimcliParam(par_path)
 
-    dsspar = pdss.DssParam()
-    dsspar.load_old(gscpar.dss_par)  # TODO: old como parâmetro
+    if gscpar.data_header.lower() == 'y':
+        header = True
+    else:
+        header = False
+
+    dsspar = gscpar.update_dsspar(True, par_path)
+
     stations_pset = gr.PointSet()
-    no_data = dsspar.nd
+    stations_pset.load(gscpar.data, gscpar.no_data, header)
 
-    # overwrite data path
-    dsspar.datapath = gscpar.data
-
-    stations_pset.load(gscpar.data, no_data, gscpar.data_header)
-
-    if not gscpar.data_header:
+    if hasattr(gscpar, 'name') and hasattr(gscpar, 'variables'):
         stations_pset.name = gscpar.name
         for i in xrange(len(stations_pset.varnames)):
             stations_pset.varnames[i] = gscpar.variables.split(',')[i].strip()
@@ -394,16 +400,52 @@ def run_par(par_path):
                                        stations_set)
 
     detect_flag = True
-    if gscpar.detect_method != 'skewness':
-        skew = None
-    else:
+    if gscpar.detect_method.strip().lower() == 'skewness':
         skew = gscpar.skewness
+    else:
+        skew = None
 
     print 'Set up complete. Running GSIMCLI...'
-    gsimcli(stations_pset, gscpar.data_header, no_data, stations_order,
+    gsimcli(stations_pset, header, gscpar.no_data, stations_order,
             gscpar.detect_method, gscpar.detect_prob, detect_flag,
             gscpar.detect_save, gscpar.dss_exe, dsspar, gscpar.results,
             gscpar.sim_purge, skew)
+
+
+def batch_decade(par_path, variograms_file):
+    """Batch process to run gsimcli with data files divided in decades.
+
+    TODO: .code not tested
+          .receber variância já normalizada
+    """
+    gscpar = pgc.GsimcliParam(par_path)
+    if gscpar.data_header.lower() == 'y':
+        header = True
+    else:
+        header = False
+    variograms = pd.read_csv(variograms_file)
+    os.chdir(os.path.dirname(variograms_file))
+
+    for i, decade in enumerate(variograms.iterrows()):
+        data_file = glob.glob(decade[1].ix['decada'].split()[0] + '*')
+
+        pset = gr.PointSet(psetpath=data_file, header=header)
+        variance = pset.clim.var()
+        fields = ['data', 'model', 'nugget', 'sill', 'ranges']
+        values = [data_file, decade[1].ix['modelo'][0],
+                  decade[1].ix['nugget'] / variance,
+                  decade[1].ix['Partial Sill'] / variance,
+                  [decade[1].ix['Range'], decade[1].ix['Range'], 1]]
+        gscpar.update(fields, values, True, ut.filename_numbering(par_path, i))
+        run_par(gscpar)
+        
+        
+def batch_networks():
+    """Batch process to run gscimcli at different networks.
+    
+    """
+    #  redes, grid
+    pass
 
 
 def main():
@@ -562,6 +604,9 @@ if __name__ == '__main__':
         print 'Loading settings at {}'.format(par)
         run_par(par)
     """
-    par = '/Users/julio/Desktop/testes/gsimcli.par'
-    run_par(par)
+    par = '/home/julio/Testes/gsimcli.par'
+    # run_par(par)
+
+    decvars = '/home/julio/Testes/rede000005/resumo_variografia_rede05_csv.csv'
+    batch_decade(par, decvars)
     print 'done'
