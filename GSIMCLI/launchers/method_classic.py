@@ -415,7 +415,6 @@ def run_par(par_path):
 def batch_decade(par_path, variograms_file):
     """Batch process to run gsimcli with data files divided in decades.
 
-    TODO: .code not tested
           .receber variância já normalizada
     """
     if isinstance(par_path, pgc.GsimcliParam):
@@ -423,7 +422,7 @@ def batch_decade(par_path, variograms_file):
     else:
         gscpar = pgc.GsimcliParam(par_path)
 
-    network_path = gscpar.path
+    network_parpath = gscpar.path
     variograms = pd.read_csv(variograms_file)
     os.chdir(os.path.dirname(variograms_file))
 
@@ -436,16 +435,20 @@ def batch_decade(par_path, variograms_file):
         pset = gr.PointSet(psetpath=data_file, header=gscpar.data_header)
         climcol = gscpar.variables.split().index('clim')
         variance = pset.values.iloc[:, climcol].var()
-        fields = ['data', 'model', 'nugget', 'sill', 'ranges', 'ZZ_minimum']
+        results_folder = os.path.join(os.path.dirname(variograms_file),
+                                      decade[1].ix['Decade'])
+        os.mkdir(results_folder)
+        fields = ['data', 'model', 'nugget', 'sill', 'ranges', 'ZZ_minimum',
+                  'results']
         values = [data_file, decade[1].ix['Model'][0],
                   str(decade[1].ix['Nugget'] / variance),
                   str(decade[1].ix['Partial Sill'] / variance),
                   ', '.join(map(str, ([decade[1].ix['Range'],
                                        decade[1].ix['Range'], 1]))),
-                  first_year]
+                  first_year, results_folder]
         gscpar.update(fields, values, True, ut.filename_indexing
-                      (network_path, decade[1].ix['Decade']))
-        # run_par(gscpar)
+                      (network_parpath, decade[1].ix['Decade']))
+        run_par(gscpar)
 
 
 def batch_networks(par_path, networks, decades=False):
@@ -460,11 +463,12 @@ def batch_networks(par_path, networks, decades=False):
         grid = pd.read_csv(specfile)
         fields = ['XX_nodes_number', 'XX_minimum', 'XX_spacing',
                  'YY_nodes_number', 'YY_minimum', 'YY_spacing',
-                 'ZZ_nodes_number', 'ZZ_spacing']
+                 'ZZ_nodes_number', 'ZZ_spacing', 'results']
         # TODO: ParametersFile com tipos no opt
         values = [str(int(grid.xnodes)), str(int(grid.xmin)),
                   str(int(grid.xsize)), str(int(grid.ynodes)),
-                  str(int(grid.ymin)), str(int(grid.ysize)), str(10), str(1)]
+                  str(int(grid.ymin)), str(int(grid.ysize)), str(10), str(1),
+                  network]
         gscpar.update(fields, values, True, ut.filename_indexing
                       (par_path, os.path.basename(network)))
 
