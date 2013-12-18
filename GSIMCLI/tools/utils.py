@@ -45,8 +45,8 @@ def filename_seq(file_id, n):
         yield fname
 
 
-def filename_numbering(file_id, n):
-    """Insert a numeric index in a filename.
+def filename_indexing(file_id, n):
+    """Insert an index in a filename.
 
     """
     base, ext = os.path.splitext(file_id)
