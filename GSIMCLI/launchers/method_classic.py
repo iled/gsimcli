@@ -438,9 +438,10 @@ def batch_decade(par_path, variograms_file):
         variance = pset.values.iloc[:, climcol].var()
         fields = ['data', 'model', 'nugget', 'sill', 'ranges', 'ZZ_minimum']
         values = [data_file, decade[1].ix['Model'][0],
-                  decade[1].ix['Nugget'] / variance,
-                  decade[1].ix['Partial Sill'] / variance,
-                  [decade[1].ix['Range'], decade[1].ix['Range'], 1],
+                  str(decade[1].ix['Nugget'] / variance),
+                  str(decade[1].ix['Partial Sill'] / variance),
+                  ', '.join(map(str, ([decade[1].ix['Range'],
+                                       decade[1].ix['Range'], 1]))),
                   first_year]
         gscpar.update(fields, values, True, ut.filename_indexing
                       (network_path, decade[1].ix['Decade']))

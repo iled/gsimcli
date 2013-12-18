@@ -120,7 +120,8 @@ class ParametersFile:
 
         """
         for i, field in enumerate(fields):
-            if hasattr(self, field):
+            # if hasattr(self, field):
+            if field in self.order:
                 setattr(self, field, values[i])
         if save:
             self.save(par_path)
