@@ -180,7 +180,7 @@ def station_col(pset_file, header):
         pset = pset_file
     else:
         pset = gr.PointSet()
-        pset.load(pset_file, header)
+        pset.load(pset_file, header=header)
 
     if header:
         try:
@@ -282,7 +282,8 @@ def append_homog_station(pset_file, station, header=True):
     return pset
 
 
-def station_order(stations_list, method, userset=None, pset=None):
+def station_order(stations_list, method, nd=-999.9, pset_path=None,
+                  header=True, userset=None):
     """Sort a list containing stations numbers, according to the selected
     method:
         - random: all stations randomly sorted;
@@ -291,17 +292,24 @@ def station_order(stations_list, method, userset=None, pset=None):
         - user: the user specifies which stations and their order.
 
     """
+    if pset_path:
+        if isinstance(pset_path, gr.PointSet):
+            pset = pset_path
+        else:
+            pset = gr.PointSet(psetpath=pset_path, nodata=nd, header=header)
     if method == 'random':
         shuffle(stations_list)
     elif method == 'sorted':
         stations_list.sort()
     elif method == 'variance':
-        if not pset:
+        if not pset_path:
             raise TypeError('Method variance requires the stations point-set')
-        stname = 'station'  # TODO: st and var names
-        varname = 'wetdays'
-        varsort = (pset.values.groupby(stname)[varname].aggregate(np.var).
-                   sort(ascending=False))
+        stname = 'station'  # TODO: não funciona se não tiver header
+        varname = 'clim'
+        values = pset.values.replace(nd, np.nan)
+        varsort = (values.groupby(stname, sort=False)[varname].
+                   aggregate(np.var))
+        varsort.sort(ascending=False)
         stations_list = list(varsort.index)
 
     elif method == 'user' and userset:
@@ -457,26 +465,12 @@ if __name__ == '__main__':
     no_data = -999.9
     pointset = '/home/julio/Testes/test/snirh.prn'
     header = False
-    bla = gr.PointSet()
-
-    # run
-    bla.load(pointset, no_data, header)
-    if not header:
-        bla = ask_add_header(bla)
-        header = True
-    stacol = station_col(bla, header)
-    print stacol
-    stlist = list_stations(bla, stacol)
-    user_order = '72 10 59 56'
-
-    ordr = station_order(stlist, 'variance', pset=bla)
+    bla = gr.PointSet(pointset, header=header)
+    
+    col = 4
+    sts = list_stations(pointset, col, header)
+    ordr = station_order(sts, 'variance', no_data, pointset, header)
     print ordr
-
-#     for i in xrange(len(ordr)):
-#         stacol = station_col(bla, header)
-#         candidate, references = take_candidate(bla, ordr[i], stacol)
-#         print candidate.name
-    # """
 
     """ snirh 50 sims
 
