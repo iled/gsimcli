@@ -16,7 +16,7 @@ import os
 # sys.path.append('/home/julio/Dropbox/workspace/isegi/GSIMCLI')
 
 import launchers.dss as dss
-# import numpy as n
+import numpy as np
 import pandas as pd
 import parsers.cost as pcost
 import parsers.dss as pdss
@@ -286,6 +286,7 @@ def gsimcli(stations_file, stations_h, no_data, stations_order, detect_method,
     dnumber_list = list()
     fnumber_list = list()
 
+    commonpath = os.path.commonprefix((outfolder, exe_path))
     # start iterative process
     for i in xrange(len(stations_order)):
         # manage stations
@@ -302,8 +303,10 @@ def gsimcli(stations_file, stations_h, no_data, stations_order, detect_method,
         candname = basename + '_candidate_' + str(i) + '.prn'
         reffile = os.path.join(outfolder, refname)
         outfile = os.path.join(outfolder, outname)
-        reffile_nt = ntpath.join(os.path.split(outfolder)[1], refname)
-        outfile_nt = ntpath.join(os.path.split(outfolder)[1], outname)
+        reffile_nt = ntpath.relpath(os.path.join(outfolder, refname),
+                                    commonpath)
+        outfile_nt = ntpath.relpath(os.path.join(outfolder, outname),
+                                    commonpath)
         parfile = os.path.join(outfolder, parname)
         references.save(psetfile=reffile, header=False)
         if detect_save:
@@ -319,8 +322,8 @@ def gsimcli(stations_file, stations_h, no_data, stations_order, detect_method,
             print ('[{}/{}] Working on realization {}'.
                    format(i + 1, len(stations_order), sim))
             oldpar.save_old(os.path.join(os.path.dirname(exe_path),
-                                         'DSSim.PAR'))
-            dss.exec_ssdir(exe_path, parfile, dbgfile)
+                                         'DSSim.par'))
+            # dss.exec_ssdir(exe_path, parfile, dbgfile)
             oldfilent = (ntpath.splitext(outfile_nt)[0] + str(sim + 1) +
                          ntpath.splitext(outfile_nt)[1])
             oldpar.update(['output', 'seed'], [oldfilent, oldpar.seed + 2])
@@ -407,10 +410,10 @@ def run_par(par_path):
         skew = None
 
     print 'Set up complete. Running GSIMCLI...'
-#     gsimcli(stations_pset, header, gscpar.no_data, stations_order,
-#             gscpar.detect_method, gscpar.detect_prob, detect_flag,
-#             gscpar.detect_save, gscpar.dss_exe, dsspar, gscpar.results,
-#             gscpar.sim_purge, skew)
+    gsimcli(stations_pset, gscpar.data_header, gscpar.no_data, stations_order,
+            gscpar.detect_method, gscpar.detect_prob, detect_flag,
+            gscpar.detect_save, gscpar.dss_exe, dsspar, gscpar.results,
+            gscpar.sim_purge, skew)
 
 
 def batch_decade(par_path, variograms_file):
@@ -435,7 +438,8 @@ def batch_decade(par_path, variograms_file):
 
         pset = gr.PointSet(psetpath=data_file, header=gscpar.data_header)
         climcol = gscpar.variables.index('clim')
-        variance = pset.values.iloc[:, climcol].var()
+        psetvalues = pset.values.iloc[:, climcol].replace(pset.nodata, np.nan)
+        variance = psetvalues.var()
         results_folder = os.path.join(os.path.dirname(variograms_file),
                                       decade[1].ix['Decade'])
         if not os.path.isdir(results_folder):
