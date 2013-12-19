@@ -433,7 +433,7 @@ def batch_decade(par_path, variograms_file):
                                  (data_folder + '/*' + first_year + '*')[0])
 
         pset = gr.PointSet(psetpath=data_file, header=gscpar.data_header)
-        climcol = gscpar.variables.split().index('clim')
+        climcol = gscpar.variables.index('clim')
         variance = pset.values.iloc[:, climcol].var()
         results_folder = os.path.join(os.path.dirname(variograms_file),
                                       decade[1].ix['Decade'])
@@ -448,7 +448,7 @@ def batch_decade(par_path, variograms_file):
                   first_year, results_folder]
         gscpar.update(fields, values, True, ut.filename_indexing
                       (network_parpath, decade[1].ix['Decade']))
-        run_par(gscpar)
+        # run_par(gscpar)
 
 
 def batch_networks(par_path, networks, decades=False):

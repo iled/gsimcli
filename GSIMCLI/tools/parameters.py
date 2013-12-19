@@ -11,21 +11,31 @@ class ParametersFile:
 
     """
 
-    def __init__(self, sep, par_set=str(), par_file=str(), text=list(),
-                 real_n=list(), int_n=list(), boolean=list(), optional=list(),
-                 parpath=None, order=None):
+    def __init__(self, field_sep, value_sep, par_set=str(), par_file=str(),
+                 text=list(), real_n=list(), int_n=list(), boolean=list(),
+                 opt_text=list(), opt_real=list(), opt_int=list(),
+                 opt_boolean=list(), parpath=None, order=None):
         """Constructor.
 
         """
         self.path = parpath
-        self.sep = sep
+        self.field_sep = field_sep
+        self.value_sep = value_sep
         self.par_set = par_set
         self.par_file = par_file
         self.text = text
         self.real = real_n
         self.int = int_n
         self.boolean = boolean
-        self.optional = optional
+        self.opt_text = opt_text
+        self.opt_real = opt_real
+        self.opt_int = opt_int
+        self.opt_boolean = opt_boolean
+        try:
+            self.optional = (self.opt_text + self.opt_real + self.opt_int
+                         + self.opt_boolean)
+        except:
+            pass
         self.fields = self.text + self.real + self.int + self.boolean
         self.order = order
         if order and len(order) != len(self.fields + self.optional):
@@ -45,6 +55,26 @@ class ParametersFile:
             par_file.write(line.strip() + '\n')
         par_file.close()
 
+    def set_field(self, field, value):
+        """Create or update the value of a attr called field, given the desired
+        object type.
+
+        """
+        if field in self.text + self.opt_text:
+            setattr(self, field, _split(value, str.strip,
+                                        self.value_sep))
+        elif field in self.real + self.opt_real:
+            setattr(self, field, _split(value, float, self.value_sep))
+        elif field in self.int + self.opt_int:
+            setattr(self, field, _split(value, int, self.value_sep))
+        elif field in self.boolean + self.opt_boolean:
+            if value.strip().lower() == 'y':
+                setattr(self, field, True)
+            else:
+                setattr(self, field, False)
+        else:
+            setattr(self, field, value.strip())
+
     def load(self, par_path):
         """Load a parameter file.
 
@@ -56,17 +86,22 @@ class ParametersFile:
         checklist = list(self.fields)
 
         for line in lines:
-            field = line.split(self.sep)[0]
-            if field in self.fields or field in self.optional:
-                value = line.split(self.sep)[1]
+            field = line.split(self.field_sep)[0]
+            if field in self.fields + self.optional:
+                value = line.split(self.field_sep)[1]
+                self.set_field(field, value)
+                if field in self.fields:
+                    checklist.remove(field)
+                """
                 if field in self.text:
-                    setattr(self, field, value.strip())
+                    setattr(self, field, _split(value, str.strip,
+                                                self.value_sep))
                     checklist.remove(field)
                 elif field in self.real:
-                    setattr(self, field, float(value))
+                    setattr(self, field, _split(value, float, self.value_sep))
                     checklist.remove(field)
                 elif field in self.int:
-                    setattr(self, field, int(value))
+                    setattr(self, field, _split(value, int, self.value_sep))
                     checklist.remove(field)
                 elif field in self.boolean:
                     if value.strip().lower() == 'y':
@@ -74,9 +109,21 @@ class ParametersFile:
                     else:
                         setattr(self, field, False)
                     checklist.remove(field)
+                if field in self.opt_text:
+                    setattr(self, field, _split(value, str.strip,
+                                                self.value_sep))
+                elif field in self.opt_real:
+                    setattr(self, field, _split(value, float, self.value_sep))
+                elif field in self.opt_int:
+                    setattr(self, field, _split(value, int, self.value_sep))
+                elif field in self.opt_boolean:
+                    if value.strip().lower() == 'y':
+                        setattr(self, field, True)
+                    else:
+                        setattr(self, field, False)
                 else:
                     setattr(self, field, value.strip())
-
+                """
         if checklist:
             raise AttributeError('There are missing parameters: {}.'
                                  .format(', '.join(map(str, checklist))))
@@ -100,19 +147,30 @@ class ParametersFile:
         for field in fields:
             if hasattr(self, field):
                 value = getattr(self, field)
-                if field in self.text:
-                    par.write(field + self.sep + ' ' + value + '\n')
-                elif field in self.real or field in self.int:
-                    par.write(field + self.sep + ' ' + str(value) + '\n')
-                elif field in self.boolean:
+                """
+                if field in self.text + self.opt_text:
+                    try:
+                        par.write(field + self.field_sep + ' ' + value + '\n')
+                    except:
+                        pass
+                elif field in (self.real + self.int + self.opt_real
+                               + self.opt_int):
+                    par.write(field + self.field_sep + ' ' + str(value) + '\n')
+                """
+                if field in (self.text + self.opt_text + self.real + self.int
+                             + self.opt_real + self.opt_int):
+                    par.write(field + self.field_sep + ' '
+                              + _join(value, self.value_sep) + '\n')
+                elif field in self.boolean + self.opt_boolean:
                     if value:
                         value = 'y'
                     else:
                         value = 'n'
-                    par.write(field + self.sep + ' ' + value + '\n')
+                    par.write(field + self.field_sep + ' ' + value + '\n')
                 else:
+                    raise
                     value = getattr(self, field)
-                    par.write(field + self.sep + ' ' + value + '\n')
+                    par.write(field + self.field_sep + ' ' + value + '\n')
         par.close()
 
     def update(self, fields, values, save=False, par_path=None):
@@ -120,8 +178,30 @@ class ParametersFile:
 
         """
         for i, field in enumerate(fields):
-            # if hasattr(self, field):
-            if field in self.order:
-                setattr(self, field, values[i])
+            if field in self.fields + self.optional:
+                self.set_field(field, values[i])
         if save:
             self.save(par_path)
+
+
+def _split(string, to_type, sep):
+    """Convert a string into a give type, returning a single converted value or
+    a list of converted values.
+
+    """
+    items = map(to_type, string.split(sep))
+    if len(items) == 1:
+        return items[0]
+    else:
+        return items
+
+
+def _join(items, sep):
+    """Convert a list of items or a single item into a string, separating items
+    with the given sep.
+
+    """
+    if type(items) == list:
+        return sep.join(map(str, items))
+    else:
+        return str(items)

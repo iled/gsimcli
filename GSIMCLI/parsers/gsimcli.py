@@ -93,13 +93,12 @@ class GsimcliParam(ParametersFile):
         text = ['data', 'st_order', 'detect_method', 'results', 'dss_exe']
         real_n = ['detect_prob', 'no_data']
         boolean = ['data_header', 'detect_save', 'sim_purge']
-        optional = ['dss_par', 'name', 'variables', 'st_user', 'skewness']
-        optional_dss = ['krig_type', 'model', 'nugget', 'sill', 'ranges',
-                        'number_simulations', 'max_search_nodes', 'angles',
-                         'XX_nodes_number', 'XX_minimum', 'XX_spacing',
-                         'YY_nodes_number', 'YY_minimum', 'YY_spacing',
-                         'ZZ_nodes_number', 'ZZ_minimum', 'ZZ_spacing']
-        int_n = []
+        opt_text = ['dss_par', 'name', 'variables', 'krig_type', 'model']
+        opt_int = ['st_user', 'number_simulations', 'max_search_nodes',
+                   'angles', 'XX_nodes_number', 'XX_minimum', 'XX_spacing',
+                   'YY_nodes_number', 'YY_minimum', 'YY_spacing',
+                   'ZZ_nodes_number', 'ZZ_minimum', 'ZZ_spacing']
+        opt_real = ['skewness', 'nugget', 'sill', 'ranges']
         order = ['data', 'no_data', 'data_header', 'name',
                  'variables', 'st_order', 'st_user', 'detect_method',
                  'skewness', 'detect_prob', 'detect_save', 'sim_purge',
@@ -109,9 +108,11 @@ class GsimcliParam(ParametersFile):
                  'XX_nodes_number', 'XX_minimum', 'XX_spacing',
                  'YY_nodes_number', 'YY_minimum', 'YY_spacing',
                  'ZZ_nodes_number', 'ZZ_minimum', 'ZZ_spacing']
-        ParametersFile.__init__(self, sep=':', par_set=par_set, text=text,
-                                int_n=int_n, real_n=real_n, boolean=boolean,
-                                optional=optional + optional_dss, order=order)
+        ParametersFile.__init__(self, field_sep=':', value_sep=',',
+                                par_set=par_set, text=text, real_n=real_n,
+                                boolean=boolean, opt_text=opt_text,
+                                opt_int=opt_int, opt_real=opt_real,
+                                order=order)
 
         if par_path:
             self.load(par_path)
