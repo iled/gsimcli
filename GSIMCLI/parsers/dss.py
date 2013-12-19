@@ -89,6 +89,11 @@ class DssParam:
         self.nstruct = [1, 0]
         self.struct = [1, 1, 0, 0, 0]
         self.ranges = [1, 1, 1]
+        # for old version
+        self.smoothflag = 0
+        self.smoothfile = 'no file'
+        self.smoothcols = [1, 2]
+        self.imask = 0
         if parpath:
             self.load_old(parpath)
 
@@ -272,14 +277,16 @@ class DssParam:
         par.write(str(self.octant) + '\n')
         par.write('    '.join(map(str, self.srchradius)) + '\n')
         par.write('    '.join(map(str, self.srchangles)) + '\n')
+        if len(self.krig) == 2:
+            self.krig.append(7.42)
         par.write('    '.join(map(str, self.krig)) + '\n')
         par.write(self.corrpath + '\n')
         par.write(self.secpath + '\n')
         par.write('    '.join(map(str, self.seccol)) + '\n')
-        par.write('    '.join(self.nstruct) + '\n')
+        par.write('    '.join(map(str, self.nstruct)) + '\n')
         for i in xrange(int(self.nstruct[0])):
-            par.write('    '.join(self.struct[i]) + '\n')
-            par.write('    '.join(self.ranges[i]) + '\n')
+            par.write('    '.join(map(str, self.struct[i])) + '\n')
+            par.write('    '.join(map(str, self.ranges[i])) + '\n')
         par.close()
 
     def update(self, keywords, values, save=False, par_path=None):
