@@ -148,8 +148,8 @@ class GsimcliParam(ParametersFile):
             self.variables = pset.varnames
             varnames = pset.varnames
 
-        column_set = [varnames.index('x'), varnames.index('y'),
-                      varnames.index('time'), varnames.index('clim'), 0, 0]
+        column_set = [varnames.index('x') + 1, varnames.index('y') + 1,
+                      varnames.index('time') + 1, varnames.index('clim') + 1, 0, 0]
 
         gsc_grid = ['XX_nodes_number', 'XX_minimum', 'XX_spacing',
                     'YY_nodes_number', 'YY_minimum', 'YY_spacing',
