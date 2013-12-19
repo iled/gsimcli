@@ -154,11 +154,17 @@ def _split(string, to_type, sep):
     a list of converted values.
 
     """
-    items = map(to_type, string.split(sep))
-    if len(items) == 1:
-        return items[0]
+    if type(string) == str:
+        items = map(to_type, string.split(sep))
     else:
-        return items
+        items = map(to_type, [string])
+    try:
+        if len(items) == 1:
+            return items[0]
+        else:
+            return items
+    except:
+        pass
 
 
 def _join(items, sep):
