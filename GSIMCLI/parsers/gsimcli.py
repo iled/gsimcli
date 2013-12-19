@@ -133,11 +133,10 @@ class GsimcliParam(ParametersFile):
             dsspar = pdss.DssParam()
 
         dsspar.path = os.path.join(os.path.dirname(self.path), 'DSSim.PAR')
-
         if hasattr(self, 'name'):
             name = self.name
         if hasattr(self, 'variables'):
-            varnames = self.variables.split()
+            varnames = map(str.strip, self.variables.split(','))
         elif self.data_header:
             pset = gr.PointSet(psetpath=self.data, header=True)
             self.name = pset.name
