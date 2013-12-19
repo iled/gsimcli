@@ -168,10 +168,10 @@ class GsimcliParam(ParametersFile):
         radius = [grid_specs[0] * grid_specs[2], grid_specs[3] * grid_specs[5],
                   grid_specs[6] * grid_specs[8]]
 
-        keywords = ['datapath', 'columns_set', 'output', 'nd', 'srchradius',
+        keywords = ['datapath', 'columns_set', 'nd', 'output', 'srchradius',
                     'xx', 'yy', 'zz']
-        values = [ntpath.normcase(self.data), columns_set, name + '.prn',
-                  self.no_data, radius,
+        values = [ntpath.normcase(self.data), columns_set, self.no_data,
+                  (name + '.prn').replace(' ', '_'), radius,
                   [grid_specs[0], grid_specs[1], grid_specs[2]],
                   [grid_specs[3], grid_specs[4], grid_specs[5]],
                   [grid_specs[6], grid_specs[7], grid_specs[8]]]

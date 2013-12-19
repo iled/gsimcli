@@ -312,7 +312,6 @@ def gsimcli(stations_file, stations_h, no_data, stations_order, detect_method,
         if detect_save:
             candfile = os.path.join(outfolder, candname)
             candidate.save(psetfile=candfile, header=True)
-        # TODO: verificar se a mudança do número de colunas (flag) afecta a dss
         dsspar.update(['datapath', 'output'], [reffile_nt, outfile_nt])
         dsspar.save_old(parfile)  # TODO: old
         oldpar = pdss.DssParam()
@@ -323,7 +322,7 @@ def gsimcli(stations_file, stations_h, no_data, stations_order, detect_method,
                    format(i + 1, len(stations_order), sim))
             oldpar.save_old(os.path.join(os.path.dirname(exe_path),
                                          'DSSim.par'))
-            # dss.exec_ssdir(exe_path, parfile, dbgfile)
+            dss.exec_ssdir(exe_path, parfile, dbgfile)
             oldfilent = (ntpath.splitext(outfile_nt)[0] + str(sim + 1) +
                          ntpath.splitext(outfile_nt)[1])
             oldpar.update(['output', 'seed'], [oldfilent, oldpar.seed + 2])
@@ -437,9 +436,18 @@ def batch_decade(par_path, variograms_file):
                                  (data_folder + '/*' + first_year + '*')[0])
 
         pset = gr.PointSet(psetpath=data_file, header=gscpar.data_header)
-        climcol = gscpar.variables.index('clim')
-        psetvalues = pset.values.iloc[:, climcol].replace(pset.nodata, np.nan)
-        variance = psetvalues.var()
+        if ('nugget_norm' in variograms.columns and
+            'psill_norm' in variograms.columns):
+            nugget = decade[1].ix['nugget_norm']
+            psill = decade[1].ix['psill_norm']
+        else:
+            climcol = gscpar.variables.index('clim')
+            psetvalues = pset.values.iloc[:, climcol].replace(pset.nodata,
+                                                              np.nan)
+            variance = psetvalues.var()
+            nugget = decade[1].ix['Nugget'] / variance
+            psill = decade[1].ix['Partial Sill'] / variance
+
         results_folder = os.path.join(os.path.dirname(variograms_file),
                                       decade[1].ix['Decade'])
         if not os.path.isdir(results_folder):
@@ -447,8 +455,7 @@ def batch_decade(par_path, variograms_file):
         fields = ['data', 'model', 'nugget', 'sill', 'ranges', 'ZZ_minimum',
                   'results']
         values = [data_file, decade[1].ix['Model'][0],
-                  str(decade[1].ix['Nugget'] / variance),
-                  str(decade[1].ix['Partial Sill'] / variance),
+                  str(nugget), str(psill),
                   ', '.join(map(str, ([decade[1].ix['Range'],
                                        decade[1].ix['Range'], 1]))),
                   first_year, results_folder]
