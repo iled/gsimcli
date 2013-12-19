@@ -224,6 +224,7 @@ def ask_stations_method(pset, header=True):
     TODO:
         . escolhe uma e depois faz por proximidade
         . investigar outros métodos
+        . precisa do no data para o station_order
     """
     print '·' * 21
     print 'Stations are homogenized one by one. Each homogenized station will'
@@ -377,25 +378,30 @@ def run_par(par_path):
     else:
         gscpar = pgc.GsimcliParam(par_path)
 
-    dsspar = gscpar.update_dsspar(True, par_path)
+    dsspar_path = os.path.join(os.path.dirname(gscpar.dss_exe), 'DSSim.par')
+    dsspar = gscpar.update_dsspar(True, dsspar_path)
 
     stations_pset = gr.PointSet()
     stations_pset.load(gscpar.data, gscpar.no_data, gscpar.data_header)
+    stations_pset.flush_varnames(gscpar.variables)
 
-    if hasattr(gscpar, 'name') and hasattr(gscpar, 'variables'):
+    if hasattr(gscpar, 'name'):
         stations_pset.name = gscpar.name
-        for i in xrange(len(stations_pset.varnames)):
-            stations_pset.varnames[i] = gscpar.variables.split(',')[i].strip()
+    if hasattr(gscpar, 'variables'):
+        stations_pset.varnames = gscpar.variables
+        # for i in xrange(len(stations_pset.varnames)):
+        #    stations_pset.varnames[i] = gscpar.variables.split(',')[i].strip()
 
     if gscpar.st_order == 'user':
         stations_set = gscpar.st_user
     else:
         stations_set = None
     stations_order = hmg.station_order(stations_pset, gscpar.st_order,
+                                       gscpar.no_data, stations_pset,
                                        stations_set)
 
     detect_flag = True
-    if gscpar.detect_method.strip().lower() == 'skewness':
+    if gscpar.detect_method.lower() == 'skewness':
         skew = gscpar.skewness
     else:
         skew = None
@@ -444,7 +450,7 @@ def batch_decade(par_path, variograms_file):
                   first_year, results_folder]
         gscpar.update(fields, values, True, ut.filename_indexing
                       (network_parpath, decade[1].ix['Decade']))
-        # run_par(gscpar)
+        run_par(gscpar)
 
 
 def batch_networks(par_path, networks, decades=False):
@@ -461,10 +467,13 @@ def batch_networks(par_path, networks, decades=False):
                  'YY_nodes_number', 'YY_minimum', 'YY_spacing',
                  'ZZ_nodes_number', 'ZZ_spacing', 'results']
         # TODO: ParametersFile com tipos no opt
-        values = [str(int(grid.xnodes)), str(int(grid.xmin)),
-                  str(int(grid.xsize)), str(int(grid.ynodes)),
-                  str(int(grid.ymin)), str(int(grid.ysize)), str(10), str(1),
-                  network]
+#         values = [str(int(grid.xnodes)), str(int(grid.xmin)),
+#                   str(int(grid.xsize)), str(int(grid.ynodes)),
+#                   str(int(grid.ymin)), str(int(grid.ysize)), str(10), str(1),
+#                   network]
+        values = [grid.xnodes, grid.xmin, grid.xsize,
+                  grid.ynodes, grid.ymin, grid.ysize,
+                  str(10), str(1), network]
         gscpar.update(fields, values, True, ut.filename_indexing
                       (par_path, os.path.basename(network)))
 
@@ -562,60 +571,9 @@ if __name__ == '__main__':
     """
 
     """
-    parfile = '/home/julio/Testes/snirh500_default8_10candidates/snirh.par'
-    stations_file = '/home/julio/Testes/snirh.prn'
-    stations_h = 'n'
-
-    par = pdss.DssParam()
-    par.load_old(parfile)
-    parfile = par
-    stations_pset = gr.PointSet()
-    no_data = parfile.nd
-    if stations_h.lower() == 'y':
-        stations_h = True
-    else:
-        stations_h = False
-
-    stations_pset.load(stations_file, no_data, stations_h)
-
-    stations_pset.name = 'snirh'
-    stations_pset.varnames[0] = 'x'
-    stations_pset.varnames[1] = 'y'
-    stations_pset.varnames[2] = 'year'
-    stations_pset.varnames[3] = 'station'
-    stations_pset.varnames[4] = 'wetdays'
-    # stations_set = '72 10 59 56'
-    # stations_set = '50 60 29 61 57 49'
-    stations_set = '50 56 72 43 64 19 13 42 8 11'
-
-    stations_order = hmg.station_order(stations_pset, 'user', stations_set)
-
-    detect_method = 'mean'
-    detect_prob = 0.95
-    detect_flag = True
-    detect_save = 'y'
-    purge_sim = 'y'
-    if detect_save.lower() == 'y':
-        detect_save = True
-    else:
-        detect_save = False
-    if purge_sim.lower() == 'y':
-        purge_sim = True
-    else:
-        purge_sim = False
-    outfolder = '/home/julio/Testes/snirh500_default8_10candidates'
-    exe_path = '/home/julio/Testes/newDSSIntelRelease.exe'
-    print 'Set up complete. Running GSIMCLI...'
-    gsimcli(stations_pset, stations_h, no_data, stations_order,
-            detect_method, detect_prob, detect_flag, detect_save, exe_path,
-            parfile, outfolder, purge_sim)
-    print 'done'
-    """
-
     settings = ['/home/julio/Testes/gsimcli.par',
                 '/home/julio/Testes/gsimcli2.par']
 
-    """
     for par in settings:
         gscpar = pgc.GsimcliParam(par)
         hd = np.loadtxt(gscpar.data, usecols=4)
@@ -644,7 +602,7 @@ if __name__ == '__main__':
                 os.path.join(base, 'rede000008'),
                 os.path.join(base, 'rede000010'),
                 os.path.join(base, 'rede000020')]
-    """
+    #"""
     networks = [os.path.join(base, 'rede000010')]
     batch_networks(par, networks, decades=True)
     print 'done'
