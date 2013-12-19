@@ -4,6 +4,7 @@ Created on 5 de Dez de 2013
 
 @author: julio
 '''
+import ntpath
 import os
 
 import parsers.dss as pdss
@@ -134,7 +135,7 @@ class GsimcliParam(ParametersFile):
         else:
             dsspar = pdss.DssParam()
 
-        dsspar.path = os.path.join(os.path.dirname(self.path), 'DSSim.PAR')
+        dsspar.path = os.path.join(os.path.dirname(self.path), 'DSSim.par')
         pset = gr.PointSet(psetpath=self.data, header=True)
 
         if hasattr(self, 'name'):
@@ -148,7 +149,7 @@ class GsimcliParam(ParametersFile):
             self.variables = pset.varnames
             varnames = pset.varnames
 
-        column_set = [varnames.index('x') + 1, varnames.index('y') + 1,
+        columns_set = [varnames.index('x') + 1, varnames.index('y') + 1,
                       varnames.index('time') + 1, varnames.index('clim') + 1, 0, 0]
 
         gsc_grid = ['XX_nodes_number', 'XX_minimum', 'XX_spacing',
@@ -167,9 +168,10 @@ class GsimcliParam(ParametersFile):
         radius = [grid_specs[0] * grid_specs[2], grid_specs[3] * grid_specs[5],
                   grid_specs[6] * grid_specs[8]]
 
-        keywords = ['datapath', 'column_set', 'output', 'nd', 'srchradius',
+        keywords = ['datapath', 'columns_set', 'output', 'nd', 'srchradius',
                     'xx', 'yy', 'zz']
-        values = [self.data, column_set, name + '.prn', self.no_data, radius,
+        values = [ntpath.normcase(self.data), columns_set, name + '.prn',
+                  self.no_data, radius,
                   [grid_specs[0], grid_specs[1], grid_specs[2]],
                   [grid_specs[3], grid_specs[4], grid_specs[5]],
                   [grid_specs[6], grid_specs[7], grid_specs[8]]]
