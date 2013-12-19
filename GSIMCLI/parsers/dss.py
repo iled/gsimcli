@@ -8,6 +8,7 @@ Created on 07/10/2013
 import ntpath
 import os
 
+import numpy as np
 import tools.grid as gr
 
 
@@ -53,7 +54,7 @@ class DssParam:
     """
     def __init__(self, parpath=None):
         """Initialise with the default parameters for GSIMCLI.
-        
+
         """
         self.path = str()
         self.datapath = str()
@@ -314,14 +315,12 @@ class DssParam:
 
         keywords = ['datapath', 'columns', 'trimming', 'tails', 'lowert',
                     'uppert', 'nd']
-        if os.name == 'posix':
-            wine = 'z:'
-        else:
-            wine = str()
-        hdpath = ntpath.join(wine, ntpath.abspath(pset.path))
+
+        hdpath = ntpath.normcase(pset.path)
         ncols = pset.values.shape[1]
-        datamin = pset.values.iloc[:, varcol].min()
-        datamax = pset.values.iloc[:, varcol].max()
+        psetvalues = pset.values.iloc[:, varcol].replace(no_data, np.nan)
+        datamin = psetvalues.min()
+        datamax = psetvalues.max()
         values = [hdpath, ncols, [datamin, datamax], [datamin, datamax],
                   [1, datamin], [1, datamax], pset.nodata]
         self.update(keywords, values, save, par_path)
