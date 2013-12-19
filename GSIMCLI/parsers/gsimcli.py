@@ -108,22 +108,23 @@ class GsimcliParam(ParametersFile):
                  'XX_nodes_number', 'XX_minimum', 'XX_spacing',
                  'YY_nodes_number', 'YY_minimum', 'YY_spacing',
                  'ZZ_nodes_number', 'ZZ_minimum', 'ZZ_spacing']
+
         ParametersFile.__init__(self, field_sep=':', value_sep=',',
                                 par_set=par_set, text=text, real_n=real_n,
                                 boolean=boolean, opt_text=opt_text,
                                 opt_int=opt_int, opt_real=opt_real,
                                 order=order)
-
         if par_path:
             self.load(par_path)
 
     def load(self, par_path):
         ParametersFile.load(self, par_path)
-        if not hasattr(self, 'variables') and self.data_header.lower == 'n':
+        if not self.data_header and (not hasattr(self, 'variables') or
+                                     not hasattr(self, 'name')):
             raise ValueError('Missing header in the data file or \'variables\''
                              'parameter')
 
-    def update_dsspar(self, save=False, par_path=None):
+    def update_dsspar(self, save=False, dsspar_path=None):
         """Update the DSS parameters file according to the set of parameters
         given in the GSIMCLI parameters file.
 
@@ -134,51 +135,92 @@ class GsimcliParam(ParametersFile):
             dsspar = pdss.DssParam()
 
         dsspar.path = os.path.join(os.path.dirname(self.path), 'DSSim.PAR')
+        pset = gr.PointSet(psetpath=self.data, header=True)
+
         if hasattr(self, 'name'):
             name = self.name
-        if hasattr(self, 'variables'):
-            varnames = map(str.strip, self.variables.split(','))
-        elif self.data_header:
-            pset = gr.PointSet(psetpath=self.data, header=True)
-            self.name = pset.name
-            self.variables = pset.varnames
-            name = pset.name
-            varnames = pset.varnames
         else:
-            raise ValueError  # TODO: just to double check, then delete
+            self.name = pset.name
+            name = pset.name
+        if hasattr(self, 'variables'):
+            varnames = self.variables  # map(str.strip, self.variables.split(','))
+        else:
+            self.variables = pset.varnames
+            varnames = pset.varnames
+
         column_set = [varnames.index('x'), varnames.index('y'),
                       varnames.index('time'), varnames.index('clim'), 0, 0]
-        radius = [self.XX_nodes_number * self.XX_spacing,
-                  self.YY_nodes_number * self.YY_spacing,
-                  self.ZZ_nodes_number * self.ZZ_spacing]
 
-        if self.model.lower().strip() == 's':
-            model = 1
-        elif self.model.lower().strip() == 'e':
-            model = 2
-        elif self.model.lower().strip() == 'g':
-            model = 3
+        gsc_grid = ['XX_nodes_number', 'XX_minimum', 'XX_spacing',
+                    'YY_nodes_number', 'YY_minimum', 'YY_spacing',
+                    'ZZ_nodes_number', 'ZZ_minimum', 'ZZ_spacing']
+        dss_grid = [dsspar.xx[0], dsspar.xx[1], dsspar.xx[2],
+                    dsspar.yy[0], dsspar.yy[1], dsspar.yy[2],
+                    dsspar.zz[0], dsspar.zz[1], dsspar.zz[2]]
+        grid_specs = list()
+        for i in xrange(len(dss_grid)):
+            if hasattr(self, gsc_grid[i]):
+                grid_specs.append(getattr(self, gsc_grid[i]))
+            else:
+                grid_specs.append(dss_grid[i])
 
-        if self.krig_type.lower().strip() == 'ok':
-            krig = 0
-        elif self.krig_type.lower().strip() == 'sk':
-            krig = 1  # TODO: faltam outros tipos
+        radius = [grid_specs[0] * grid_specs[2], grid_specs[3] * grid_specs[5],
+                  grid_specs[6] * grid_specs[8]]
 
-        keywords = ['column_set', 'output', 'nsim', 'xx', 'yy', 'zz', 'nd',
-                    'nsamples', 'maxsim', 'srchradius', 'srchangles', 'krig',
-                    'nstruct', 'struct', 'ranges', 'datapath']
-        values = [column_set, name + '.prn', self.number_simulations,
-                  [self.XX_nodes_number, self.XX_minimum, self.XX_spacing],
-                  [self.YY_nodes_number, self.YY_minimum, self.YY_spacing],
-                  [self.ZZ_nodes_number, self.ZZ_minimum, self.ZZ_spacing],
-                  self.no_data, [1, self.max_search_nodes],
-                  self.max_search_nodes, radius, self.angles,
-                  [krig, 0], [dsspar.nstruct[0], self.nugget],
-                  [model, self.sill, self.angles], self.ranges, self.data]
+        keywords = ['datapath', 'column_set', 'output', 'nd', 'srchradius',
+                    'xx', 'yy', 'zz']
+        values = [self.data, column_set, name + '.prn', self.no_data, radius,
+                  [grid_specs[0], grid_specs[1], grid_specs[2]],
+                  [grid_specs[3], grid_specs[4], grid_specs[5]],
+                  [grid_specs[6], grid_specs[7], grid_specs[8]]]
+
+        if hasattr(self, 'krig_type'):
+            if self.krig_type.lower() == 'ok':
+                krig = 0
+            elif self.krig_type.lower() == 'sk':
+                krig = 1  # TODO: faltam outros tipos
+            keywords.append('krig')
+            values.append([krig, 0])
+        if hasattr(self, 'max_search_nodes'):
+            keywords.append('nsamples')
+            values.append([1, self.max_search_nodes])
+        if hasattr(self, 'nugget'):
+            keywords.append('nstruct')
+            values.append([dsspar.nstruct[0], self.nugget])
+        if hasattr(self, 'ranges'):
+            keywords.append('ranges')
+            values.append([self.ranges])
+        if hasattr(self, 'model'):
+            if self.model.lower() == 's':
+                model = 1
+            elif self.model.lower() == 'e':
+                model = 2
+            elif self.model.lower() == 'g':
+                model = 3
+        else:
+            model = dsspar.struct[0]
+        if hasattr(self, 'sill'):
+            sill = self.sill
+        else:
+            sill = dsspar.struct[1]
+        if hasattr(self, 'angles'):
+            angles = self.angles
+        else:
+            angles = dsspar.struct[2:]
+
+        keywords.append('struct')
+        values.append([[model, sill] + angles])
+
+        other_keys = ['nsim', 'srchangles', 'maxsim']
+        other_values = ['number_simulations', 'angles', 'max_search_nodes']
+        for i in xrange(len(other_keys)):
+            if hasattr(self, other_values[i]):
+                keywords.append(other_keys[i])
+                values.append(getattr(self, other_values[i]))
 
         dsspar.update(keywords, values)
         dsspar.data2update(self.data, self.no_data, varnames.index('clim'),
-                           self.data_header, save, par_path)
+                           self.data_header, save, dsspar_path)
         return dsspar
 
 
