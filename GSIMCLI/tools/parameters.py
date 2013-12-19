@@ -8,7 +8,21 @@ Created on 6 de Dez de 2013
 
 class ParametersFile:
     """Base class to construct a ParametersClass.
-
+    
+    Each parameter is defined by the following pair:
+        - field: the name of the parameter which will be used both as an
+                 attribute of this class, and;
+        - value: which is the value of that same parameter.
+        
+    Fields are separated into lists of predetermined types: str (text), float
+    (real_n), int (int_n) and bool (boolean).
+    
+    Fields can be mandatory or optional (opt_).
+    
+    Fields are separated from values with a given separator (field_sep). Values
+    can be a single value or a list of values, which are separated with yet
+    another given separator (values_sep).
+    
     """
 
     def __init__(self, field_sep, value_sep, par_set=str(), par_file=str(),
@@ -31,11 +45,8 @@ class ParametersFile:
         self.opt_real = opt_real
         self.opt_int = opt_int
         self.opt_boolean = opt_boolean
-        try:
-            self.optional = (self.opt_text + self.opt_real + self.opt_int
+        self.optional = (self.opt_text + self.opt_real + self.opt_int
                          + self.opt_boolean)
-        except:
-            pass
         self.fields = self.text + self.real + self.int + self.boolean
         self.order = order
         if order and len(order) != len(self.fields + self.optional):
@@ -45,7 +56,7 @@ class ParametersFile:
 
     def template(self, par_path):
         """Write a parameter file with the template to follow, which must have
-        been defined as a docstring.
+        been defined in the docstring.
 
         """
         self.path = par_path
@@ -56,8 +67,8 @@ class ParametersFile:
         par_file.close()
 
     def set_field(self, field, value):
-        """Create or update the value of a attr called field, given the desired
-        object type.
+        """Create or update the value of an attr called field, given the
+        desired object type.
 
         """
         if field in self.text + self.opt_text:
@@ -92,38 +103,6 @@ class ParametersFile:
                 self.set_field(field, value)
                 if field in self.fields:
                     checklist.remove(field)
-                """
-                if field in self.text:
-                    setattr(self, field, _split(value, str.strip,
-                                                self.value_sep))
-                    checklist.remove(field)
-                elif field in self.real:
-                    setattr(self, field, _split(value, float, self.value_sep))
-                    checklist.remove(field)
-                elif field in self.int:
-                    setattr(self, field, _split(value, int, self.value_sep))
-                    checklist.remove(field)
-                elif field in self.boolean:
-                    if value.strip().lower() == 'y':
-                        setattr(self, field, True)
-                    else:
-                        setattr(self, field, False)
-                    checklist.remove(field)
-                if field in self.opt_text:
-                    setattr(self, field, _split(value, str.strip,
-                                                self.value_sep))
-                elif field in self.opt_real:
-                    setattr(self, field, _split(value, float, self.value_sep))
-                elif field in self.opt_int:
-                    setattr(self, field, _split(value, int, self.value_sep))
-                elif field in self.opt_boolean:
-                    if value.strip().lower() == 'y':
-                        setattr(self, field, True)
-                    else:
-                        setattr(self, field, False)
-                else:
-                    setattr(self, field, value.strip())
-                """
         if checklist:
             raise AttributeError('There are missing parameters: {}.'
                                  .format(', '.join(map(str, checklist))))
@@ -147,16 +126,6 @@ class ParametersFile:
         for field in fields:
             if hasattr(self, field):
                 value = getattr(self, field)
-                """
-                if field in self.text + self.opt_text:
-                    try:
-                        par.write(field + self.field_sep + ' ' + value + '\n')
-                    except:
-                        pass
-                elif field in (self.real + self.int + self.opt_real
-                               + self.opt_int):
-                    par.write(field + self.field_sep + ' ' + str(value) + '\n')
-                """
                 if field in (self.text + self.opt_text + self.real + self.int
                              + self.opt_real + self.opt_int):
                     par.write(field + self.field_sep + ' '
@@ -166,10 +135,6 @@ class ParametersFile:
                         value = 'y'
                     else:
                         value = 'n'
-                    par.write(field + self.field_sep + ' ' + value + '\n')
-                else:
-                    raise
-                    value = getattr(self, field)
                     par.write(field + self.field_sep + ' ' + value + '\n')
         par.close()
 
@@ -202,6 +167,6 @@ def _join(items, sep):
 
     """
     if type(items) == list:
-        return sep.join(map(str, items))
+        return (sep + ' ').join(map(str, items))
     else:
         return str(items)
