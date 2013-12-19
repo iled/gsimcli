@@ -377,15 +377,10 @@ def run_par(par_path):
     else:
         gscpar = pgc.GsimcliParam(par_path)
 
-    if gscpar.data_header.lower() == 'y':
-        header = True
-    else:
-        header = False
-
     dsspar = gscpar.update_dsspar(True, par_path)
 
     stations_pset = gr.PointSet()
-    stations_pset.load(gscpar.data, gscpar.no_data, header)
+    stations_pset.load(gscpar.data, gscpar.no_data, gscpar.data_header)
 
     if hasattr(gscpar, 'name') and hasattr(gscpar, 'variables'):
         stations_pset.name = gscpar.name
@@ -406,10 +401,10 @@ def run_par(par_path):
         skew = None
 
     print 'Set up complete. Running GSIMCLI...'
-    gsimcli(stations_pset, header, gscpar.no_data, stations_order,
-            gscpar.detect_method, gscpar.detect_prob, detect_flag,
-            gscpar.detect_save, gscpar.dss_exe, dsspar, gscpar.results,
-            gscpar.sim_purge, skew)
+#     gsimcli(stations_pset, header, gscpar.no_data, stations_order,
+#             gscpar.detect_method, gscpar.detect_prob, detect_flag,
+#             gscpar.detect_save, gscpar.dss_exe, dsspar, gscpar.results,
+#             gscpar.sim_purge, skew)
 
 
 def batch_decade(par_path, variograms_file):
@@ -437,7 +432,8 @@ def batch_decade(par_path, variograms_file):
         variance = pset.values.iloc[:, climcol].var()
         results_folder = os.path.join(os.path.dirname(variograms_file),
                                       decade[1].ix['Decade'])
-        os.mkdir(results_folder)
+        if not os.path.isdir(results_folder):
+            os.mkdir(results_folder)
         fields = ['data', 'model', 'nugget', 'sill', 'ranges', 'ZZ_minimum',
                   'results']
         values = [data_file, decade[1].ix['Model'][0],
@@ -642,10 +638,13 @@ if __name__ == '__main__':
     # decvars = '/home/julio/Testes/rede000005/resumo_variografia_rede05_csv.csv'
     # batch_decade(par, decvars)
     base = '/home/julio/Testes/cost-home'
+    """
     networks = [os.path.join(base, 'rede000004'),
                 os.path.join(base, 'rede000005'),
                 os.path.join(base, 'rede000008'),
                 os.path.join(base, 'rede000010'),
                 os.path.join(base, 'rede000020')]
+    """
+    networks = [os.path.join(base, 'rede000010')]
     batch_networks(par, networks, decades=True)
     print 'done'
