@@ -298,7 +298,7 @@ class GridFiles:
                 medmap[cell] = np.median(arr)
                 # comparar com bottleneck.median()
             if lvar:
-                varmap[cell] = arr.var()
+                varmap[cell] = np.nanvar(arr, ddof=1)
             if lstd:
                 stdmap[cell] = arr.std()
             if lcoefvar:
