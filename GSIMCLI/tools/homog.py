@@ -17,7 +17,7 @@ import tools.grid as gr
 
 
 # import parsers.cost as cost
-def detect(grids, obs_file, method='mean', prob=0.95, varcol=-1, skewness=None,
+def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
            flag=True, save=False, outfile=None, header=True):
     """Tries to detect and homogenize irregularities in data series, following
     the geostatistical simulation approach:
@@ -91,44 +91,47 @@ def detect(grids, obs_file, method='mean', prob=0.95, varcol=-1, skewness=None,
     vline_stats = grids.stats_vline(obs_xy, lmean, lmed, lskew, lperc=True,
                                     p=prob, save=save)
 
+    # remove lines with no-data and flags
+    if 'Flag' in obs.values.columns:
+        obs.values = obs.values.drop('Flag', axis=1)
+    obs.values = obs.values.replace(obs.nodata, np.nan).dropna(subset=['clim'])
+    
     # find and fill missing values
     fn = 0
     if obs.values.shape[0] < grids.dz:
-        obs, fn = fill_station(obs, vline_stats.values.iloc[:, 3], varcol,
+        varcol = obs.varnames.index('clim')
+        obs, fn = fill_station(obs, vline_stats.values['mean'], varcol,
                                grids.zi, grids.zi + grids.dz, grids.cellz,
                                header)
-
+    # nodatas = obs.values['clim'].isin([obs.nodata]).sum()
+        
     # detect irregularities
-    hom_where = np.logical_or(obs.values.iloc[:, varcol] < vline_stats.
-                              values.iloc[:, -2], obs.values.iloc[:, varcol] >
-                                         vline_stats.values.iloc[:, -1])
+    hom_where = ~obs.values['clim'].between(vline_stats.values['lperc'],
+                                            vline_stats.values['rperc'])
     detected_number = hom_where.sum()  # + fn
 
     # homogenize irregularities
     homogenized = gr.PointSet(obs.name + '_homogenized', obs.nodata, obs.nvars,
                               list(obs.varnames), obs.values.copy())
     
-    imean = vline_stats.varnames.index('mean')
     if method == 'skewness' and skewness:
-        imed = vline_stats.varnames.index('median')
-        iskew = vline_stats.varnames.index('skewness')
-        fixvalues = np.where(vline_stats.values.iloc[:, iskew] > 1.5,
-                             vline_stats. values.iloc[:, imed],
-                             vline_stats.values.iloc[:, imean])
+        fixvalues = np.where(vline_stats.values['skewness'] > 1.5,
+                             vline_stats.values['median'],
+                             vline_stats.values['mean'])
     else:
-        fixvalues = vline_stats.values.iloc[:, imean]
+        fixvalues = vline_stats.values['mean']
 
-    homogenized.values.iloc[:, varcol] = np.where(hom_where, fixvalues,
-                                             obs.values.iloc[:, varcol])
+    homogenized.values['clim'] = obs.values['clim'].where(~hom_where,
+                                                          fixvalues.values)
     if flag:
-        flag_col = np.where(hom_where, obs.values.iloc[:, varcol], obs.nodata)
-        if homogenized.varnames[-1].lower() != 'flag':
+        flag_col = obs.values['clim'].where(hom_where, obs.nodata)
+        if 'Flag' not in homogenized.varnames:
             homogenized.nvars += 1
             homogenized.varnames.append('Flag')
             homogenized.values = (homogenized.values.join
                                   (pd.Series(flag_col, name='Flag')))
         else:
-            homogenized.values.iloc[:, -1] = flag_col
+            homogenized.values['Flag'] = flag_col
     # corrections = list()  # opt for pd.DataFrame ?
     # for cell in xrange(grid.dz):
     #    if obs < per[cell, 0] or obs > per[cell, 1]:
@@ -143,6 +146,8 @@ def detect(grids, obs_file, method='mean', prob=0.95, varcol=-1, skewness=None,
 def fill_station(pset_file, values, varcol, time_min, time_max, time_step=1,
                  header=True):
     """Look for missing data in a station and fill them with a given value.
+    
+    TODO: tirar dependência do varcol
     """
     if isinstance(pset_file, gr.PointSet):
         pset = pset_file
@@ -154,8 +159,10 @@ def fill_station(pset_file, values, varcol, time_min, time_max, time_step=1,
     j = 0
     timeserie = np.arange(time_min, time_max, time_step)
     filled = np.zeros((timeserie.shape[0], pset.values.shape[1]))
+    pset_na = pset.values.dropna(axis=-1)
     for i, itime in enumerate(timeserie):
-        if j < len(pset.values.iloc[:, 2]) and itime == pset.values.iloc[j, 2]:
+        if (j < len(pset.values['time']) and
+            itime == pset.values['time'].iloc[j]):
             filled[i, :] = pset.values.iloc[j, :]
             j += 1
         else:
@@ -165,7 +172,7 @@ def fill_station(pset_file, values, varcol, time_min, time_max, time_step=1,
                             ][:pset.values.shape[1]]
             filled_count += 1
 
-    pset.values = pd.DataFrame(filled)  # TODO: testar
+    pset.values = pd.DataFrame(filled, columns=pset.values.columns)
 
     return pset, filled_count
 
@@ -180,7 +187,7 @@ def station_col(pset_file, header):
         pset = gr.PointSet()
         pset.load(pset_file, header=header)
 
-    if header and 'station' in pset.varnames.index:
+    if header and 'station' in pset.varnames:
         stcol = pset.varnames.index('station')
     else:
         stcol = None
@@ -277,8 +284,8 @@ def append_homog_station(pset_file, station, header=True):
     return pset
 
 
-def station_order(stations_list, method, nd=-999.9, pset_path=None,
-                  header=True, userset=None):
+def station_order(method, pset_path=None, nd=-999.9, header=True,
+                  userset=None):
     """Sort a list containing stations numbers, according to the selected
     method:
         - random: all stations randomly sorted;
@@ -292,6 +299,9 @@ def station_order(stations_list, method, nd=-999.9, pset_path=None,
             pset = pset_path
         else:
             pset = gr.PointSet(psetpath=pset_path, nodata=nd, header=header)
+    
+    stations_list = list_stations(pset, header)
+    
     if method == 'random':
         shuffle(stations_list)
     elif method == 'sorted':
@@ -303,12 +313,12 @@ def station_order(stations_list, method, nd=-999.9, pset_path=None,
         varname = 'clim'
         values = pset.values.replace(nd, np.nan)
         varsort = (values.groupby(stname, sort=False)[varname].
-                   aggregate(np.var))
+                   aggregate(np.nanvar(ddof=1)))
         varsort.sort(ascending=False)
         stations_list = list(varsort.index)
 
     elif method == 'user' and userset:
-        stations_list = [int(i) for i in userset.split()]
+        stations_list = userset
     else:
         raise TypeError('Method {} not understood or invalid userset ({}).'
                         .format(method, userset))
