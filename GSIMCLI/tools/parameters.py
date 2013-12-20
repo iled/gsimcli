@@ -158,13 +158,10 @@ def _split(string, to_type, sep):
         items = map(to_type, string.split(sep))
     else:
         items = map(to_type, [string])
-    try:
-        if len(items) == 1:
-            return items[0]
-        else:
-            return items
-    except:
-        pass
+    if len(items) == 1:
+        return items[0]
+    else:
+        return items
 
 
 def _join(items, sep):

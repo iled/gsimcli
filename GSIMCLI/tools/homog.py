@@ -107,7 +107,7 @@ def detect(grids, obs_file, method='mean', prob=0.95, varcol=-1, skewness=None,
     # homogenize irregularities
     homogenized = gr.PointSet(obs.name + '_homogenized', obs.nodata, obs.nvars,
                               list(obs.varnames), obs.values.copy())
-
+    
     imean = vline_stats.varnames.index('mean')
     if method == 'skewness' and skewness:
         imed = vline_stats.varnames.index('median')
@@ -125,12 +125,10 @@ def detect(grids, obs_file, method='mean', prob=0.95, varcol=-1, skewness=None,
         if homogenized.varnames[-1].lower() != 'flag':
             homogenized.nvars += 1
             homogenized.varnames.append('Flag')
-            # homogenized.values = np.column_stack((homogenized.values,
-            #                                      flag_col))
             homogenized.values = (homogenized.values.join
                                   (pd.Series(flag_col, name='Flag')))
         else:
-            homogenized.values = homogenized.values.iloc[:, -1] = flag_col
+            homogenized.values.iloc[:, -1] = flag_col
     # corrections = list()  # opt for pd.DataFrame ?
     # for cell in xrange(grid.dz):
     #    if obs < per[cell, 0] or obs > per[cell, 1]:
@@ -182,11 +180,8 @@ def station_col(pset_file, header):
         pset = gr.PointSet()
         pset.load(pset_file, header=header)
 
-    if header:
-        try:
-            stcol = pset.varnames.index('station')
-        except ValueError:
-            stcol = None
+    if header and 'station' in pset.varnames.index:
+        stcol = pset.varnames.index('station')
     else:
         stcol = None
 

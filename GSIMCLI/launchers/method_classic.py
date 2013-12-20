@@ -296,7 +296,8 @@ def gsimcli(stations_file, stations_h, no_data, stations_order, detect_method,
         print ('Processing candidate {} out of {} with ID {}.'.
                format(i + 1, len(stations_order), stations_order[i]))
         # prepare and launch DSS
-        basename = ntpath.splitext(ntpath.basename(dsspar.output))[0]
+        # basename = ntpath.splitext(ntpath.basename(dsspar.output))[0]
+        basename = os.path.basename(outfolder)
         refname = basename + '_references_' + str(i) + '.prn'
         outname = basename + '_dss_map_st' + str(i) + '_sim.out'
         parname = basename + '_dss_par_st' + str(i) + '.par'
@@ -408,6 +409,7 @@ def run_par(par_path):
     else:
         skew = None
 
+    print 'Candidates order: ', ', '.join(map(str, stations_order))
     print 'Set up complete. Running GSIMCLI...'
     gsimcli(stations_pset, gscpar.data_header, gscpar.no_data, stations_order,
             gscpar.detect_method, gscpar.detect_prob, detect_flag,
