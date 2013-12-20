@@ -78,10 +78,7 @@ class PointSet:
             self.values = pd.DataFrame(values)  # , columns=self.varnames)
             # self.values = values
             if len(self.values.columns) == len(self.varnames):
-                try:
-                    self.values.columns = self.varnames
-                except:
-                    pass
+                self.values.columns = self.varnames
 
     def load(self, psetfile, nd=-999.9, header=True):
         """Loads a point-set from a file in GSLIB format.
@@ -125,6 +122,8 @@ class PointSet:
 
         """
         if varnames:
+            if 'Flag' in varnames:
+                varnames.remove('Flag')  # TODO: this is a hack!
             self.values.columns = varnames
         else:
             self.values.columns = self.varnames
