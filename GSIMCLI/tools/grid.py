@@ -376,7 +376,7 @@ class GridFiles:
             if lskew:
                 skewline[j] = skew(arr)
             if lvar:
-                varline[j] = arr.var()
+                varline[j] = np.nanvar(arr, ddof=1)
             if lstd:
                 stdline[j] = arr.std()
             if lcoefvar:
