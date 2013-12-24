@@ -94,17 +94,23 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
     # remove lines with no-data and flags
     if 'Flag' in obs.values.columns:
         obs.values = obs.values.drop('Flag', axis=1)
-    obs.values = obs.values.replace(obs.nodata, np.nan).dropna(subset=['clim'])
-    
+    if 'Flag' in obs.varnames:
+            obs.varnames.remove('Flag')
+            obs.nvars -= 1
+    nodatas = obs.values['clim'].isin([obs.nodata]).sum()
+    obs.values = obs.values.replace(obs.nodata, np.nan)
+    meanvalues = pd.Series(vline_stats.values['mean'].values, name='clim',
+                           index=obs.values.index)
+    obs.values.update(meanvalues, overwrite=False)
+
     # find and fill missing values
     fn = 0
     if obs.values.shape[0] < grids.dz:
         varcol = obs.varnames.index('clim')
-        obs, fn = fill_station(obs, vline_stats.values['mean'], varcol,
+        obs, fn = fill_station(obs, meanvalues, varcol,
                                grids.zi, grids.zi + grids.dz, grids.cellz,
                                header)
-    # nodatas = obs.values['clim'].isin([obs.nodata]).sum()
-        
+
     # detect irregularities
     hom_where = ~obs.values['clim'].between(vline_stats.values['lperc'],
                                             vline_stats.values['rperc'])
@@ -113,7 +119,7 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
     # homogenize irregularities
     homogenized = gr.PointSet(obs.name + '_homogenized', obs.nodata, obs.nvars,
                               list(obs.varnames), obs.values.copy())
-    
+
     if method == 'skewness' and skewness:
         fixvalues = np.where(vline_stats.values['skewness'] > 1.5,
                              vline_stats.values['median'],
@@ -125,28 +131,20 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
                                                           fixvalues.values)
     if flag:
         flag_col = obs.values['clim'].where(hom_where, obs.nodata)
-        if 'Flag' not in homogenized.varnames:
-            homogenized.nvars += 1
-            homogenized.varnames.append('Flag')
-            homogenized.values = (homogenized.values.join
-                                  (pd.Series(flag_col, name='Flag')))
-        else:
-            homogenized.values['Flag'] = flag_col
-    # corrections = list()  # opt for pd.DataFrame ?
-    # for cell in xrange(grid.dz):
-    #    if obs < per[cell, 0] or obs > per[cell, 1]:
-    #        corrections.append([cell, avmed[cell]])
+        homogenized.nvars += 1
+        homogenized.varnames.append('Flag')
+        homogenized.values['Flag'] = flag_col
 
     if save and outfile:
         homogenized.save(outfile, header)
 
-    return homogenized, detected_number, fn
+    return homogenized, detected_number, fn + nodatas
 
 
 def fill_station(pset_file, values, varcol, time_min, time_max, time_step=1,
                  header=True):
     """Look for missing data in a station and fill them with a given value.
-    
+
     TODO: tirar dependência do varcol
     """
     if isinstance(pset_file, gr.PointSet):
@@ -159,7 +157,6 @@ def fill_station(pset_file, values, varcol, time_min, time_max, time_step=1,
     j = 0
     timeserie = np.arange(time_min, time_max, time_step)
     filled = np.zeros((timeserie.shape[0], pset.values.shape[1]))
-    pset_na = pset.values.dropna(axis=-1)
     for i, itime in enumerate(timeserie):
         if (j < len(pset.values['time']) and
             itime == pset.values['time'].iloc[j]):
@@ -168,7 +165,6 @@ def fill_station(pset_file, values, varcol, time_min, time_max, time_step=1,
         else:
             filled[i, :] = [pset.values.iloc[0, 0], pset.values.iloc[0, 1],
                             itime, pset.values.iloc[0, 3:varcol], values[i],
-                            pset.values.iloc[0, varcol + 1:]
                             ][:pset.values.shape[1]]
             filled_count += 1
 
@@ -207,10 +203,10 @@ def list_stations(pset_file, stcol, h=True):
         pset.load(pset_file, header=h)
 
     stations = np.unique(pset.values.iloc[:, stcol])
-    return stations
+    return map(int, stations)
 
 
-def take_candidate(pset_file, station, stcol, h=True, save=False):
+def take_candidate(pset_file, station, h=True, save=False, path=None):
     """Remove a station from a point-set file and stores its points in another
     file, as well the remainder (neighbours) in yet another file.
 
@@ -225,32 +221,27 @@ def take_candidate(pset_file, station, stcol, h=True, save=False):
         pset = gr.PointSet()
         pset.load(pset_file, header=h)
 
-    # candidate = pset.values[pset.values[:, stcol] == int(station)]
-    candidate = pset.values[pset.values.iloc[:, stcol] == int(station)]
-    # neighbours = pset.values[pset.values[:, stcol] != int(station)]
-    neighbours = pset.values[pset.values.iloc[:, stcol] != int(station)]
+    candidate = pset.values[pset.values['station'] == int(station)]
+    neighbours = pset.values[pset.values['station'] != int(station)]
 
-    candidate_pset = gr.PointSet('Candidate_' + str(station),
-                                 pset.nodata, pset.nvars,
-                                 pset.varnames, candidate)
-    neighbours_pset = gr.PointSet('References_' + str(station),
-                                  pset.nodata, pset.nvars, pset.varnames,
-                                  neighbours)
+    if 'Flag' in candidate.columns:
+        candidate = candidate.drop('Flag', axis=1)
+        cand_nvars = pset.nvars - 1
+        cand_varnames = list(candidate.columns)
+    else:
+        cand_nvars = pset.nvars
+        cand_varnames = pset.varnames
 
-    if save:  # FIXME: isto dá bronca se receber um PointSet
-        base, ext = os.path.splitext(pset_file)
+    candidate_pset = gr.PointSet('Candidate_' + str(station), pset.nodata,
+                                 cand_nvars, cand_varnames, candidate)
+    neighbours_pset = gr.PointSet('References_' + str(station), pset.nodata,
+                                  pset.nvars, pset.varnames, neighbours)
+
+    if save and path:
+        base, ext = os.path.splitext(path)
         candidate_pset.save(base + '_candidate' + ext, h)
         neighbours_pset.save(base + '_neighbours' + ext, h)
-        """
-        candidate_file = cost.start_pset(base + '_candidate' + ext)
-        neighbours_file = cost.start_pset(base + '_neighbours' + ext)
-        np.savetxt(candidate_file, candidate,
-                   fmt=['%-10.6f', '%10.6f', '%10i', '%10.4f', '%06i', '%08i'])
-        np.savetxt(neighbours_file, neighbours,
-                   fmt=['%-10.6f', '%10.6f', '%10i', '%10.4f', '%06i', '%08i'])
-        candidate_file.close()
-        neighbours_file.close()
-        """
+
     return candidate_pset, neighbours_pset
 
 
@@ -267,11 +258,9 @@ def append_homog_station(pset_file, station, header=True):
         pset.load(pset_file, header)
 
     # checks if 'Flag' column already exists
-    if pset.varnames[-1].lower() != 'flag':
+    if 'Flag' not in pset.varnames:
         pset.varnames.append('Flag')
         pset.nvars += 1
-        # pset.values = np.column_stack((pset.values, np.repeat
-        #                               (pset.nodata, pset.values.shape[0])))
         pset.values = (pset.values.join
                        (pd.Series(np.repeat(pset.nodata, pset.values.shape[0]),
                                   name='Flag')))
@@ -299,9 +288,9 @@ def station_order(method, pset_path=None, nd=-999.9, header=True,
             pset = pset_path
         else:
             pset = gr.PointSet(psetpath=pset_path, nodata=nd, header=header)
-    
+
     stations_list = list_stations(pset, header)
-    
+
     if method == 'random':
         shuffle(stations_list)
     elif method == 'sorted':
@@ -312,8 +301,7 @@ def station_order(method, pset_path=None, nd=-999.9, header=True,
         stname = 'station'  # TODO: não funciona se não tiver header
         varname = 'clim'
         values = pset.values.replace(nd, np.nan)
-        varsort = (values.groupby(stname, sort=False)[varname].
-                   aggregate(np.nanvar(ddof=1)))
+        varsort = values.groupby(stname, sort=False)[varname].var()
         varsort.sort(ascending=False)
         stations_list = list(varsort.index)
 
@@ -342,6 +330,7 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
 
     TODO:
         .checkar
+        .tirar dependência do stcol
 
     """
     if isinstance(pset_file, gr.PointSet):
@@ -350,7 +339,7 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
         pset = gr.PointSet()
         pset.load(pset_file, header)
 
-    flagged = (pset.varnames[-1].lower() == 'flag')
+    flagged = ('Flag' in pset.varnames)
     if fformat == 'normal':
         with open(outfile, 'wb') as csvfile:
             out = csv.writer(csvfile, dialect='excel')
@@ -363,29 +352,27 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
 
     elif fformat == 'gsimcli':
         # year, time (month)
-        csvheader = [pset.varnames[2]]
+        csvheader = ['time']
         # csvfile = open(outfile, 'wb')
         # out = csv.writer(csvfile, dialect='excel')
         if station_split and flagged:
             # year, time (month), stationID_VAR, stationID_FLAG
-            st_col = station_col(pset, header)
-            stations = map(int, list_stations(pset, st_col))
-            varname = pset.varnames[-2]
+            st_col = pset.varnames.index('station')
+            stations = list_stations(pset, st_col)
+            varname = pset.varnames[-2]  # TODO: deprecated?
             headerline = [[str(stations[i]) + '_' + varname,
                            str(stations[i]) + '_FLAG']
                           for i in xrange(len(stations))]
             csvheader += itertools.chain.from_iterable(headerline)
-            outdf = pd.DataFrame(index=np.arange(pset.values.iloc[:, 2].min(),
-                                                 pset.values.iloc[:, 2].max()
+            outdf = pd.DataFrame(index=np.arange(pset.values['time'].min(),
+                                                 pset.values['time'].max()
                                                  + 1),
                                  columns=csvheader[1:])
-            for i in xrange(len(stations)):  # TODO: rever para pd.DF
-                # temp = pset.values.iloc[np.where(pset.values.iloc[:, st_col]
-                #                            == stations[i])][:, [2, -2, -1]]
-                temp = pset.values[pset.values.iloc[:, st_col] == stations[i]
-                                   ].iloc[:, [2, -2, -1]]
-                tempdf = pd.DataFrame(temp.iloc[:, 1:])
-                tempdf.index = temp.iloc[:, 0]
+            for i in xrange(len(stations)):
+                temp = pset.values[pset.values['station'] == stations[i]
+                                   ][['time', 'clim', 'Flag']]
+                tempdf = pd.DataFrame(temp[['clim', 'Flag']])
+                tempdf.index = temp['time']
                 tempdf.columns = csvheader[2 * i + 1:2 * i + 3]
                 outdf.update(tempdf)
         else:  # TODO: falta sem station_split; vale a pena?
@@ -393,7 +380,7 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
             # csvheader.append([pset.varnames[i] for i in
             #               xrange(5, pset.nvars)])
             # cols = pset.values[:, 5:]
-            pass
+            raise NotImplementedError
         # out.writerow(csvheader)
         # out.writerows(cols)
         # csvfile.close()
@@ -404,8 +391,8 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
         outdf.to_csv(outfile, index_label='year')
 
     elif fformat.lower() == 'gslib':
-        if network_split and pset.varnames[4] == 'network':
-            networks = np.unique(pset.values.iloc[:, 4])
+        if network_split and 'network' in pset.varnames:
+            networks = pset.values['network'].unique()
             temp_varnames = pset.varnames[:]
             temp_varnames.remove('network')
             for nw in networks:
@@ -414,26 +401,21 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
                                    varnames=temp_varnames)
                 outfile = (os.path.splitext(outfile)[0] + '_' + str(nw) +
                            os.path.splitext(outfile)[1])
-                # TODO: rever para pd.DF
-                temp.values = pset.values.iloc[np.where(pset.values.iloc
-                                                        [:, 4] == nw), :]
+                temp.values = pset.values[pset.values['network'] == nw]
                 temp.save(outfile, header=True)
         else:
             pset.save(outfile, header=True)
 
     if save_stations:
-        st_col = station_col(pset, header)
-        stations = [int(i) for i in list_stations(pset, st_col)]
+        st_col = pset.varnames.index('station')
+        stations = list_stations(pset, st_col)
         stations_out = os.path.join(os.path.dirname(outfile),
                                 os.path.splitext(os.path.basename(outfile))
                                 [0] + '_stations.csv')
-        stationsdf = pd.DataFrame(index=stations,
-                                      columns=pset.varnames[:2])
+        stationsdf = pd.DataFrame(index=stations, columns=['x', 'y'])
 
         for i, st in enumerate(stations):
-            # stationsdf.iloc[i] = pset.values[np.where(pset.values[:, st_col]
-            #                                       == st)[0][0], :2]
-            stationsdf.iloc[i] = pset.values[pset.values.iloc[:, st_col] == st
+            stationsdf.iloc[i] = pset.values[pset.values['station'] == st
                                              ].iloc[0, :2]
         if keys:
             keysdf = pd.read_csv(keys, sep='\t', index_col=0)
@@ -441,6 +423,46 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
             stationsdf = stationsdf.join(keysdf)
 
         stationsdf.to_csv(stations_out, index_label='Station')
+
+
+def merge_output(results, path):
+    """Merge the gsimcli output into one single spreadsheet file.
+    Each result file goes to one different sheet.
+    Two more sheets are added: one with the complete data set, another with
+    a summary of the process.
+
+    """
+    merged = pd.ExcelWriter(path)
+    groups = list()
+    alldf = pd.DataFrame()
+    summary = pd.DataFrame()
+
+    for result in results:
+        outfile, st_order, detected_n, filled_n = result
+        group = os.path.basename(outfile).split('_')[0]
+        groups.append(group)
+        df = pd.DataFrame.from_csv(outfile)
+        labels_i = list(df.columns)
+        labels_sort = list(itertools.chain(*[[labels_i[2 * k],
+                                              labels_i[2 * k + 1]]
+                                             for k in np.argsort(st_order)]))
+        df = df.reindex_axis(labels_sort, axis=1)
+        df.columns = list(labels_i)
+        alldf = alldf.append(df)
+        df.to_excel(merged, group)
+
+        summary = summary.append([st_order, detected_n, filled_n],
+                                 ignore_index=True)
+    
+    alldf = alldf.reindex_axis(list(labels_i), axis=1)
+    colidx = (pd.MultiIndex.from_tuples
+              ([(group, key) for group in groups for key in
+                ['Stations order', 'Detections number', 'Missing data']],
+               names=['Decade', '']))
+    summary = pd.DataFrame(summary.values, index=colidx)
+    alldf.to_excel(merged, 'All stations', index_label='year')
+    summary.to_excel(merged, 'Summary')
+    merged.save()
 
 
 def ask_add_header(pset):
@@ -454,50 +476,17 @@ def ask_add_header(pset):
 
 
 if __name__ == '__main__':
-    """ benchmark
-    fstpar = '/home/julio/Transferências/test/test.out'
-    outpath = '/home/julio/Transferências/test'
-    pointset = ('/home/julio/Transferências/benchmark/inho/precip/sur1/' +
-                'sur1_rr_pset.prn')
-    grid_dims = [50, 50, 10]
-    nsims = 10
-    no_data = -999.9
-    st = 85152001
-    header = True
-    """
-
-    # """ snirh
+    """ snirh
     no_data = -999.9
     pointset = '/home/julio/Testes/test/snirh.prn'
     header = False
     bla = gr.PointSet(pointset, header=header)
-    
+
     col = 4
     sts = list_stations(pointset, col, header)
     ordr = station_order(sts, 'variance', no_data, pointset, header)
     print ordr
-
-    """ snirh 50 sims
-
-    fstpar = '/home/julio/Testes/snirh50/dss_map_st1_sim.out'
-    grid_dims = [220, 200, 20]
-    nsims = 50
-    firstcoord = [100000, 0, 1980]
-    cellsize = [1000, 1000, 1]
-    no_data = -999.9
-    pointset = '/home/julio/Testes/snirh/snirh.prn'
-    outpath = '/home/julio/Testes/snirh'
-    header = False
-    st = 72
-    # """
-
     """
-    print 'loading grids'
-    grids = gr.GridFiles()
-    grids.load(fstpar, nsims, grid_dims, firstcoord, cellsize, no_data, 0)
-    print 'setup candidate'
-    c, h = take_candidate(pointset, st, stcol=3, h=header, save=True)
-    # """
 
     """
     cand = gr.GridArr()
@@ -522,5 +511,17 @@ if __name__ == '__main__':
     save_output(pset, fileout, fformat='gsimcli', header=True,
                 station_split=True, save_stations=True, keys=keys)
     #"""
-
+    
+    results = [('/home/julio/Testes/cost-home/rede000010/1900-1909/1900-1909_homogenized_data.csv', [3.0, 7.0, 2.0, 5.0, 1.0, 4.0, 6.0, 8.0, 9.0], [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 5, 0, 0, 10, 10, 10, 9, 10]),
+               ('/home/julio/Testes/cost-home/rede000010/1910-1919/1910-1919_homogenized_data.csv', [8.0, 2.0, 3.0, 7.0, 9.0, 4.0, 5.0, 1.0, 6.0], [2, 1, 2, 0, 0, 0, 4, 0, 0], [0, 0, 0, 0, 3, 7, 0, 10, 10]),
+               ('/home/julio/Testes/cost-home/rede000010/1920-1929/1920-1929_homogenized_data.csv', [2.0, 5.0, 8.0, 6.0, 3.0, 7.0, 9.0, 4.0, 1.0], [0, 3, 2, 4, 0, 0, 0, 0, 3], [0, 0, 0, 1, 0, 0, 0, 0, 5]),
+               ('/home/julio/Testes/cost-home/rede000010/1930-1939/1930-1939_homogenized_data.csv', [6.0, 8.0, 4.0, 2.0, 3.0, 7.0, 9.0, 5.0, 1.0], [0, 1, 1, 0, 0, 0, 0, 0, 2], [0, 0, 0, 0, 0, 0, 0, 0, 0]),
+               ('/home/julio/Testes/cost-home/rede000010/1940-1949/1940-1949_homogenized_data.csv', [9.0, 6.0, 2.0, 8.0, 5.0, 3.0, 1.0, 7.0, 4.0], [1, 1, 1, 4, 0, 0, 2, 0, 1], [0, 0, 1, 0, 0, 1, 0, 5, 1]),
+               ('/home/julio/Testes/cost-home/rede000010/1950-1959/1950-1959_homogenized_data.csv', [9.0, 2.0, 8.0, 6.0, 5.0, 7.0, 3.0, 1.0, 4.0], [2, 2, 4, 0, 1, 0, 0, 5, 6], [0, 0, 0, 0, 0, 0, 0, 0, 0]),
+               ('/home/julio/Testes/cost-home/rede000010/1960-1969/1960-1969_homogenized_data.csv', [6.0, 9.0, 2.0, 8.0, 3.0, 7.0, 5.0, 1.0, 4.0], [1, 2, 1, 1, 0, 0, 0, 1, 4], [0, 0, 0, 0, 0, 0, 0, 0, 0]),
+               ('/home/julio/Testes/cost-home/rede000010/1970-1979/1970-1979_homogenized_data.csv', [6.0, 2.0, 4.0, 8.0, 9.0, 5.0, 7.0, 3.0, 1.0], [1, 1, 2, 1, 3, 0, 0, 0, 3], [0, 0, 0, 0, 0, 0, 0, 0, 0]),
+               ('/home/julio/Testes/cost-home/rede000010/1980-1989/1980-1989_homogenized_data.csv', [9.0, 7.0, 6.0, 3.0, 8.0, 1.0, 4.0, 5.0, 2.0], [1, 0, 0, 0, 1, 5, 0, 0, 1], [0, 0, 0, 0, 0, 0, 0, 0, 0]),
+               ('/home/julio/Testes/cost-home/rede000010/1990-1999/1990-1999_homogenized_data.csv', [8.0, 2.0, 1.0, 6.0, 4.0, 9.0, 7.0, 3.0, 5.0], [4, 2, 2, 1, 1, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0])]
+    path = '/home/julio/Testes/cost-home/rede000010/gsimcli_results.xls'
+    merge_output(results, path)
     print 'done'
