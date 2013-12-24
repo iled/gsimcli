@@ -11,9 +11,9 @@ It uses geostatistical simulation approach with classic DSS.
 import glob
 import ntpath
 import os
-# import sys
+import sys
 
-# sys.path.append('/home/julio/Dropbox/workspace/isegi/GSIMCLI')
+sys.path.append('/home/julio/git/gsimcli/GSIMCLI')
 
 import launchers.dss as dss
 import numpy as np
@@ -248,8 +248,9 @@ def ask_stations_method(pset, header=True):
     elif i == str(3):
         stations = hmg.station_order(stations_list, method='sorted')
     elif i == str(4):
-        stations_set = raw_input('Write stations ID in the desired order '
+        stations_user = raw_input('Write stations ID in the desired order '
                                  '(e.g., 72 10 59 56): ')
+        stations_set = [int(i) for i in stations_user.split()]
         stations = hmg.station_order(stations_list, method='user',
                                      userset=stations_set)
     elif i == str(0):
@@ -289,17 +290,15 @@ def gsimcli(stations_file, stations_h, no_data, stations_order, detect_method,
     commonpath = os.path.commonprefix((outfolder, exe_path))
     # start iterative process
     for i in xrange(len(stations_order)):
-        # manage stations
-        stacol = hmg.station_col(stations_pset, True)
-        candidate, references = hmg.take_candidate(stations_pset,
-                                                    stations_order[i], stacol)
         print ('Processing candidate {} out of {} with ID {}.'.
                format(i + 1, len(stations_order), stations_order[i]))
+        # manage stations
+        candidate, references = hmg.take_candidate(stations_pset,
+                                                   stations_order[i])
         # prepare and launch DSS
-        # basename = ntpath.splitext(ntpath.basename(dsspar.output))[0]
         basename = os.path.basename(outfolder)
         refname = basename + '_references_' + str(i) + '.prn'
-        outname = basename + '_dss_map_st' + str(i) + '_sim.out'
+        outname = basename + '_dss_map_st' + str(i) + '_sim.out'  # TODO: +1
         parname = basename + '_dss_par_st' + str(i) + '.par'
         candname = basename + '_candidate_' + str(i) + '.prn'
         reffile = os.path.join(outfolder, refname)
@@ -340,12 +339,11 @@ def gsimcli(stations_file, stations_h, no_data, stations_order, detect_method,
                       no_data, headerin=0)
         print 'Detecting inhomogeneities...'
         # detect and fix inhomogeneities
-        # TODO: varcol opt
         homogenization = hmg.detect(grids=sim_maps, obs_file=candidate,
                                  method=detect_method, prob=detect_prob,
                                  flag=detect_flag, save=detect_save,
                                  outfile=intermediary_files, header=True,
-                                 varcol=stacol + 1, skewness=detect_skew)
+                                 skewness=detect_skew)
         homogenized, detected_number, filled_number = homogenization
         print 'Inhomogeneities detected: {}'.format(detected_number)
         dnumber_list.append(detected_number)
@@ -370,6 +368,8 @@ def gsimcli(stations_file, stations_h, no_data, stations_order, detect_method,
     hmg.save_output(pset_file=stations_pset, outfile=homogenized_file,
                     fformat='gsimcli', header=True, station_split=True,
                     save_stations=True)
+
+    return homogenized_file, stations_order, dnumber_list, fnumber_list
 
 
 def run_par(par_path):
@@ -399,9 +399,10 @@ def run_par(par_path):
         stations_set = gscpar.st_user
     else:
         stations_set = None
-    stations_order = hmg.station_order(stations_pset, gscpar.st_order,
-                                       gscpar.no_data, stations_pset,
-                                       stations_set)
+    stations_order = (hmg.station_order
+                      (method=gscpar.st_order, nd=gscpar.no_data,
+                       pset_path=stations_pset, header=gscpar.data_header,
+                       userset=stations_set))
 
     detect_flag = True
     if gscpar.detect_method.lower() == 'skewness':
@@ -411,10 +412,12 @@ def run_par(par_path):
 
     print 'Candidates order: ', ', '.join(map(str, stations_order))
     print 'Set up complete. Running GSIMCLI...'
-    gsimcli(stations_pset, gscpar.data_header, gscpar.no_data, stations_order,
-            gscpar.detect_method, gscpar.detect_prob, detect_flag,
-            gscpar.detect_save, gscpar.dss_exe, dsspar, gscpar.results,
-            gscpar.sim_purge, skew)
+    results = gsimcli(stations_pset, gscpar.data_header, gscpar.no_data,
+                      stations_order, gscpar.detect_method, gscpar.detect_prob,
+                      detect_flag, gscpar.detect_save, gscpar.dss_exe, dsspar,
+                      gscpar.results, gscpar.sim_purge, skew)
+
+    return results
 
 
 def batch_decade(par_path, variograms_file):
@@ -430,6 +433,7 @@ def batch_decade(par_path, variograms_file):
     network_parpath = gscpar.path
     variograms = pd.read_csv(variograms_file)
     os.chdir(os.path.dirname(variograms_file))
+    results = list()
 
     for decade in variograms.iterrows():
         first_year = decade[1].ix['Decade'].split('-')[0].strip()
@@ -463,7 +467,10 @@ def batch_decade(par_path, variograms_file):
                   first_year, results_folder]
         gscpar.update(fields, values, True, ut.filename_indexing
                       (network_parpath, decade[1].ix['Decade']))
-        run_par(gscpar)
+        results.append(run_par(gscpar))
+
+    hmg.merge_output(results, os.path.join(os.path.dirname(variograms_file),
+                     'gsimcli_results.xls'))
 
 
 def batch_networks(par_path, networks, decades=False):
@@ -479,11 +486,6 @@ def batch_networks(par_path, networks, decades=False):
         fields = ['XX_nodes_number', 'XX_minimum', 'XX_spacing',
                  'YY_nodes_number', 'YY_minimum', 'YY_spacing',
                  'ZZ_nodes_number', 'ZZ_spacing', 'results']
-        # TODO: ParametersFile com tipos no opt
-#         values = [str(int(grid.xnodes)), str(int(grid.xmin)),
-#                   str(int(grid.xsize)), str(int(grid.ynodes)),
-#                   str(int(grid.ymin)), str(int(grid.ysize)), str(10), str(1),
-#                   network]
         values = [grid.xnodes, grid.xmin, grid.xsize,
                   grid.ynodes, grid.ymin, grid.ysize,
                   str(10), str(1), network]
@@ -583,26 +585,6 @@ if __name__ == '__main__':
     print ask_save_vars(ps)
     """
 
-    """
-    settings = ['/home/julio/Testes/gsimcli.par',
-                '/home/julio/Testes/gsimcli2.par']
-
-    for par in settings:
-        gscpar = pgc.GsimcliParam(par)
-        hd = np.loadtxt(gscpar.data, usecols=4)
-        hdmin = hd.min()
-        hdmax = hd.max()
-        hdvar = hd.var()
-        dsspar = pdss.DssParam()
-        dsspar.load_old(gscpar.dss_par)
-        dsspar.update(['trimming', 'tails', 'lowert', 'uppert', 'nstruct',
-                       'struct'], [[hdmin, hdmax], [hdmin, hdmax], [1, hdmin],
-                                   [1, hdmax], [1, dsspar.nstruct[1] / hdvar],
-                                   [2, dsspar.struct[1] / hdvar, 0, 0, 0]],
-                      save=True)
-        print 'Loading settings at {}'.format(par)
-        run_par(par)
-    """
     par = '/home/julio/Testes/cost-home/gsimcli.par'
     # run_par(par)
 
@@ -617,5 +599,6 @@ if __name__ == '__main__':
                 os.path.join(base, 'rede000020')]
     #"""
     networks = [os.path.join(base, 'rede000010')]
+    # networks = ['/home/julio/Testes/benchtest/rede000010']
     batch_networks(par, networks, decades=True)
     print 'done'
