@@ -523,5 +523,5 @@ if __name__ == '__main__':
                ('/home/julio/Testes/cost-home/rede000010/1980-1989/1980-1989_homogenized_data.csv', [9.0, 7.0, 6.0, 3.0, 8.0, 1.0, 4.0, 5.0, 2.0], [1, 0, 0, 0, 1, 5, 0, 0, 1], [0, 0, 0, 0, 0, 0, 0, 0, 0]),
                ('/home/julio/Testes/cost-home/rede000010/1990-1999/1990-1999_homogenized_data.csv', [8.0, 2.0, 1.0, 6.0, 4.0, 9.0, 7.0, 3.0, 5.0], [4, 2, 2, 1, 1, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0])]
     path = '/home/julio/Testes/cost-home/rede000010/gsimcli_results.xls'
-    merge_output(results, path)
+    #merge_output(results, path)
     print 'done'

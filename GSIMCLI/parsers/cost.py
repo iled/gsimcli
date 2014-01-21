@@ -46,6 +46,20 @@ def directory_walk_v2(root):
     pass
 
 
+def directory_convert(fpath, ftype=None, variable=None, content=None,
+                   network=None, merge=False, to_year=None, coords=None,
+                   md=-999.9):
+    for root, dirs, files in os.walk(fpath):  # @UnusedVariable
+        if len(dirs) > 0 and all([len(d) == 6 and d.isdigit() for d in dirs]):
+            print 'processing ' + root
+            parsed_files = directory_walk_v1(root)
+            selected_files = files_select(parsed=parsed_files, ftype=ftype,
+                                          variable=variable, content=content,
+                                          network=network)
+            if selected_files:
+                convert_gslib(selected_files, merge, md, to_year, coords)
+
+
 def filename_parse(filepath, station_n=8, network_n=3):
     """Recognizes file type and properties.
 
@@ -340,7 +354,7 @@ def station_coord(network, station_path, coordinates_file=None):
     return float(x), float(y)
 
 
-def convert_gslib(files, merge=False, md=-999.9, sum_year=False,
+def convert_gslib(files, merge=False, md=-999.9, to_year=None,
                   coordinates_file=None):
     """Load selected files type, previously parsed. Then converts them
     to GSLIB format. By default it generates one file per network.
@@ -417,7 +431,7 @@ def convert_gslib(files, merge=False, md=-999.9, sum_year=False,
                                              coordinates_file)
         temp = pd.DataFrame((cost2gslib(station_x, station_y,
                                         datafile(file_path, file_type[4]), md,
-                                        sum_year)),
+                                        to_year)),
                             columns=['lon', 'lat', 'time', 'year', var])
 
         # temp[np.isnan(temp)] == md
@@ -443,7 +457,7 @@ def convert_gslib(files, merge=False, md=-999.9, sum_year=False,
     pset.save(pset_file, header=True)
 
 
-def cost2gslib(x, y, data, nd=-999.9, sum_year=False):
+def cost2gslib(x, y, data, nd=-999.9, to_year=None):
     """Converts data from one station to the GSLIB standard (point-set).
 
     @x, y: station coordinates
@@ -456,13 +470,18 @@ def cost2gslib(x, y, data, nd=-999.9, sum_year=False):
 
     if resolution == 1:  # yearly
         z = data.index
-        var = np.array(data)
+        var = np.array(data)  # TODO: pd.S ?
         m = 1
     elif data.shape[1] == 12:  # monthly
-        if sum_year:
+        if to_year == 'sum':
             z = data.index
             var = data.sum(axis=1, skipna=False)
             m = 1
+        elif to_year == 'mean':
+            z = data.index
+            var = data.average(axis=1, skipna=False)
+            m = 1
+            # TODO: confirmar NaN quando só falta alguns meses num ano
         else:
             # years with months in decimal place
             # z = [data.index[i] + float(j)/12 for i in xrange(0,data.shape[0])
@@ -545,7 +564,7 @@ if __name__ == '__main__':
                                           variable='rr', content='d',
                                           network='000016')
             if selected_files:
-                convert_gslib(selected_files, merge=False, sum_year=True,
+                convert_gslib(selected_files, merge=False, to_year='sum',
                               coordinates_file=coords)
 
     print 'done'
