@@ -523,25 +523,31 @@ def files_select(parsed, network=None, ftype=None, status=None, variable=None,
     """Sort and filter parsed files according to user criteria.
 
     @parsed: dict containing files path and type.
+
     """
-    # sort by network number
-    parsed_sorted = [x for x in parsed.iteritems()]
-    parsed_sorted.sort(key=lambda x: x[1][0])
+    parsed_items = [x for x in parsed.iteritems()]
 
     if network:
-        parsed_sorted = [s for s in parsed_sorted if s[1][0] == network]
+        parsed_items = [s for s in parsed_items if s[1][0] == network]
     if ftype:
-        parsed_sorted = [s for s in parsed_sorted if s[1][1] == ftype]
+        parsed_items = [s for s in parsed_items if s[1][1] == ftype]
     if status and ftype == 'data':
-        parsed_sorted = [s for s in parsed_sorted if s[1][2] == status]
+        parsed_items = [s for s in parsed_items if s[1][2] == status]
     if variable and ftype == 'data':
-        parsed_sorted = [s for s in parsed_sorted if s[1][3] == variable]
+        parsed_items = [s for s in parsed_items if s[1][3] == variable]
     if resolution and ftype == 'data':
-        parsed_sorted = [s for s in parsed_sorted if s[1][4] == resolution]
+        parsed_items = [s for s in parsed_items if s[1][4] == resolution]
     if content and ftype == 'data':
-        parsed_sorted = [s for s in parsed_sorted if s[1][6] == content]
+        parsed_items = [s for s in parsed_items if s[1][6] == content]
 
-    return parsed_sorted
+    if ftype == 'data':
+        # sort by network number and then by station number
+        parsed_items.sort(key=lambda x: (x[1][0], x[1][5]))
+    else:
+        # sort by network number
+        parsed_items.sort(key=lambda x: x[1][0])
+        
+    return parsed_items
 
 
 if __name__ == '__main__':
