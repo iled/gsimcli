@@ -302,7 +302,7 @@ def station_order(method, pset_path=None, nd=-999.9, header=True,
         varname = 'clim'
         values = pset.values.replace(nd, np.nan)
         varsort = values.groupby(stname, sort=False)[varname].var()
-        varsort.sort(ascending=False)
+        varsort = varsort.order(ascending=False)
         stations_list = list(varsort.index)
 
     elif method == 'user' and userset:
