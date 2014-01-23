@@ -6,6 +6,7 @@ Created on 19/09/2013
 '''
 
 import datetime
+import itertools
 import os
 
 import numpy as np
@@ -550,6 +551,43 @@ def files_select(parsed, network=None, ftype=None, status=None, variable=None,
     return parsed_items
 
 
+def match_orig(stations_spec, orig_path):
+    """Select orig files according to given station files.
+    
+    """
+    orig_spec = list()
+    netw = None
+    for st_spec in stations_spec:
+        spec = st_spec[1]
+        if netw != spec[0]:
+            orig_parsed = files_select(parsed=orig_path, network=spec[0],
+                                         ftype=spec[1], variable=spec[3],
+                                         content=spec[6])
+            orig_spec.append(orig_parsed)
+            netw = spec[0]
+       
+    orig_spec = list(itertools.chain.from_iterable(orig_spec))
+    if len(orig_spec) != len(stations_spec):
+        raise ValueError('Mismatch between homogenized and original files.')
+    return orig_spec
+
+
+def agg_network(stations_parsed):
+    """Aggreggate stations by network.
+    
+    """
+    networks = list()
+    netw = None
+    for station in stations_parsed:
+        if netw != station[1][0]:
+            netw = station[1][0]
+            netw_list = [st for st in stations_parsed
+                         if st[1][0] == netw]
+            networks.append(netw_list)
+            
+    return networks
+    
+    
 if __name__ == '__main__':
     """
     base = r'C:\Users\jcaineta\Downloads\benchmark\h305\temp\sur1'
