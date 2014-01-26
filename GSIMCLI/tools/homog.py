@@ -399,7 +399,7 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
                 temp = gr.PointSet(name=pset.name + ' network: ' + str(nw),
                                    nodata=pset.nodata, nvars=pset.nvars - 1,
                                    varnames=temp_varnames)
-                outfile = (os.path.splitext(outfile)[0] + '_' + str(nw) +
+                outfile = (os.path.splitext(outfile)[0] + '_' + str(nw) + 
                            os.path.splitext(outfile)[1])
                 temp.values = pset.values[pset.values['network'] == nw]
                 temp.save(outfile, header=True)
@@ -425,7 +425,7 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
         stationsdf.to_csv(stations_out, index_label='Station')
 
 
-def merge_output(results, path):
+def merge_output(results, path, homog_order=True):
     """Merge the gsimcli output into one single spreadsheet file.
     Each result file goes to one different sheet.
     Two more sheets are added: one with the complete data set, another with
@@ -441,14 +441,21 @@ def merge_output(results, path):
         outfile, st_order, detected_n, filled_n = result
         group = os.path.basename(outfile).split('_')[0]
         groups.append(group)
+        
         df = pd.DataFrame.from_csv(outfile)
-        labels_i = list(df.columns)
-        labels_sort = list(itertools.chain(*[[labels_i[2 * k],
-                                              labels_i[2 * k + 1]]
-                                             for k in np.argsort(st_order)]))
-        df = df.reindex_axis(labels_sort, axis=1)
-        df.columns = list(labels_i)
         alldf = alldf.append(df)
+        
+        labels_i = list(df.columns)
+        if homog_order:
+            clim = '_' + labels_i[0].split('_')[1]
+            flag = '_' + labels_i[1].split('_')[1]
+            labels_sort = list(itertools.chain.from_iterable
+                               ([[str(int(k)) + clim, str(int(k)) + flag]
+                                 for k in st_order]))
+        else:
+            labels_sort = labels_i
+        df = df.reindex_axis(labels_sort, axis=1)
+        df.columns = list(labels_sort)
         df.to_excel(merged, group)
 
         summary = summary.append([st_order, detected_n, filled_n],
@@ -461,7 +468,7 @@ def merge_output(results, path):
                names=['Decade', '']))
     summary = pd.DataFrame(summary.values, index=colidx)
     alldf.to_excel(merged, 'All stations', index_label='year')
-    summary.to_excel(merged, 'Summary')
+    summary.to_excel(merged, 'Summary', header=range(1, len(st_order) + 1))
     merged.save()
 
 
@@ -511,17 +518,20 @@ if __name__ == '__main__':
     save_output(pset, fileout, fformat='gsimcli', header=True,
                 station_split=True, save_stations=True, keys=keys)
     #"""
+    macpath = '/Users/julio/Desktop/testes/cost-home/500_dflt_16_allvar_vind/'
+    mintpath = '/home/julio/Testes/cost-home/'
+    basepath = macpath
     
-    results = [('/home/julio/Testes/cost-home/rede000010/1900-1909/1900-1909_homogenized_data.csv', [3.0, 7.0, 2.0, 5.0, 1.0, 4.0, 6.0, 8.0, 9.0], [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 5, 0, 0, 10, 10, 10, 9, 10]),
-               ('/home/julio/Testes/cost-home/rede000010/1910-1919/1910-1919_homogenized_data.csv', [8.0, 2.0, 3.0, 7.0, 9.0, 4.0, 5.0, 1.0, 6.0], [2, 1, 2, 0, 0, 0, 4, 0, 0], [0, 0, 0, 0, 3, 7, 0, 10, 10]),
-               ('/home/julio/Testes/cost-home/rede000010/1920-1929/1920-1929_homogenized_data.csv', [2.0, 5.0, 8.0, 6.0, 3.0, 7.0, 9.0, 4.0, 1.0], [0, 3, 2, 4, 0, 0, 0, 0, 3], [0, 0, 0, 1, 0, 0, 0, 0, 5]),
-               ('/home/julio/Testes/cost-home/rede000010/1930-1939/1930-1939_homogenized_data.csv', [6.0, 8.0, 4.0, 2.0, 3.0, 7.0, 9.0, 5.0, 1.0], [0, 1, 1, 0, 0, 0, 0, 0, 2], [0, 0, 0, 0, 0, 0, 0, 0, 0]),
-               ('/home/julio/Testes/cost-home/rede000010/1940-1949/1940-1949_homogenized_data.csv', [9.0, 6.0, 2.0, 8.0, 5.0, 3.0, 1.0, 7.0, 4.0], [1, 1, 1, 4, 0, 0, 2, 0, 1], [0, 0, 1, 0, 0, 1, 0, 5, 1]),
-               ('/home/julio/Testes/cost-home/rede000010/1950-1959/1950-1959_homogenized_data.csv', [9.0, 2.0, 8.0, 6.0, 5.0, 7.0, 3.0, 1.0, 4.0], [2, 2, 4, 0, 1, 0, 0, 5, 6], [0, 0, 0, 0, 0, 0, 0, 0, 0]),
-               ('/home/julio/Testes/cost-home/rede000010/1960-1969/1960-1969_homogenized_data.csv', [6.0, 9.0, 2.0, 8.0, 3.0, 7.0, 5.0, 1.0, 4.0], [1, 2, 1, 1, 0, 0, 0, 1, 4], [0, 0, 0, 0, 0, 0, 0, 0, 0]),
-               ('/home/julio/Testes/cost-home/rede000010/1970-1979/1970-1979_homogenized_data.csv', [6.0, 2.0, 4.0, 8.0, 9.0, 5.0, 7.0, 3.0, 1.0], [1, 1, 2, 1, 3, 0, 0, 0, 3], [0, 0, 0, 0, 0, 0, 0, 0, 0]),
-               ('/home/julio/Testes/cost-home/rede000010/1980-1989/1980-1989_homogenized_data.csv', [9.0, 7.0, 6.0, 3.0, 8.0, 1.0, 4.0, 5.0, 2.0], [1, 0, 0, 0, 1, 5, 0, 0, 1], [0, 0, 0, 0, 0, 0, 0, 0, 0]),
-               ('/home/julio/Testes/cost-home/rede000010/1990-1999/1990-1999_homogenized_data.csv', [8.0, 2.0, 1.0, 6.0, 4.0, 9.0, 7.0, 3.0, 5.0], [4, 2, 2, 1, 1, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0])]
-    path = '/home/julio/Testes/cost-home/rede000010/gsimcli_results.xls'
-    #merge_output(results, path)
+    results = [(basepath + 'rede000010/1900-1909/1900-1909_homogenized_data.csv', [3.0, 7.0, 2.0, 5.0, 1.0, 4.0, 6.0, 8.0, 9.0], [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 5, 0, 0, 10, 10, 10, 9, 10]),
+               (basepath + 'rede000010/1910-1919/1910-1919_homogenized_data.csv', [8.0, 2.0, 3.0, 7.0, 9.0, 4.0, 5.0, 1.0, 6.0], [2, 1, 2, 0, 0, 0, 4, 0, 0], [0, 0, 0, 0, 3, 7, 0, 10, 10]),
+               (basepath + 'rede000010/1920-1929/1920-1929_homogenized_data.csv', [2.0, 5.0, 8.0, 6.0, 3.0, 7.0, 9.0, 4.0, 1.0], [0, 3, 2, 4, 0, 0, 0, 0, 3], [0, 0, 0, 1, 0, 0, 0, 0, 5]),
+               (basepath + 'rede000010/1930-1939/1930-1939_homogenized_data.csv', [6.0, 8.0, 4.0, 2.0, 3.0, 7.0, 9.0, 5.0, 1.0], [0, 1, 1, 0, 0, 0, 0, 0, 2], [0, 0, 0, 0, 0, 0, 0, 0, 0]),
+               (basepath + 'rede000010/1940-1949/1940-1949_homogenized_data.csv', [9.0, 6.0, 2.0, 8.0, 5.0, 3.0, 1.0, 7.0, 4.0], [1, 1, 1, 4, 0, 0, 2, 0, 1], [0, 0, 1, 0, 0, 1, 0, 5, 1]),
+               (basepath + 'rede000010/1950-1959/1950-1959_homogenized_data.csv', [9.0, 2.0, 8.0, 6.0, 5.0, 7.0, 3.0, 1.0, 4.0], [2, 2, 4, 0, 1, 0, 0, 5, 6], [0, 0, 0, 0, 0, 0, 0, 0, 0]),
+               (basepath + 'rede000010/1960-1969/1960-1969_homogenized_data.csv', [6.0, 9.0, 2.0, 8.0, 3.0, 7.0, 5.0, 1.0, 4.0], [1, 2, 1, 1, 0, 0, 0, 1, 4], [0, 0, 0, 0, 0, 0, 0, 0, 0]),
+               (basepath + 'rede000010/1970-1979/1970-1979_homogenized_data.csv', [6.0, 2.0, 4.0, 8.0, 9.0, 5.0, 7.0, 3.0, 1.0], [1, 1, 2, 1, 3, 0, 0, 0, 3], [0, 0, 0, 0, 0, 0, 0, 0, 0]),
+               (basepath + 'rede000010/1980-1989/1980-1989_homogenized_data.csv', [9.0, 7.0, 6.0, 3.0, 8.0, 1.0, 4.0, 5.0, 2.0], [1, 0, 0, 0, 1, 5, 0, 0, 1], [0, 0, 0, 0, 0, 0, 0, 0, 0]),
+               (basepath + 'rede000010/1990-1999/1990-1999_homogenized_data.csv', [8.0, 2.0, 1.0, 6.0, 4.0, 9.0, 7.0, 3.0, 5.0], [4, 2, 2, 1, 1, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0])]
+    path = basepath + 'rede000010/gsimcli_results.xls'
+    merge_output(results, path)
     print 'done'
