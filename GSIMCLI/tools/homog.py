@@ -431,6 +431,7 @@ def merge_output(results, path, homog_order=True):
     Two more sheets are added: one with the complete data set, another with
     a summary of the process.
 
+    TODO: check what if labels_i are not sorted
     """
     merged = pd.ExcelWriter(path)
     groups = list()
