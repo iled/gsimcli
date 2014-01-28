@@ -614,17 +614,16 @@ def agg_network(stations_parsed):
 
 
 if __name__ == '__main__':
-    """
-    base = r'C:\Users\jcaineta\Downloads\benchmark\h305\temp\sur1'
-    vistos = directory_walk_v1(base)
-    selected = files_select(vistos, ftype='data', content='d')
-    convert_gslib(selected, merge=False)
-    """
+    macpath = '/Users/julio/Desktop/testes/cost-home/'
+    mintpath = '/home/julio/Testes/'
+    basepath = macpath
+
+    rede = basepath + 'benchmark/h009/precip/sur1/000005'
 
     benchmark = '/home/julio/Testes/benchmark/inho/precip/sur1'
-    # benchmark = '/Users/julio/Downloads/benchmark/inho/precip/sur1'
     coords = '/home/julio/Dropbox/ISEGI/cost-home/rede000016/tab_coordenadas_projetadas_rede000016.txt'
 
+    """
     for root, dirs, files in os.walk(benchmark):  # @UnusedVariable
         if len(dirs) > 0 and all([len(d) == 6 and d.isdigit() for d in dirs]):
             print 'processing ' + root
@@ -635,5 +634,7 @@ if __name__ == '__main__':
             if selected_files:
                 convert_gslib(selected_files, merge=False, to_year='sum',
                               coordinates_file=coords)
-
+    """
+    dirwalk = directory_walk_v1(rede)
+    print dirwalk
     print 'done'
