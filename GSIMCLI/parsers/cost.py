@@ -325,9 +325,9 @@ def start_pset(filepath):
     # if os.path.isfile(filepath):
     #    os.remove(filepath)
     pset = open(filepath, 'w')
-    pset.writelines(os.path.splitext(os.path.basename(filepath))[0] + 
-                    '\n' + repr(6) + '\n' + 'lat' + '\n' + 'lon' + '\n' + 
-                    'time' + '\n' + 'value' + '\n' + 'network' + '\n' + 
+    pset.writelines(os.path.splitext(os.path.basename(filepath))[0] +
+                    '\n' + repr(6) + '\n' + 'lat' + '\n' + 'lon' + '\n' +
+                    'time' + '\n' + 'value' + '\n' + 'network' + '\n' +
                     'station' + '\n')
     return pset
 
@@ -423,7 +423,7 @@ def convert_gslib(files, merge=False, md=-999.9, to_year=None,
                                    nodata=md, nvars=nvar,
                                    varnames=['lon', 'lat', 'time', 'station',
                                              var])
-                pset_file = os.path.join(savedir, str(network_number) + '_' + 
+                pset_file = os.path.join(savedir, str(network_number) + '_' +
                                          var + '_pset.prn')
                 # pset.values = np.zeros((0, nvar))
                 # pset.values = pd.DataFrame(np.zeros((0, nvar)))
@@ -495,7 +495,7 @@ def cost2gslib(x, y, data, nd=-999.9, to_year=None):
             m = 12
     # daily -- converted to days (not considering leap years)
     elif data.shape[1] == 3:
-        z = [data.index[0] * 365 + 365 * i + 
+        z = [data.index[0] * 365 + 365 * i +
              (datetime.date(i, data.iloc[i, 0], data.iloc[i, 1]).timetuple()
               .tm_yday)
              for i in xrange(0, data.shape[0])]
@@ -503,7 +503,7 @@ def cost2gslib(x, y, data, nd=-999.9, to_year=None):
         m = 0  # not implemented, depends on leap years
     # subdaily -- same as daily but with hours in decimal place
     elif data.shape[1] == 4:
-        z = [data.index[0] * 365 + 365 * i + 
+        z = [data.index[0] * 365 + 365 * i +
              datetime.date(i, data.iloc[i, 0], (data.iloc[i, 1]).timetuple()
                            .tm_yday) + float(data.iloc[i, 2]) / 24
              for i in xrange(0, data.shape[0])]
@@ -547,13 +547,13 @@ def files_select(parsed, network=None, ftype=None, status=None, variable=None,
     else:
         # sort by network number
         parsed_items.sort(key=lambda x: x[1][0])
-        
+
     return parsed_items
 
 
 def match_orig(stations_spec, orig_path):
     """Select orig files according to given station files.
-    
+
     FIXME: DEPRECATED in favor of match_sets
     """
     orig_spec = list()
@@ -566,7 +566,7 @@ def match_orig(stations_spec, orig_path):
                                          content=spec[6])
             orig_spec.append(orig_parsed)
             netw = spec[0]
-       
+
     orig_spec = list(itertools.chain.from_iterable(orig_spec))
     if len(orig_spec) != len(stations_spec):
         raise ValueError('Mismatch between homogenized and original files.')
@@ -576,30 +576,30 @@ def match_orig(stations_spec, orig_path):
 def match_sets(subset_path, mainset_path):
     """Select a stations subset from a mainset, given both paths.
     Only appliable to data files.
-    
+
     """
     subset_files = directory_walk_v1(subset_path)
     mainset_files = directory_walk_v1(mainset_path)
     subset_parsed = files_select(parsed=subset_files, ftype='data',
                                  content='d')
     subset_agg = agg_network(subset_parsed)
-    
+
     mainset_parsed = list()
     for group in subset_agg:
         network = group[0][1][0]
         mainset_parsed.append(files_select(parsed=mainset_files, ftype='data',
                                   content='d', network=network))
-    
+
     mainset_parsed = list(itertools.chain.from_iterable(mainset_parsed))
     if len(subset_parsed) != len(mainset_parsed):
         raise ValueError('{} is not a subset of {}'.format(subset_path,
                                                             mainset_path))
     return mainset_parsed
-    
+
 
 def agg_network(stations_parsed):
     """Aggreggate stations by network.
-    
+
     """
     networks = list()
     netw = None
@@ -609,7 +609,7 @@ def agg_network(stations_parsed):
             netw_list = [st for st in stations_parsed
                          if st[1][0] == netw]
             networks.append(netw_list)
-            
+
     return networks
 
 
