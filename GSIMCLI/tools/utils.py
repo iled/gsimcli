@@ -54,5 +54,17 @@ def filename_indexing(file_id, n):
     return fname
 
 
-if __name__ == '__main__':
-    pass
+def path_up(path, level):
+    """Goes up level levels in the path tree.
+
+    """
+    if os.path.isdir(path):
+        head = path
+    else:
+        head = os.path.dirname(path)
+
+    tail = os.sep
+    for i in xrange(level):  # @UnusedVariable
+        head, base = os.path.split(head)
+        tail = os.path.join(tail, base)
+    return head, tail
