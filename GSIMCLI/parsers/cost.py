@@ -33,7 +33,10 @@ def directory_walk_v1(base):
     # este ciclo deve dar para integrar no anterior
     for network, stations in networks.iteritems():
         for station in stations:
-            direc = os.path.join(base, network, station)
+            if os.path.basename(base) == network:
+                direc = os.path.join(base, station)
+            else:
+                direc = os.path.join(base, network, station)
             parsed_files[direc] = [network] + filename_parse(direc)
 
     return parsed_files
@@ -616,7 +619,7 @@ def agg_network(stations_parsed):
 if __name__ == '__main__':
     macpath = '/Users/julio/Desktop/testes/cost-home/'
     mintpath = '/home/julio/Testes/'
-    basepath = macpath
+    basepath = mintpath
 
     rede = basepath + 'benchmark/h009/precip/sur1/000005'
 
