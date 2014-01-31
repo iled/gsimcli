@@ -68,7 +68,7 @@ class Station(object):
                                format(path))
 
         detected = pc.breakpointsfile(detected_file)
-        self.outliers = detected[((detected.Station == self.id) &
+        self.outliers = detected[((self.id in str(detected.Station)) &
                                   (detected.Type == 'OUTLIE'))].ix[:, 2:]
 
     def match_orig(self, path=None):
@@ -220,7 +220,7 @@ class Network(object):
             years_list.append(list(np.unique(itertools.chain.
                                              from_iterable(outlier_list))))
 
-        return years_list
+        return list(itertools.chain.from_iterable(years_list))
 
     def setup(self):
         """Load stations.
