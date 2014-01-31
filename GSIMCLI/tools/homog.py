@@ -268,7 +268,6 @@ def append_homog_station(pset_file, station, header=True):
         raise ValueError('PointSets {} and {} have different number of '
                          'variables.'.format(pset.name, station.name))
 
-    # pset.values = np.vstack((pset.values, station.values))
     pset.values = pset.values.append(station.values, ignore_index=True)
     return pset
 
@@ -280,6 +279,8 @@ def station_order(method, pset_path=None, nd=-999.9, header=True,
         - random: all stations randomly sorted;
         - sorted: sorts all stations in ascending order;
         - variance: sorts all stations by greater variance;
+        - network deviation: sorts all station in ascending order according to
+    the difference between the station average and the network average;
         - user: the user specifies which stations and their order.
 
     """
@@ -293,17 +294,23 @@ def station_order(method, pset_path=None, nd=-999.9, header=True,
 
     if method == 'random':
         shuffle(stations_list)
+
     elif method == 'sorted':
         stations_list.sort()
+
     elif method == 'variance':
         if not pset_path:
             raise TypeError('Method variance requires the stations point-set')
-        stname = 'station'  # TODO: não funciona se não tiver header
-        varname = 'clim'
         values = pset.values.replace(nd, np.nan)
-        varsort = values.groupby(stname, sort=False)[varname].var()
+        varsort = values.groupby('station', sort=False).clim.var()
         varsort = varsort.order(ascending=False)
         stations_list = list(varsort.index)
+
+    elif method == 'network deviation':
+        values = pset.values.replace(nd, np.nan)
+        stations_mean = values.groupby('station', sort=False).clim.mean()
+        network_dev = (stations_mean - values.clim.mean()).abs().order()
+        stations_list = list(network_dev.index)
 
     elif method == 'user' and userset:
         stations_list = userset
@@ -399,7 +406,7 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
                 temp = gr.PointSet(name=pset.name + ' network: ' + str(nw),
                                    nodata=pset.nodata, nvars=pset.nvars - 1,
                                    varnames=temp_varnames)
-                outfile = (os.path.splitext(outfile)[0] + '_' + str(nw) + 
+                outfile = (os.path.splitext(outfile)[0] + '_' + str(nw) +
                            os.path.splitext(outfile)[1])
                 temp.values = pset.values[pset.values['network'] == nw]
                 temp.save(outfile, header=True)
@@ -442,10 +449,10 @@ def merge_output(results, path, homog_order=True):
         outfile, st_order, detected_n, filled_n = result
         group = os.path.basename(outfile).split('_')[0]
         groups.append(group)
-        
+
         df = pd.DataFrame.from_csv(outfile)
         alldf = alldf.append(df)
-        
+
         labels_i = list(df.columns)
         if homog_order:
             clim = '_' + labels_i[0].split('_')[1]
@@ -461,7 +468,7 @@ def merge_output(results, path, homog_order=True):
 
         summary = summary.append([st_order, detected_n, filled_n],
                                  ignore_index=True)
-    
+
     alldf = alldf.reindex_axis(list(labels_i), axis=1)
     colidx = (pd.MultiIndex.from_tuples
               ([(group, key) for group in groups for key in
@@ -484,45 +491,10 @@ def ask_add_header(pset):
 
 
 if __name__ == '__main__':
-    """ snirh
-    no_data = -999.9
-    pointset = '/home/julio/Testes/test/snirh.prn'
-    header = False
-    bla = gr.PointSet(pointset, header=header)
-
-    col = 4
-    sts = list_stations(pointset, col, header)
-    ordr = station_order(sts, 'variance', no_data, pointset, header)
-    print ordr
-    """
-
-    """
-    cand = gr.GridArr()
-    cand.load(fstpar, grid_dims, no_data, 0)
-    cand_vline = cand.drill((5, 5))
-    """
-
-    """
-    cand_vline = c
-    print 'detecting irregularities'
-    corr, dn = detect(grids, cand_vline, 'skewness', prob=0.95, skewness=1.5)
-    print corr
-    print dn
-    grids.dump()
-    # """
-
-    """
-    pset = '/home/julio/Testes/snirh50/pset_final.prn'
-    fileout = '/home/julio/Testes/snirh50/homog_final.csv'
-    keys = '/home/julio/Testes/test/snirh_keys.txt'
-
-    save_output(pset, fileout, fformat='gsimcli', header=True,
-                station_split=True, save_stations=True, keys=keys)
-    #"""
     macpath = '/Users/julio/Desktop/testes/cost-home/500_dflt_16_allvar_vind/'
     mintpath = '/home/julio/Testes/cost-home/'
     basepath = macpath
-    
+
     results = [(basepath + 'rede000010/1900-1909/1900-1909_homogenized_data.csv', [3.0, 7.0, 2.0, 5.0, 1.0, 4.0, 6.0, 8.0, 9.0], [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 5, 0, 0, 10, 10, 10, 9, 10]),
                (basepath + 'rede000010/1910-1919/1910-1919_homogenized_data.csv', [8.0, 2.0, 3.0, 7.0, 9.0, 4.0, 5.0, 1.0, 6.0], [2, 1, 2, 0, 0, 0, 4, 0, 0], [0, 0, 0, 0, 3, 7, 0, 10, 10]),
                (basepath + 'rede000010/1920-1929/1920-1929_homogenized_data.csv', [2.0, 5.0, 8.0, 6.0, 3.0, 7.0, 9.0, 4.0, 1.0], [0, 3, 2, 4, 0, 0, 0, 0, 3], [0, 0, 0, 1, 0, 0, 0, 0, 5]),
