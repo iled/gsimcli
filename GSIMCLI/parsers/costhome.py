@@ -59,8 +59,13 @@ class Station(object):
         if type(path) == str and os.path.isfile(path):
             detected_file = path
         else:
-            os.chdir(os.path.dirname(self.path))
-            detected_file = glob.glob('*detected.txt')[0]
+            path = os.path.dirname(self.path)
+            os.chdir(path)
+            try:
+                detected_file = glob.glob('*detected.txt')[0]
+            except:
+                raise os.error('breakpoints file not found in directory {}'.
+                               format(path))
 
         detected = pc.breakpointsfile(detected_file)
         self.outliers = detected[((detected.Station == self.id) &
@@ -115,6 +120,8 @@ class Station(object):
             self.match_orig()
             self.orig.load()
         if outliers and not hasattr(self, 'outliers'):
+            if 'orig' not in self.path.lower():
+                warnings.warn('loading outliers from non ORIG submission')
             self.load_outliers()
         if inho and not hasattr(self, 'inho'):
             self.match_inho()
@@ -188,18 +195,22 @@ class Network(object):
     def skip_years(self, missing=False, outlier=True):
         """List of the years where any station in the network has missing data
         and/or has an outlier.
+        Missing data and outliers are both retrieved from the station's ORIG.
 
         """
         self.setup()
         missing_list = list()
         outlier_list = list()
         for station in self.stations:
-            station.setup(outliers=outlier)
+            station.setup()
             if missing:
+                station.orig.load()
                 orig = station.orig.data
                 missing_list.append(orig[orig.isnull().any(axis=1)].index)
             if outlier:
-                outlier_list.append(list(np.unique(station.outliers.Year)))
+                station.orig.load_outliers()
+                outlier_list.append(list(np.unique(station.
+                                                   orig.outliers.Year)))
 
         years_list = list()
         if missing:
@@ -251,6 +262,11 @@ def match_sub(path, sub):
     benchpath, subm = os.path.split(subpath)  # @UnusedVariable
     match = os.path.join(benchpath, sub, signalpath)
     if not os.path.isfile(match):
-        raise os.error('no such file: \'{}\''.format(match))
+        # try to match by station id
+        dirname, basename = os.path.split(match)
+        os.chdir(dirname)
+        match = os.path.join(dirname, glob.glob('*' + str(basename[2:]))[0])
+        if not os.path.isfile(match):
+            raise os.error('no such file: \'{}\''.format(match))
 
     return match
