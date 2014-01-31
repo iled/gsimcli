@@ -25,7 +25,7 @@ class Station(object):
         """
         self.path = path
         self.md = md
-        self.network = os.path.basename(os.path.dirname(path))
+        self.network_id = os.path.basename(os.path.dirname(path))
 
         if type(path) == str and os.path.isfile(path):
             spec = pc.filename_parse(path)
@@ -79,7 +79,7 @@ class Station(object):
             self.orig = Station(path, self.md)
             if self.id != self.orig.id:
                 warnings.warn('mismatch between Station and ORIG IDs')
-            if self.network != self.orig.network:
+            if self.network_id != self.orig.network_id:
                 warnings.warn('mismatch between Station and ORIG networks')
         else:
             self.orig = Station(match_sub(self.path, 'orig'), self.md)
@@ -92,7 +92,7 @@ class Station(object):
             self.inho = Station(path, self.md)
             if self.id != self.inho.id:
                 warnings.warn('mismatch between Station and INHO IDs')
-            if self.network != self.inho.network:
+            if self.network_id != self.inho.network_id:
                 warnings.warn('mismatch between Station and INHO networks')
         else:
             self.inho = Station(match_sub(path, 'inho'), self.md)
@@ -164,7 +164,7 @@ class Network(object):
             self.stations.append(Station(station, self.md))
 
     def average(self, orig=False):
-        """Calculate the average per year of all stations the network.
+        """Calculate the average per year of all stations in the network.
         Option to calculate the same average for the corresponding ORIG data.
 
         """
