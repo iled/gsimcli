@@ -10,7 +10,9 @@ import itertools
 import os
 
 import numpy as np
+import pandas as pd
 import parsers.cost as cost
+import parsers.costhome as ch
 
 
 def crmse(station_path, orig_path, res, md, skip_years=None):
@@ -35,8 +37,46 @@ def crmse(station_path, orig_path, res, md, skip_years=None):
     station_yearly = station.mean(axis=1)
     station_yc = station_yearly - station_yearly.mean()
     diff = station_yc - orig_yc
-    
+
     return diff.std()
+
+
+def crmse_cl(homog, orig, skip_years=None, centered=True):
+    """Centered Root-Mean-Square Error
+
+    """
+    if skip_years:
+        orig = orig.select(lambda x: x not in skip_years)
+
+    if centered:
+        homog -= homog.mean()
+        orig -= orig.mean()
+    diff = homog - orig
+
+    return diff.std()
+
+
+def crmse_station_cl(station, skip_outliers=True, yearly=True):
+    """Station CRMSE
+
+    TODO: handle skip_outliers when resolution != 'y'
+    """
+    station.setup(outliers=skip_outliers)
+
+    if yearly:
+        homog = station.yearly('mean')
+        orig = station.orig.yearly('mean')
+    else:
+        homog = station.data
+        orig = station.orig.data
+
+    skip_years = list()
+    if skip_outliers:
+        skip_years = list(np.unique(station.outliers.Year))
+
+    st_crmse = crmse_cl(homog, orig, skip_years)
+
+    return st_crmse
 
 
 def crmse_network(stations_spec, orig_files, md, skip_netwmissing=False,
@@ -85,6 +125,20 @@ def crmse_network_new(network_homog, network_orig, md, skip_netwmissing=False,
     return diff.std()
 
 
+def crmse_network_cl(network, skip_missing=False, skip_outlier=True):
+    """Network CRMSE
+
+    """
+    network.setup()
+    homog, orig = network.average(orig=True)
+
+    skip_years = network.skip_years(skip_missing, skip_outlier)
+
+    netw_crmse = crmse_cl(homog, orig, skip_years)
+
+    return netw_crmse
+
+
 def crmse_global(homog_path, orig_path, variable, md, skip_netwmissing=False,
                  skip_outlier=True):
     """Submission average CRMSE.
@@ -114,6 +168,39 @@ def crmse_global(homog_path, orig_path, variable, md, skip_netwmissing=False,
 
     return network_crmse.mean(), np.mean(list(itertools.chain.
                                              from_iterable(todos)))
+
+
+def crmse_submission_cl(submission, over_station=True, over_network=True,
+                        skip_missing=False, skip_outlier=True):
+    """Submission average CRMSE.
+    The average can be calculated over all the stations and/or over the
+    networks of a given submission.
+
+    """
+    if over_network:
+        # network_crmses = np.zeros(len(submission.networks))
+        network_crmses = pd.Series(index=submission.networks_id,
+                                   name='Network CRMSE')
+    if over_station:
+        # station_crmses = np.zeros(submission.stations_number)
+        station_crmses = pd.DataFrame(columns=submission.networks_id)
+
+    for i, network in enumerate(submission.networks):
+        if over_network:
+            network_crmses.loc[i] = crmse_network_cl(network, skip_missing,
+                                                     skip_outlier)
+        if over_station:
+            network.setup()
+            for j, station in enumerate(network.stations):
+                station_crmses.loc[i, j] = crmse_station_cl(station,
+                                                             skip_outlier)
+    results = list()
+    if over_network:
+        results.append(network_crmses.mean())
+    if over_station:
+        results.append(station_crmses.mean().mean())
+        
+    return results
 
 
 def skip_years(orig_spec, md):
@@ -225,4 +312,7 @@ if __name__ == '__main__':
     print improvement(netw_path, inho_path, orig_path, variable, md,
                       False, True)
 
+    sub = ch.Submission(netw_path, md)
+    print crmse_submission_cl(sub, over_station=True, over_network=True,
+                              skip_missing=False, skip_outlier=True)
     print 'done'
