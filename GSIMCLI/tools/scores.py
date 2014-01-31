@@ -61,7 +61,7 @@ def crmse_station_cl(station, skip_outliers=True, yearly=True):
 
     TODO: handle skip_outliers when resolution != 'y'
     """
-    station.setup(outliers=skip_outliers)
+    station.setup()
 
     if yearly:
         homog = station.yearly('mean')
@@ -72,7 +72,8 @@ def crmse_station_cl(station, skip_outliers=True, yearly=True):
 
     skip_years = list()
     if skip_outliers:
-        skip_years = list(np.unique(station.outliers.Year))
+        station.orig.load_outliers()
+        skip_years = list(np.unique(station.orig.outliers.Year))
 
     st_crmse = crmse_cl(homog, orig, skip_years)
 
@@ -281,6 +282,7 @@ if __name__ == '__main__':
     # """
 
     """ # inho sur1 precip
+    # st 7.3 1.00 netw 3.1 1.00
     netw_path = basepath + 'benchmark/inho/precip/sur1'
     orig_path = basepath + 'benchmark/orig/precip/sur1'
     inho_path = basepath + 'benchmark/inho/precip/sur1'
@@ -288,6 +290,7 @@ if __name__ == '__main__':
     # """
 
     """ # inho sur1 temp
+    # st 0.47 1.00 netw 0.20 1.00
     netw_path = basepath + 'benchmark/inho/temp/sur1'
     orig_path = basepath + 'benchmark/orig/temp/sur1'
     inho_path = basepath + 'benchmark/inho/temp/sur1'
@@ -295,6 +298,7 @@ if __name__ == '__main__':
     # """
 
     """ # AnClim SNHT
+    # st 0.52 1.02 netw 0.31 1.16
     netw_path = basepath + 'benchmark/h019/temp/sur1'
     orig_path = basepath + 'benchmark/orig/temp/sur1'
     inho_path = basepath + 'benchmark/inho/temp/sur1'
@@ -302,6 +306,7 @@ if __name__ == '__main__':
     # """
 
     # """ # MASH Marinova precip
+    # st 3.6 0.56 netw 1.6 0.69
     netw_path = basepath + 'benchmark/h009/precip/sur1'
     orig_path = basepath + 'benchmark/orig/precip/sur1'
     inho_path = basepath + 'benchmark/inho/precip/sur1'
