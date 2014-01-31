@@ -60,18 +60,11 @@ def path_up(path, level):
     """
     if os.path.isdir(path):
         head = path
-        filename = None
     else:
-        head, filename = os.path.split(path)
+        head = os.path.dirname(path)
 
-    tail = list()
-    if filename:
-        tail.append(filename)
-        
+    tail = os.sep
     for i in xrange(level):  # @UnusedVariable
         head, base = os.path.split(head)
-        tail.append(base)
-
-    tail = os.path.join(*tail[::-1])
-
+        tail = os.path.join(tail, base)
     return head, tail

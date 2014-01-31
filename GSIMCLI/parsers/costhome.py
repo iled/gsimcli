@@ -5,7 +5,6 @@ Created on 28/01/2014
 '''
 
 import glob
-import itertools
 import os
 import warnings
 
@@ -17,7 +16,6 @@ import tools.utils as ut
 class Station(object):
     """Station container.
 
-    TODO: separate quality flag from data
     """
     def __init__(self, path, md):
         """ Constructor
@@ -25,21 +23,20 @@ class Station(object):
         """
         self.path = path
         self.md = md
-        self.network = os.path.basename(os.path.dirname(path))
 
-        if type(path) == str and os.path.isfile(path):
+        if os.path.isfile(path):
             spec = pc.filename_parse(path)
         else:
             spec = path[1]
 
-        (self.ftype, self.status, self.variable, self.resolution,
+        (self.network, self.ftype, self.status, self.variable, self.resolution,
          self.id, self.content) = spec
 
     def load(self, path=None, content=None):
         """Load station data file.
 
         """
-        if type(path) == str and os.path.isfile(path) and content:
+        if os.path.isfile(path) and content:
             if content == 'd':
                 self.data = pc.datafile(self.path, self.resolution, self.md)
             elif content == 'f':
@@ -56,7 +53,7 @@ class Station(object):
         """List of the dates with detected outliers.
 
         """
-        if type(path) == str and os.path.isfile(path):
+        if os.path.isfile(path):
             detected_file = path
         else:
             os.chdir(os.path.dirname(self.path))
@@ -73,12 +70,12 @@ class Station(object):
         if path:
             self.orig = Station(path, self.md)
             if self.id != self.orig.id:
-                warnings.warn('mismatch between Station and ORIG IDs')
+                warnings.warn('Mismatch between Station and ORIG IDs')
             if self.network != self.orig.network:
-                warnings.warn('mismatch between Station and ORIG networks')
+                warnings.warn('Mismatch between Station and ORIG networks')
         else:
-            self.orig = Station(match_sub(self.path, 'orig'), self.md)
-
+            self.orig = Station(match_sub(path, 'orig'), self.md)
+            
     def match_inho(self, path=None):
         """Try to fetch the matching INHO station.
 
@@ -86,38 +83,11 @@ class Station(object):
         if path:
             self.inho = Station(path, self.md)
             if self.id != self.inho.id:
-                warnings.warn('mismatch between Station and INHO IDs')
+                warnings.warn('Mismatch between Station and INHO IDs')
             if self.network != self.inho.network:
-                warnings.warn('mismatch between Station and INHO networks')
+                warnings.warn('Mismatch between Station and INHO networks')
         else:
             self.inho = Station(match_sub(path, 'inho'), self.md)
-
-    def yearly(self, func='mean'):
-        """Upscale data resolution to yearly.
-
-        TODO: check when resolution != monthly
-        """
-        if not hasattr(self, 'data'):
-            raise ValueError('no loaded data')
-        if func == 'mean':
-            return self.data.mean(axis=1)
-        elif func == 'sum':
-            return self.data.sum(axis=1)
-
-    def setup(self, outliers=False, inho=False):
-        """Load data, orig and outliers.
-        No option to load from a non default path.
-
-        """
-        if not hasattr(self, 'data'):
-            self.load()
-        if not hasattr(self, 'orig'):
-            self.match_orig()
-            self.orig.load()
-        if outliers and not hasattr(self, 'outliers'):
-            self.load_outliers()
-        if inho and not hasattr(self, 'inho'):
-            self.match_inho()
 
 
 class Network(object):
@@ -131,9 +101,9 @@ class Network(object):
         """
         self.path = path
         self.md = md
-        if type(path) == str and os.path.isdir(path):
+        if os.path.isdir(path):
             parsed = pc.directory_walk_v1(path)
-            selected = pc.files_select(parsed, ftype='data', content='d')
+            selected = pc.files_select(parsed, ftype='data')
         else:
             selected = path
 
@@ -141,7 +111,6 @@ class Network(object):
         self.stations_id = list()
         self.stations_spec = list()
         self.stations_path = list()
-        self.stations_number = len(selected)
 
         for station in selected:
             self.stations_id.append(station[1][5])
@@ -156,68 +125,24 @@ class Network(object):
         for station in self.stations_path:
             self.stations.append(Station(station, self.md))
 
-    def average(self, orig=False):
+    def average(self):
         """Calculate the average per year of all stations the network.
-        Option to calculate the same average for the corresponding ORIG data.
-
-        """
-        self.setup()
-
-        first = True
-        for station in self.stations:
-            station.setup()
-            if first:
-                # netw_average = np.zeros(station.data.shape[0])
-                netw_average = station.data.mean(axis=1)
-                if orig:
-                    orig_average = station.orig.data.mean(axis=1)
-                first = False
-                continue
-            netw_average += station.data.mean(axis=1)
-            if orig:
-                orig_average += station.orig.data.mean(axis=1)
-
-        netw_result = netw_average / len(self.stations)
-        if orig:
-            result = [netw_result, orig_average / len(self.stations)]
-        else:
-            result = netw_result
-
-        return result
-
-    def skip_years(self, missing=False, outlier=True):
-        """List of the years where any station in the network has missing data
-        and/or has an outlier.
-
-        """
-        self.setup()
-        missing_list = list()
-        outlier_list = list()
-        for station in self.stations:
-            station.setup(outliers=outlier)
-            if missing:
-                orig = station.orig.data
-                missing_list.append(orig[orig.isnull().any(axis=1)].index)
-            if outlier:
-                outlier_list.append(list(np.unique(station.outliers.Year)))
-
-        years_list = list()
-        if missing:
-            years_list.append(list(np.unique(itertools.chain.
-                                             from_iterable(missing_list))))
-        if outlier:
-            years_list.append(list(np.unique(itertools.chain.
-                                             from_iterable(outlier_list))))
-
-        return years_list
-
-    def setup(self):
-        """Load stations.
-        No option to load from a non default path.
 
         """
         if not hasattr(self, 'stations'):
             self.load_stations()
+
+        first = True
+        for station in self.stations:
+            station.load()
+            if first:
+                netw_average = np.zeros(station.data.shape[0])
+                netw_average = station.data.mean(axis=1)
+                first = False
+                continue
+            netw_average += station.data.mean(axis=1)
+
+        return netw_average / len(self.stations)
 
 
 class Submission(object):
@@ -231,16 +156,14 @@ class Submission(object):
         self.name = os.path.basename(os.path.dirname(path))
         self.signal = os.path.basename(path)
         parsed = pc.directory_walk_v1(path)
-        selected = pc.files_select(parsed, ftype='data', content='d')
+        selected = pc.files_select(parsed, ftype='data')
         grouped = pc.agg_network(selected)
         self.networks = list()
         self.networks_id = list()
-        self.stations_number = 0
 
         for network in grouped:
-            self.networks_id.append(network[0][1][0])
-            self.networks.append(Network(network, md))
-            self.stations_number += self.networks[-1].stations_number
+            self.networks.append(network[0][1][0])
+            self.networks.append(Network(network))
 
 
 def match_sub(path, sub):
@@ -251,6 +174,6 @@ def match_sub(path, sub):
     benchpath, subm = os.path.split(subpath)
     match = os.path.join(benchpath, sub, signalpath)
     if not os.path.isfile(match):
-        raise os.error('no such file: \'{}\''.format(match))
-
+        raise os.error('No such file: \'{}\''.format(match))
+            
     return match
