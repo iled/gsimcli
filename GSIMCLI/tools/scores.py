@@ -200,7 +200,7 @@ def crmse_submission_cl(submission, over_station=True, over_network=True,
         results.append(network_crmses.mean())
     if over_station:
         results.append(station_crmses.mean().mean())
-        
+
     return results
 
 
@@ -249,6 +249,22 @@ def improvement(homog_path, inhomog_path, orig_path, variable, md,
 
     return homog_crmse[0] / inhomog_crmse[0], homog_crmse[1] / inhomog_crmse[1]
 
+
+def improvement_cl(submission, over_station, over_network, skip_missing,
+                   skip_outlier):
+    """The improvement over the inhomogeneous data is computed as the quotient
+    of the mean CRMSE of the homogenized networks and the mean CRMSE of the
+    same inhomogeneous networks.
+
+    """
+    homog = crmse_submission_cl(submission, over_station, over_network,
+                                skip_missing, skip_outlier)
+    
+    inho_path = ch.match_sub(submission.path, 'inho')
+    inho_sub = ch.Submission(inho_path, submission.md)
+    inho = crmse_submission_cl(inho_sub, over_station, over_network,
+                               skip_missing, skip_outlier)
+    
 
 def network_average(network, md):
     """Calculate the average of all stations in a network per year.
