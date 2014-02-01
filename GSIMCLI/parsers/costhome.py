@@ -254,14 +254,14 @@ class Submission(object):
             self.stations_number += self.networks[-1].stations_number
 
 
-def match_sub(path, sub):
+def match_sub(path, sub, level=3):
     """Try to fetch the matching submission sub station.
 
     """
-    subpath, signalpath = ut.path_up(path, 3)
+    subpath, signalpath = ut.path_up(path, level)
     benchpath, subm = os.path.split(subpath)  # @UnusedVariable
     match = os.path.join(benchpath, sub, signalpath)
-    if not os.path.isfile(match):
+    if not os.path.exists(match):
         # try to match by station id
         dirname, basename = os.path.split(match)
         os.chdir(dirname)
