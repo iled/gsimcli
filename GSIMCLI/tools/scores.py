@@ -257,14 +257,17 @@ def improvement_cl(submission, over_station, over_network, skip_missing,
     same inhomogeneous networks.
 
     """
-    homog = crmse_submission_cl(submission, over_station, over_network,
+    homog_crmse = crmse_submission_cl(submission, over_station, over_network,
                                 skip_missing, skip_outlier)
-    
-    inho_path = ch.match_sub(submission.path, 'inho')
-    inho_sub = ch.Submission(inho_path, submission.md)
-    inho = crmse_submission_cl(inho_sub, over_station, over_network,
-                               skip_missing, skip_outlier)
-    
+
+    inho_path = ch.match_sub(submission.path, 'inho', level=2)
+    inho_sub = ch.Submission(inho_path, submission.md, submission.networks_id)
+    inho_crmse = crmse_submission_cl(inho_sub, over_station, over_network,
+                                     skip_missing, skip_outlier)
+
+    return (homog_crmse, inho_crmse,
+            list(np.array(homog_crmse) / np.array(inho_crmse)))
+
 
 def network_average(network, md):
     """Calculate the average of all stations in a network per year.
@@ -334,6 +337,9 @@ if __name__ == '__main__':
                       False, True)
 
     sub = ch.Submission(netw_path, md)
-    print crmse_submission_cl(sub, over_station=True, over_network=True,
-                              skip_missing=False, skip_outlier=True)
+    # print crmse_submission_cl(sub, over_station=True, over_network=True,
+    #                          skip_missing=False, skip_outlier=True)
+    print improvement_cl(sub, over_station=True, over_network=True,
+                         skip_missing=False, skip_outlier=True)
+
     print 'done'
