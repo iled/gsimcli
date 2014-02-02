@@ -532,7 +532,7 @@ def files_select(parsed, network=None, ftype=None, status=None, variable=None,
     parsed_items = [x for x in parsed.iteritems()]
 
     if network:
-        parsed_items = [s for s in parsed_items if s[1][0] == network]
+        parsed_items = [s for s in parsed_items if s[1][0] in network]
     if ftype:
         parsed_items = [s for s in parsed_items if s[1][1] == ftype]
     if status and ftype == 'data':
