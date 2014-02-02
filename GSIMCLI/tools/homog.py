@@ -176,6 +176,7 @@ def fill_station(pset_file, values, varcol, time_min, time_max, time_step=1,
 def station_col(pset_file, header):
     """Try to find the column which has the station ID's.
 
+    DEPRECATED
     """
     if isinstance(pset_file, gr.PointSet):
         pset = pset_file
@@ -191,7 +192,7 @@ def station_col(pset_file, header):
     return stcol
 
 
-def list_stations(pset_file, stcol, h=True):
+def list_stations(pset_file, h=True):
     """Lists all the stations in one point-set file.
     It doesn't distinguish networks.
 
@@ -202,7 +203,7 @@ def list_stations(pset_file, stcol, h=True):
         pset = gr.PointSet()
         pset.load(pset_file, header=h)
 
-    stations = np.unique(pset.values.iloc[:, stcol])
+    stations = np.unique(pset.values.station)
     return map(int, stations)
 
 
@@ -273,13 +274,13 @@ def append_homog_station(pset_file, station, header=True):
 
 
 def station_order(method, pset_path=None, nd=-999.9, header=True,
-                  userset=None):
+                  userset=None, md_last=True):
     """Sort a list containing stations numbers, according to the selected
     method:
         - random: all stations randomly sorted;
         - sorted: sorts all stations in ascending order;
         - variance: sorts all stations by greater variance;
-        - network deviation: sorts all station in ascending order according to
+        - network deviation: sorts all stations in ascending order according to
     the difference between the station average and the network average;
         - user: the user specifies which stations and their order.
 
@@ -290,7 +291,7 @@ def station_order(method, pset_path=None, nd=-999.9, header=True,
         else:
             pset = gr.PointSet(psetpath=pset_path, nodata=nd, header=header)
 
-    stations_list = list_stations(pset, header)
+    stations_list = list_stations(pset, h=header)
 
     if method == 'random':
         shuffle(stations_list)
@@ -303,13 +304,13 @@ def station_order(method, pset_path=None, nd=-999.9, header=True,
             raise TypeError('Method variance requires the stations point-set')
         values = pset.values.replace(nd, np.nan)
         varsort = values.groupby('station', sort=False).clim.var()
-        varsort = varsort.order(ascending=False)
+        varsort = varsort.order(ascending=False, na_last=md_last)
         stations_list = list(varsort.index)
 
     elif method == 'network deviation':
         values = pset.values.replace(nd, np.nan)
         stations_mean = values.groupby('station', sort=False).clim.mean()
-        network_dev = (stations_mean - values.clim.mean()).abs().order()
+        network_dev = (stations_mean - values.clim.mean()).abs().order(md_last)
         stations_list = list(network_dev.index)
 
     elif method == 'user' and userset:
@@ -495,6 +496,8 @@ if __name__ == '__main__':
     mintpath = '/home/julio/Testes/cost-home/'
     basepath = macpath
 
+    netw_pset = '/Users/julio/Desktop/testes/cost-home/rede000009/dec_sgems_rede9/dec1900_1909_rede9.txt'
+    """
     results = [(basepath + 'rede000010/1900-1909/1900-1909_homogenized_data.csv', [3.0, 7.0, 2.0, 5.0, 1.0, 4.0, 6.0, 8.0, 9.0], [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 5, 0, 0, 10, 10, 10, 9, 10]),
                (basepath + 'rede000010/1910-1919/1910-1919_homogenized_data.csv', [8.0, 2.0, 3.0, 7.0, 9.0, 4.0, 5.0, 1.0, 6.0], [2, 1, 2, 0, 0, 0, 4, 0, 0], [0, 0, 0, 0, 3, 7, 0, 10, 10]),
                (basepath + 'rede000010/1920-1929/1920-1929_homogenized_data.csv', [2.0, 5.0, 8.0, 6.0, 3.0, 7.0, 9.0, 4.0, 1.0], [0, 3, 2, 4, 0, 0, 0, 0, 3], [0, 0, 0, 1, 0, 0, 0, 0, 5]),
@@ -507,4 +510,6 @@ if __name__ == '__main__':
                (basepath + 'rede000010/1990-1999/1990-1999_homogenized_data.csv', [8.0, 2.0, 1.0, 6.0, 4.0, 9.0, 7.0, 3.0, 5.0], [4, 2, 2, 1, 1, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0])]
     path = basepath + 'rede000010/gsimcli_results.xls'
     merge_output(results, path)
+    """
+    print station_order('network deviation', netw_pset)
     print 'done'
