@@ -236,13 +236,14 @@ class Submission(object):
     (temperature or precipitation).
 
     """
-    def __init__(self, path, md):
+    def __init__(self, path, md, networks=None):
         self.path = path
         self.md = md
         self.name = os.path.basename(os.path.dirname(path))
         self.signal = os.path.basename(path)
         parsed = pc.directory_walk_v1(path)
-        selected = pc.files_select(parsed, ftype='data', content='d')
+        selected = pc.files_select(parsed, network=networks, ftype='data',
+                                   content='d')
         grouped = pc.agg_network(selected)
         self.networks = list()
         self.networks_id = list()
