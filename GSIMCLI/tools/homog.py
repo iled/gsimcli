@@ -14,9 +14,9 @@ from random import shuffle
 import numpy as np
 import pandas as pd
 import tools.grid as gr
-
-
 # import parsers.cost as cost
+
+
 def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
            flag=True, save=False, outfile=None, header=True):
     """Tries to detect and homogenize irregularities in data series, following
@@ -268,7 +268,6 @@ def append_homog_station(pset_file, station, header=True):
         raise ValueError('PointSets {} and {} have different number of '
                          'variables.'.format(pset.name, station.name))
 
-    # pset.values = np.vstack((pset.values, station.values))
     pset.values = pset.values.append(station.values, ignore_index=True)
     return pset
 
@@ -298,10 +297,8 @@ def station_order(method, pset_path=None, nd=-999.9, header=True,
     elif method == 'variance':
         if not pset_path:
             raise TypeError('Method variance requires the stations point-set')
-        stname = 'station'  # TODO: não funciona se não tiver header
-        varname = 'clim'
         values = pset.values.replace(nd, np.nan)
-        varsort = values.groupby(stname, sort=False)[varname].var()
+        varsort = values.groupby('station', sort=False).clim.var()
         varsort = varsort.order(ascending=False)
         stations_list = list(varsort.index)
 
@@ -399,7 +396,7 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
                 temp = gr.PointSet(name=pset.name + ' network: ' + str(nw),
                                    nodata=pset.nodata, nvars=pset.nvars - 1,
                                    varnames=temp_varnames)
-                outfile = (os.path.splitext(outfile)[0] + '_' + str(nw) + 
+                outfile = (os.path.splitext(outfile)[0] + '_' + str(nw) +
                            os.path.splitext(outfile)[1])
                 temp.values = pset.values[pset.values['network'] == nw]
                 temp.save(outfile, header=True)
@@ -431,7 +428,7 @@ def merge_output(results, path, homog_order=False):
     Two more sheets are added: one with the complete data set, another with
     a summary of the process.
 
-    TODO: check what if labels_i are not sorted
+    TODO: check what if labels_i are not previously sorted
     """
     merged = pd.ExcelWriter(path)
     groups = list()
@@ -484,41 +481,6 @@ def ask_add_header(pset):
 
 
 if __name__ == '__main__':
-    """ snirh
-    no_data = -999.9
-    pointset = '/home/julio/Testes/test/snirh.prn'
-    header = False
-    bla = gr.PointSet(pointset, header=header)
-
-    col = 4
-    sts = list_stations(pointset, col, header)
-    ordr = station_order(sts, 'variance', no_data, pointset, header)
-    print ordr
-    """
-
-    """
-    cand = gr.GridArr()
-    cand.load(fstpar, grid_dims, no_data, 0)
-    cand_vline = cand.drill((5, 5))
-    """
-
-    """
-    cand_vline = c
-    print 'detecting irregularities'
-    corr, dn = detect(grids, cand_vline, 'skewness', prob=0.95, skewness=1.5)
-    print corr
-    print dn
-    grids.dump()
-    # """
-
-    """
-    pset = '/home/julio/Testes/snirh50/pset_final.prn'
-    fileout = '/home/julio/Testes/snirh50/homog_final.csv'
-    keys = '/home/julio/Testes/test/snirh_keys.txt'
-
-    save_output(pset, fileout, fformat='gsimcli', header=True,
-                station_split=True, save_stations=True, keys=keys)
-    #"""
     macpath = '/Users/julio/Desktop/testes/cost-home/500_dflt_16_allvar_vind/'
     mintpath = '/home/julio/Testes/cost-home/'
     basepath = macpath
