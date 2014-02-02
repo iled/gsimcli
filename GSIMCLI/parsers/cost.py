@@ -27,6 +27,10 @@ def directory_walk_v1(base):
 
     for root, dirs, files in os.walk(base):  # @UnusedVariable
         network = os.path.basename(root)
+        if network in networks.keys():
+            raise ValueError('There is no support for networks with the same'
+                             'ID in the same submission directory tree: {}'.
+                             format(network))
         if network.isdigit() and len(network) == 6:
             networks[network] = files
 
