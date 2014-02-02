@@ -14,9 +14,9 @@ from random import shuffle
 import numpy as np
 import pandas as pd
 import tools.grid as gr
-
-
 # import parsers.cost as cost
+
+
 def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
            flag=True, save=False, outfile=None, header=True):
     """Tries to detect and homogenize irregularities in data series, following
@@ -432,13 +432,13 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
         stationsdf.to_csv(stations_out, index_label='Station')
 
 
-def merge_output(results, path, homog_order=True):
+def merge_output(results, path, homog_order=False):
     """Merge the gsimcli output into one single spreadsheet file.
     Each result file goes to one different sheet.
     Two more sheets are added: one with the complete data set, another with
     a summary of the process.
 
-    TODO: check what if labels_i are not sorted
+    TODO: check what if labels_i are not previously sorted
     """
     merged = pd.ExcelWriter(path)
     groups = list()
@@ -472,7 +472,7 @@ def merge_output(results, path, homog_order=True):
     alldf = alldf.reindex_axis(list(labels_i), axis=1)
     colidx = (pd.MultiIndex.from_tuples
               ([(group, key) for group in groups for key in
-                ['Stations order', 'Detections number', 'Missing data']],
+                ['Stations ID order', 'Detections number', 'Missing data']],
                names=['Decade', '']))
     summary = pd.DataFrame(summary.values, index=colidx)
     alldf.to_excel(merged, 'All stations', index_label='year')

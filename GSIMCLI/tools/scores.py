@@ -10,7 +10,9 @@ import itertools
 import os
 
 import numpy as np
+import pandas as pd
 import parsers.cost as cost
+import parsers.costhome as ch
 
 
 def crmse(station_path, orig_path, res, md, skip_years=None):
@@ -35,8 +37,47 @@ def crmse(station_path, orig_path, res, md, skip_years=None):
     station_yearly = station.mean(axis=1)
     station_yc = station_yearly - station_yearly.mean()
     diff = station_yc - orig_yc
-    
+
     return diff.std()
+
+
+def crmse_cl(homog, orig, skip_years=None, centered=True):
+    """Centered Root-Mean-Square Error
+
+    """
+    if skip_years:
+        orig = orig.select(lambda x: x not in skip_years)
+
+    if centered:
+        homog -= homog.mean()
+        orig -= orig.mean()
+    diff = homog - orig
+
+    return diff.std()
+
+
+def crmse_station_cl(station, skip_outliers=True, yearly=True):
+    """Station CRMSE
+
+    TODO: handle skip_outliers when resolution != 'y'
+    """
+    station.setup()
+
+    if yearly:
+        homog = station.yearly('mean')
+        orig = station.orig.yearly('mean')
+    else:
+        homog = station.data
+        orig = station.orig.data
+
+    skip_years = list()
+    if skip_outliers:
+        station.orig.load_outliers()
+        skip_years = list(np.unique(station.orig.outliers.Year))
+
+    st_crmse = crmse_cl(homog, orig, skip_years)
+
+    return st_crmse
 
 
 def crmse_network(stations_spec, orig_files, md, skip_netwmissing=False,
@@ -85,6 +126,20 @@ def crmse_network_new(network_homog, network_orig, md, skip_netwmissing=False,
     return diff.std()
 
 
+def crmse_network_cl(network, skip_missing=False, skip_outlier=True):
+    """Network CRMSE
+
+    """
+    network.setup()
+    homog, orig = network.average(orig=True)
+
+    skip_years = network.skip_years(skip_missing, skip_outlier)
+
+    netw_crmse = crmse_cl(homog, orig, skip_years)
+
+    return netw_crmse
+
+
 def crmse_global(homog_path, orig_path, variable, md, skip_netwmissing=False,
                  skip_outlier=True):
     """Submission average CRMSE.
@@ -114,6 +169,39 @@ def crmse_global(homog_path, orig_path, variable, md, skip_netwmissing=False,
 
     return network_crmse.mean(), np.mean(list(itertools.chain.
                                              from_iterable(todos)))
+
+
+def crmse_submission_cl(submission, over_station=True, over_network=True,
+                        skip_missing=False, skip_outlier=True):
+    """Submission average CRMSE.
+    The average can be calculated over all the stations and/or over the
+    networks of a given submission.
+
+    """
+    if over_network:
+        # network_crmses = np.zeros(len(submission.networks))
+        network_crmses = pd.Series(index=submission.networks_id,
+                                   name='Network CRMSE')
+    if over_station:
+        # station_crmses = np.zeros(submission.stations_number)
+        station_crmses = pd.DataFrame(columns=submission.networks_id)
+
+    for i, network in enumerate(submission.networks):
+        if over_network:
+            network_crmses.loc[i] = crmse_network_cl(network, skip_missing,
+                                                     skip_outlier)
+        if over_station:
+            network.setup()
+            for j, station in enumerate(network.stations):
+                station_crmses.loc[i, j] = crmse_station_cl(station,
+                                                             skip_outlier)
+    results = list()
+    if over_network:
+        results.append(network_crmses.mean())
+    if over_station:
+        results.append(station_crmses.mean().mean())
+
+    return results
 
 
 def skip_years(orig_spec, md):
@@ -162,6 +250,25 @@ def improvement(homog_path, inhomog_path, orig_path, variable, md,
     return homog_crmse[0] / inhomog_crmse[0], homog_crmse[1] / inhomog_crmse[1]
 
 
+def improvement_cl(submission, over_station, over_network, skip_missing,
+                   skip_outlier):
+    """The improvement over the inhomogeneous data is computed as the quotient
+    of the mean CRMSE of the homogenized networks and the mean CRMSE of the
+    same inhomogeneous networks.
+
+    """
+    homog_crmse = crmse_submission_cl(submission, over_station, over_network,
+                                skip_missing, skip_outlier)
+
+    inho_path = ch.match_sub(submission.path, 'inho', level=2)
+    inho_sub = ch.Submission(inho_path, submission.md, submission.networks_id)
+    inho_crmse = crmse_submission_cl(inho_sub, over_station, over_network,
+                                     skip_missing, skip_outlier)
+
+    return (homog_crmse, inho_crmse,
+            list(np.array(homog_crmse) / np.array(inho_crmse)))
+
+
 def network_average(network, md):
     """Calculate the average of all stations in a network per year.
 
@@ -194,6 +301,7 @@ if __name__ == '__main__':
     # """
 
     """ # inho sur1 precip
+    # st 7.3 1.00 netw 3.1 1.00
     netw_path = basepath + 'benchmark/inho/precip/sur1'
     orig_path = basepath + 'benchmark/orig/precip/sur1'
     inho_path = basepath + 'benchmark/inho/precip/sur1'
@@ -201,6 +309,7 @@ if __name__ == '__main__':
     # """
 
     """ # inho sur1 temp
+    # st 0.47 1.00 netw 0.20 1.00
     netw_path = basepath + 'benchmark/inho/temp/sur1'
     orig_path = basepath + 'benchmark/orig/temp/sur1'
     inho_path = basepath + 'benchmark/inho/temp/sur1'
@@ -208,6 +317,7 @@ if __name__ == '__main__':
     # """
 
     """ # AnClim SNHT
+    # st 0.52 1.02 netw 0.31 1.16
     netw_path = basepath + 'benchmark/h019/temp/sur1'
     orig_path = basepath + 'benchmark/orig/temp/sur1'
     inho_path = basepath + 'benchmark/inho/temp/sur1'
@@ -215,6 +325,7 @@ if __name__ == '__main__':
     # """
 
     # """ # MASH Marinova precip
+    # st 3.6 0.56 netw 1.6 0.69
     netw_path = basepath + 'benchmark/h009/precip/sur1'
     orig_path = basepath + 'benchmark/orig/precip/sur1'
     inho_path = basepath + 'benchmark/inho/precip/sur1'
@@ -224,5 +335,11 @@ if __name__ == '__main__':
     # print crmse_global(netw_path, orig_path, variable, md)
     print improvement(netw_path, inho_path, orig_path, variable, md,
                       False, True)
+
+    sub = ch.Submission(netw_path, md)
+    # print crmse_submission_cl(sub, over_station=True, over_network=True,
+    #                          skip_missing=False, skip_outlier=True)
+    print improvement_cl(sub, over_station=True, over_network=True,
+                         skip_missing=False, skip_outlier=True)
 
     print 'done'

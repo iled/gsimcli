@@ -578,12 +578,6 @@ def main():
 
 if __name__ == '__main__':
     # main()
-    """
-    psetfile = '/home/julio/Transferências/test/psetout.prn'
-    ps = gr.PointSet()
-    ps.load(psetfile)
-    print ask_save_vars(ps)
-    """
 
     par = '/home/julio/Testes/cost-home/gsimcli.par'
     # run_par(par)
@@ -598,7 +592,6 @@ if __name__ == '__main__':
                 os.path.join(base, 'rede000010'),
                 os.path.join(base, 'rede000020')]
     #"""
-    networks = [os.path.join(base, 'rede000010')]
-    # networks = ['/home/julio/Testes/benchtest/rede000010']
+    networks = [os.path.join(base, 'rede000009')]
     batch_networks(par, networks, decades=True)
     print 'done'
