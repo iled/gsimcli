@@ -126,6 +126,15 @@ class Station(object):
         if inho and not hasattr(self, 'inho'):
             self.match_inho()
 
+    def save(self, path):
+        """Save data in the COST-HOME format.
+
+        """
+        self.setup()
+        filename = (self.status + self.variable + self.resolution + self.id +
+                    self.content + '.txt')
+        st.data.to_csv(os.path.join(path, filename), sep='\t', header=False)
+
 
 class Network(object):
     """Network container.
@@ -229,6 +238,18 @@ class Network(object):
         """
         if not hasattr(self, 'stations'):
             self.load_stations()
+            
+    def save(self, path):
+        """Save all the stations in the network according to the COST-HOME
+        format.
+        
+        TODO: stations, detected
+        """
+        self.setup()
+        path = os.path.join(path, self.id)
+        os.mkdir(path)
+        for station in self.stations:
+            station.save(path)
 
 
 class Submission(object):
@@ -271,3 +292,16 @@ def match_sub(path, sub, level=3):
             raise os.error('no such file: \'{}\''.format(match))
 
     return match
+
+
+if __name__ == '__main__':
+    md = -999.9
+    p = '/Users/julio/Desktop/testes/cost-home/benchmark/h009/precip/sur1/000005/horrm21109001d.txt'
+    p2 = '/Users/julio/Desktop/testes/cost-home/benchmark/h009/precip/sur1/000005/horrm21109001d__new.txt'
+    st = Station(p, md)
+    st.setup()
+    netwp = '/Users/julio/Desktop/testes/cost-home/benchmark/h009/precip/sur1/000005'
+    netw = Network(netwp, md)
+    netw.save(netwp)
+    pass
+    print 'done'
