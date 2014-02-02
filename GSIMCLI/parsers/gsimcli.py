@@ -35,7 +35,11 @@ class GsimcliParam(ParametersFile):
                 - 'random' all stations are randomly sorted;
                 - 'sorted' sorts all stations in ascending order;
                 - 'variance' sorts all stations by greater variance;
+                - 'network deviation' sorts all stations in ascending order
+                according to the difference between the station average and
+                the network average;
                 - 'user' the user specifies which stations and their order.
+        md_last: put missing data at the end of sorted stations ('y'/'n')
         st_user: stations IDs in order if st_order == 'user' (e.g., '3 10 1 2')
         detect_method: detection method (comparison between upper and lower
                        percentiles and the simulated values):
@@ -93,7 +97,7 @@ class GsimcliParam(ParametersFile):
         par_set = 'GSIMCLI'
         text = ['data', 'st_order', 'detect_method', 'results', 'dss_exe']
         real_n = ['detect_prob', 'no_data']
-        boolean = ['data_header', 'detect_save', 'sim_purge']
+        boolean = ['data_header', 'detect_save', 'sim_purge', 'md_last']
         opt_text = ['dss_par', 'name', 'variables', 'krig_type', 'model']
         opt_int = ['st_user', 'number_simulations', 'max_search_nodes',
                    'angles', 'XX_nodes_number', 'XX_minimum', 'XX_spacing',
@@ -101,11 +105,11 @@ class GsimcliParam(ParametersFile):
                    'ZZ_nodes_number', 'ZZ_minimum', 'ZZ_spacing']
         opt_real = ['skewness', 'nugget', 'sill', 'ranges']
         order = ['data', 'no_data', 'data_header', 'name',
-                 'variables', 'st_order', 'st_user', 'detect_method',
-                 'skewness', 'detect_prob', 'detect_save', 'sim_purge',
-                 'results', 'dss_par', 'dss_exe', 'number_simulations',
-                 'krig_type', 'model', 'nugget', 'sill', 'ranges', 'angles',
-                 'max_search_nodes',
+                 'variables', 'st_order', 'md_last', 'st_user',
+                 'detect_method', 'skewness', 'detect_prob', 'detect_save',
+                 'sim_purge', 'results', 'dss_par', 'dss_exe',
+                 'number_simulations', 'krig_type', 'model', 'nugget', 'sill',
+                 'ranges', 'angles', 'max_search_nodes',
                  'XX_nodes_number', 'XX_minimum', 'XX_spacing',
                  'YY_nodes_number', 'YY_minimum', 'YY_spacing',
                  'ZZ_nodes_number', 'ZZ_minimum', 'ZZ_spacing']
@@ -150,7 +154,8 @@ class GsimcliParam(ParametersFile):
             varnames = pset.varnames
 
         columns_set = [varnames.index('x') + 1, varnames.index('y') + 1,
-                      varnames.index('time') + 1, varnames.index('clim') + 1, 0, 0]
+                      varnames.index('time') + 1, varnames.index('clim') +
+                      1, 0, 0]
 
         gsc_grid = ['XX_nodes_number', 'XX_minimum', 'XX_spacing',
                     'YY_nodes_number', 'YY_minimum', 'YY_spacing',
