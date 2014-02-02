@@ -15,6 +15,7 @@ from tools.utils import skip_lines
 
 class PointSetOLD:
     """Class for storing point-set data.
+    DEPRECATED
     """
     def __init__(self, name='', nodata=-999.9, nvars=0, varnames=list(),
                  values=np.zeros(0), psetpath=str(), header=True):
@@ -75,8 +76,7 @@ class PointSet:
             self.nvars = nvars
             self.nodata = nodata
             self.varnames = varnames
-            self.values = pd.DataFrame(values)  # , columns=self.varnames)
-            # self.values = values
+            self.values = pd.DataFrame(values)
             if len(self.values.columns) == len(self.varnames):
                 self.values.columns = self.varnames
 
