@@ -402,7 +402,7 @@ def run_par(par_path):
     stations_order = (hmg.station_order
                       (method=gscpar.st_order, nd=gscpar.no_data,
                        pset_path=stations_pset, header=gscpar.data_header,
-                       userset=stations_set))
+                       userset=stations_set, md_last=gscpar.md_last))
 
     detect_flag = True
     if gscpar.detect_method.lower() == 'skewness':
