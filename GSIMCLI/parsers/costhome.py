@@ -10,7 +10,9 @@ import os
 import warnings
 
 import numpy as np
+import pandas as pd
 import parsers.cost as pc
+import tools.grid as gr
 import tools.utils as ut
 
 
@@ -19,21 +21,20 @@ class Station(object):
 
     TODO: separate quality flag from data
     """
-    def __init__(self, path, md):
+    def __init__(self, path=None, spec=None, md=-999.9):
         """ Constructor
 
         """
-        self.path = path
         self.md = md
-        self.network_id = os.path.basename(os.path.dirname(path))
 
         if type(path) == str and os.path.isfile(path):
+            self.path = path
+            self.network_id = os.path.basename(os.path.dirname(path))
             spec = pc.filename_parse(path)
-        else:
-            spec = path[1]
 
-        (self.ftype, self.status, self.variable, self.resolution,
-         self.id, self.content) = spec
+        if spec:
+            (self.ftype, self.status, self.variable, self.resolution,
+             self.id, self.content) = spec
 
     def load(self, path=None, content=None):
         """Load station data file.
@@ -130,43 +131,49 @@ class Station(object):
         """Save data in the COST-HOME format.
 
         """
-        self.setup()
+        self.path = path
+        self.load()
         filename = (self.status + self.variable + self.resolution + self.id +
                     self.content + '.txt')
-        st.data.to_csv(os.path.join(path, filename), sep='\t', header=False)
+        self.data.to_csv(os.path.join(path, filename), sep='\t', header=False)
 
 
 class Network(object):
     """Network container.
 
     """
-    def __init__(self, path, md):
+    def __init__(self, path=None, md=-999.9, network_id=None):
         """Constructor.
 
         TODO: handle other files besides data?
         """
-        self.path = path
         self.md = md
-        if type(path) == str and os.path.isdir(path):
-            parsed = pc.directory_walk_v1(path)
-            selected = pc.files_select(parsed, ftype='data', content='d')
-        else:
-            selected = path
-
-        self.id = selected[0][1][0]
+        self.path = path
+        self.id = network_id
         self.stations_id = list()
         self.stations_spec = list()
         self.stations_path = list()
-        self.stations_number = len(selected)
+        self.stations_number = 0
+        
+        if path:
+            if type(path) == str and os.path.isdir(path):
+                parsed = pc.directory_walk_v1(path)
+                selected = pc.files_select(parsed, ftype='data', content='d')
+            else:
+                selected = path
 
-        for station in selected:
-            self.stations_id.append(station[1][5])
-            self.stations_spec.append(station[1])
-            self.stations_path.append(station[0])
+            self.id = selected[0][1][0]
+            self.stations_number = len(selected)
+
+            for station in selected:
+                self.stations_id.append(station[1][5])
+                self.stations_spec.append(station[1])
+                self.stations_path.append(station[0])
 
     def load_stations(self):
         """Load all the stations in the network.
-        Note that the date iself has to be explicitily loaded.
+        Note that the data has to be explicitily loaded.
+
         """
         self.stations = list()
         for station in self.stations_path:
@@ -238,18 +245,53 @@ class Network(object):
         """
         if not hasattr(self, 'stations'):
             self.load_stations()
-            
+
     def save(self, path):
         """Save all the stations in the network according to the COST-HOME
         format.
-        
+
         TODO: stations, detected
         """
         self.setup()
         path = os.path.join(path, self.id)
-        os.mkdir(path)
+        if not os.path.exists(path):
+            os.mkdir(path)
         for station in self.stations:
             station.save(path)
+
+    def load_pointset(self, path, header=True, ftype='data', status='xx',
+                      variable='vv', resolution='r', content='c',
+                      year_col='year', station_col='est_id', var_col='value'):
+        """Load data from a file in the GSLIB format.
+
+        """
+        if isinstance(path, gr.PointSet):
+            pset = path
+        else:
+            pset = gr.PointSet(psetpath=path, header=header)
+            pset.values.rename(columns={year_col: 'time', station_col:
+                                        'station', var_col: 'clim'},
+                               inplace=True)
+
+        index = pset.values.time.unique().astype('int')
+        self.stations_id = list(pset.values.station.unique().astype('int'))
+        self.stations_number = len(self.stations_id)
+        self.stations = list()
+
+        for station_id in self.stations_id:
+            st_data = pd.Series(pset.values.clim
+                                [pset.values.station == station_id].values,
+                                index, name=variable)
+            st = Station(md=self.md)
+            st.data = st_data
+            st.id = format(station_id, '0=8.0f')
+            st.ftype = ftype
+            st.status = status
+            st.variable = variable
+            st.resolution = resolution
+            st.content = content
+            st.network_id = self.id
+            self.stations.append(st)
 
 
 class Submission(object):
@@ -275,6 +317,14 @@ class Submission(object):
             self.networks.append(Network(network, md))
             self.stations_number += self.networks[-1].stations_number
 
+    def save(self, path):
+        """Save all networks included in the submission, according to the
+        COST-HOME format.
+
+        """
+        for network in self.networks:
+            network.save(path)
+
 
 def match_sub(path, sub, level=3):
     """Try to fetch the matching submission sub station.
@@ -298,10 +348,13 @@ if __name__ == '__main__':
     md = -999.9
     p = '/Users/julio/Desktop/testes/cost-home/benchmark/h009/precip/sur1/000005/horrm21109001d.txt'
     p2 = '/Users/julio/Desktop/testes/cost-home/benchmark/h009/precip/sur1/000005/horrm21109001d__new.txt'
-    st = Station(p, md)
-    st.setup()
-    netwp = '/Users/julio/Desktop/testes/cost-home/benchmark/h009/precip/sur1/000005'
-    netw = Network(netwp, md)
-    netw.save(netwp)
-    pass
+    # st = Station(p, md)
+    # st.setup()
+    subp = '/Users/julio/Desktop/testes/cost-home/benchmark/h009/precip/sur1'
+    # sub = Submission(subp, md)
+    # sub.save('/Users/julio/Desktop/testes/')
+    bench = '/Users/julio/Desktop/testes/cost-home/rede000005/1900_1909.txt'
+    netw = Network(network_id='teste')
+    netw.load_pointset(bench)
+    netw.save('/Users/julio/Desktop/testes/')
     print 'done'
