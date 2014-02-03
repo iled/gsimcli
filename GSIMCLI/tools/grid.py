@@ -10,6 +10,7 @@ from scipy.stats import skew  # , skewtest
 
 import numpy as np
 import pandas as pd
+# import parsers.costhome as ch
 from tools.utils import skip_lines
 
 
@@ -103,7 +104,7 @@ class PointSet:
 
     def save(self, psetfile, header=True):
         """Writes a point-set to a file in GSLIB format.
-        
+
         """
         if not psetfile:
             psetfile = self.path
@@ -127,6 +128,15 @@ class PointSet:
             self.values.columns = varnames
         else:
             self.values.columns = self.varnames
+
+#     def to_costhome(self, ftype='data', status='xx', variable='vv',
+#                     resolution='r', station_id='ssssssss', content='c'):
+#         """Convert a point-set to the COST-HOME format.
+#
+#         """
+#         station = ch.Station(spec=(ftype, status, variable, resolution,
+#                                    station_id, content), md=self.nodata)
+#         station.data
 
 
 class GridArr:
@@ -512,10 +522,13 @@ if __name__ == '__main__':
     # """
 
     snirh = '/home/julio/Testes/snirh500_dssim_narrow/snirh.prn'
+    bench = '/Users/julio/Desktop/testes/cost-home/rede000005/1900_1909.txt'
 
     # """
     pset = PointSet()
-    pset.load(snirh, header=False)
+    # pset.load(snirh, header=False)
+    pset.load(bench, header=True)
     # pset.save(os.path.join(outpath, 'psetout.prn'))
     # """
-    pass
+    # pset.to_costhome()
+    print 'done'

@@ -479,7 +479,7 @@ def merge_output(results, path, homog_order=False):
     alldf.to_excel(merged, 'All stations', index_label='year')
     summary.to_excel(merged, 'Summary', header=range(1, len(st_order) + 1))
     merged.save()
-
+        
 
 def ask_add_header(pset):
     """Ask for the header when a point-set does not have any."""
@@ -497,7 +497,7 @@ if __name__ == '__main__':
     basepath = macpath
 
     netw_pset = '/Users/julio/Desktop/testes/cost-home/rede000009/dec_sgems_rede9/dec1900_1909_rede9.txt'
-    """
+    #"""
     results = [(basepath + 'rede000010/1900-1909/1900-1909_homogenized_data.csv', [3.0, 7.0, 2.0, 5.0, 1.0, 4.0, 6.0, 8.0, 9.0], [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 5, 0, 0, 10, 10, 10, 9, 10]),
                (basepath + 'rede000010/1910-1919/1910-1919_homogenized_data.csv', [8.0, 2.0, 3.0, 7.0, 9.0, 4.0, 5.0, 1.0, 6.0], [2, 1, 2, 0, 0, 0, 4, 0, 0], [0, 0, 0, 0, 3, 7, 0, 10, 10]),
                (basepath + 'rede000010/1920-1929/1920-1929_homogenized_data.csv', [2.0, 5.0, 8.0, 6.0, 3.0, 7.0, 9.0, 4.0, 1.0], [0, 3, 2, 4, 0, 0, 0, 0, 3], [0, 0, 0, 1, 0, 0, 0, 0, 5]),
@@ -510,6 +510,6 @@ if __name__ == '__main__':
                (basepath + 'rede000010/1990-1999/1990-1999_homogenized_data.csv', [8.0, 2.0, 1.0, 6.0, 4.0, 9.0, 7.0, 3.0, 5.0], [4, 2, 2, 1, 1, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0])]
     path = basepath + 'rede000010/gsimcli_results.xls'
     merge_output(results, path)
-    """
+    #"""
     print station_order('network deviation', netw_pset)
     print 'done'

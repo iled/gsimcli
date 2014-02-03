@@ -582,8 +582,6 @@ if __name__ == '__main__':
     par = '/home/julio/Testes/cost-home/gsimcli.par'
     # run_par(par)
 
-    # decvars = '/home/julio/Testes/rede000005/resumo_variografia_rede05_csv.csv'
-    # batch_decade(par, decvars)
     base = '/home/julio/Testes/cost-home'
     """
     networks = [os.path.join(base, 'rede000004'),
