@@ -60,6 +60,7 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
         lskew = True
     else:
         raise ValueError('Method {} invalid or incomplete.'.format(method))
+    
     if isinstance(obs_file, gr.PointSet):
         obs = obs_file
     else:
@@ -68,26 +69,6 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
 
     obs_xy = list(obs.values.iloc[0, :2])
     # calculate stats
-    """ # grid stats, more than 100 times slower that vline stats!
-    avmed, per = grids.stats(lmean, lmed, lperc=True, p=prob)
-    avmed_grid = gr.GridArr(name=method + 'map', dx=grids.dx, dy=grids.dy,
-                            dz=grids.dz, xi=grids.xi, yi=grids.yi, zi=grids.zi,
-                            cellx=grids.cellx, celly=grids.celly,
-                            cellz=grids.cellz, val=avmed)
-    per_grid_right = gr.GridArr(name='rpercentile map', dx=grids.dx,
-                                dy=grids.dy, dz=grids.dz, xi=grids.xi,
-                                yi=grids.yi, zi=grids.zi, cellx=grids.cellx,
-                                celly=grids.celly, cellz=grids.cellz,
-                                val=per[:, 0])
-    per_grid_left = gr.GridArr(name='lpercentile map', dx=grids.dx,
-                               dy=grids.dy, dz=grids.dz, xi=grids.xi,
-                               yi=grids.yi, zi=grids.zi, cellx=grids.cellx,
-                               celly=grids.celly, cellz=grids.cellz,
-                               val=per[:, 1])
-    avmed_vline = avmed_grid.drill(obs_xy)
-    per_vline_right = per_grid_right.drill(obs_xy)
-    per_vline_left = per_grid_left.drill(obs_xy)
-    """
     vline_stats = grids.stats_vline(obs_xy, lmean, lmed, lskew, lperc=True,
                                     p=prob, save=save)
 
@@ -493,8 +474,8 @@ def ask_add_header(pset):
 
 if __name__ == '__main__':
     macpath = '/Users/julio/Desktop/testes/cost-home/500_dflt_16_allvar_vind/'
-    mintpath = '/home/julio/Testes/cost-home/'
-    basepath = macpath
+    mintpath = '/home/julio/Testes/cost-home/500_dflt_16_allvar_vintermedia/'
+    basepath = mintpath
 
     netw_pset = '/Users/julio/Desktop/testes/cost-home/rede000009/dec_sgems_rede9/dec1900_1909_rede9.txt'
     #"""
@@ -511,5 +492,5 @@ if __name__ == '__main__':
     path = basepath + 'rede000010/gsimcli_results.xls'
     merge_output(results, path)
     #"""
-    print station_order('network deviation', netw_pset)
+    # print station_order('network deviation', netw_pset)
     print 'done'

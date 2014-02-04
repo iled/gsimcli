@@ -97,13 +97,14 @@ class GsimcliParam(ParametersFile):
         par_set = 'GSIMCLI'
         text = ['data', 'st_order', 'detect_method', 'results', 'dss_exe']
         real_n = ['detect_prob', 'no_data']
-        boolean = ['data_header', 'detect_save', 'sim_purge', 'md_last']
+        boolean = ['data_header', 'detect_save', 'sim_purge']
         opt_text = ['dss_par', 'name', 'variables', 'krig_type', 'model']
         opt_int = ['st_user', 'number_simulations', 'max_search_nodes',
                    'angles', 'XX_nodes_number', 'XX_minimum', 'XX_spacing',
                    'YY_nodes_number', 'YY_minimum', 'YY_spacing',
                    'ZZ_nodes_number', 'ZZ_minimum', 'ZZ_spacing']
         opt_real = ['skewness', 'nugget', 'sill', 'ranges']
+        opt_boolean = ['md_last']
         order = ['data', 'no_data', 'data_header', 'name',
                  'variables', 'st_order', 'md_last', 'st_user',
                  'detect_method', 'skewness', 'detect_prob', 'detect_save',
@@ -118,7 +119,7 @@ class GsimcliParam(ParametersFile):
                                 par_set=par_set, text=text, real_n=real_n,
                                 boolean=boolean, opt_text=opt_text,
                                 opt_int=opt_int, opt_real=opt_real,
-                                order=order)
+                                opt_boolean=opt_boolean, order=order)
         if par_path:
             self.load(par_path)
 

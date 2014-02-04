@@ -561,7 +561,7 @@ def files_select(parsed, network=None, ftype=None, status=None, variable=None,
 def match_orig(stations_spec, orig_path):
     """Select orig files according to given station files.
 
-    FIXME: DEPRECATED in favor of match_sets
+    DEPRECATED in favor of match_sets
     """
     orig_spec = list()
     netw = None
