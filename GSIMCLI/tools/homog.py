@@ -60,7 +60,7 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
         lskew = True
     else:
         raise ValueError('Method {} invalid or incomplete.'.format(method))
-    
+
     if isinstance(obs_file, gr.PointSet):
         obs = obs_file
     else:
@@ -255,14 +255,15 @@ def append_homog_station(pset_file, station, header=True):
 
 
 def station_order(method, pset_path=None, nd=-999.9, header=True,
-                  userset=None, md_last=True):
+                  userset=None, ascending=False, md_last=True):
     """Sort a list containing stations numbers, according to the selected
-    method:
+    method, whether in ascending or descending order:
         - random: all stations randomly sorted;
-        - sorted: sorts all stations in ascending order;
-        - variance: sorts all stations by greater variance;
-        - network deviation: sorts all stations in ascending order according to
-    the difference between the station average and the network average;
+        - sorted: sorts all stations in ascending or descending order;
+        - variance: sorts all stations by greater or lower variance;
+        - network deviation: sorts all stations in ascending  or descending
+        order according to the difference between the station average and the
+        network average;
         - user: the user specifies which stations and their order.
 
     """
@@ -278,20 +279,21 @@ def station_order(method, pset_path=None, nd=-999.9, header=True,
         shuffle(stations_list)
 
     elif method == 'sorted':
-        stations_list.sort()
+        stations_list.sort(reverse=not ascending)
 
     elif method == 'variance':
         if not pset_path:
             raise TypeError('Method variance requires the stations point-set')
         values = pset.values.replace(nd, np.nan)
         varsort = values.groupby('station', sort=False).clim.var()
-        varsort = varsort.order(ascending=False, na_last=md_last)
+        varsort = varsort.order(ascending=ascending, na_last=md_last)
         stations_list = list(varsort.index)
 
     elif method == 'network deviation':
         values = pset.values.replace(nd, np.nan)
         stations_mean = values.groupby('station', sort=False).clim.mean()
-        network_dev = (stations_mean - values.clim.mean()).abs().order(md_last)
+        network_dev = ((stations_mean - values.clim.mean()).abs()
+                       .order(ascending=ascending, na_last=md_last))
         stations_list = list(network_dev.index)
 
     elif method == 'user' and userset:
@@ -460,7 +462,7 @@ def merge_output(results, path, homog_order=False):
     alldf.to_excel(merged, 'All stations', index_label='year')
     summary.to_excel(merged, 'Summary', header=range(1, len(st_order) + 1))
     merged.save()
-        
+
 
 def ask_add_header(pset):
     """Ask for the header when a point-set does not have any."""
@@ -478,7 +480,7 @@ if __name__ == '__main__':
     basepath = mintpath
 
     netw_pset = '/Users/julio/Desktop/testes/cost-home/rede000009/dec_sgems_rede9/dec1900_1909_rede9.txt'
-    #"""
+    # """
     results = [(basepath + 'rede000010/1900-1909/1900-1909_homogenized_data.csv', [3.0, 7.0, 2.0, 5.0, 1.0, 4.0, 6.0, 8.0, 9.0], [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 5, 0, 0, 10, 10, 10, 9, 10]),
                (basepath + 'rede000010/1910-1919/1910-1919_homogenized_data.csv', [8.0, 2.0, 3.0, 7.0, 9.0, 4.0, 5.0, 1.0, 6.0], [2, 1, 2, 0, 0, 0, 4, 0, 0], [0, 0, 0, 0, 3, 7, 0, 10, 10]),
                (basepath + 'rede000010/1920-1929/1920-1929_homogenized_data.csv', [2.0, 5.0, 8.0, 6.0, 3.0, 7.0, 9.0, 4.0, 1.0], [0, 3, 2, 4, 0, 0, 0, 0, 3], [0, 0, 0, 1, 0, 0, 0, 0, 5]),
@@ -491,6 +493,6 @@ if __name__ == '__main__':
                (basepath + 'rede000010/1990-1999/1990-1999_homogenized_data.csv', [8.0, 2.0, 1.0, 6.0, 4.0, 9.0, 7.0, 3.0, 5.0], [4, 2, 2, 1, 1, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0])]
     path = basepath + 'rede000010/gsimcli_results.xls'
     merge_output(results, path)
-    #"""
+    # """
     # print station_order('network deviation', netw_pset)
     print 'done'

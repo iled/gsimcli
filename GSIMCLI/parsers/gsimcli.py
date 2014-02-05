@@ -33,12 +33,13 @@ class GsimcliParam(ParametersFile):
         --- DETECTION ---
         st_order: method for setting candidates order:
                 - 'random' all stations are randomly sorted;
-                - 'sorted' sorts all stations in ascending order;
-                - 'variance' sorts all stations by greater variance;
-                - 'network deviation' sorts all stations in ascending order
-                according to the difference between the station average and
-                the network average;
+                - 'sorted' sorts all stations in ascending or descending order;
+                - 'variance' sorts all stations by greater or lower variance;
+                - 'network deviation' sorts all stations in ascending  or
+                descending order according to the difference between the
+                station average and the network average;
                 - 'user' the user specifies which stations and their order.
+        ascending: sort in ascending order ('y'/'n')
         md_last: put missing data at the end of sorted stations ('y'/'n')
         st_user: stations IDs in order if st_order == 'user' (e.g., '3 10 1 2')
         detect_method: detection method (comparison between upper and lower
@@ -104,9 +105,9 @@ class GsimcliParam(ParametersFile):
                    'YY_nodes_number', 'YY_minimum', 'YY_spacing',
                    'ZZ_nodes_number', 'ZZ_minimum', 'ZZ_spacing']
         opt_real = ['skewness', 'nugget', 'sill', 'ranges']
-        opt_boolean = ['md_last']
+        opt_boolean = ['ascending', 'md_last']
         order = ['data', 'no_data', 'data_header', 'name',
-                 'variables', 'st_order', 'md_last', 'st_user',
+                 'variables', 'st_order', 'ascending', 'md_last', 'st_user',
                  'detect_method', 'skewness', 'detect_prob', 'detect_save',
                  'sim_purge', 'results', 'dss_par', 'dss_exe',
                  'number_simulations', 'krig_type', 'model', 'nugget', 'sill',
