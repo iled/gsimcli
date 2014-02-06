@@ -324,7 +324,7 @@ if __name__ == '__main__':
     variable = None  # 'tn'
     # """
 
-    # """ # MASH Marinova precip
+    """ # MASH Marinova precip
     # st 3.6 0.56 netw 1.6 0.69
     netw_path = basepath + 'benchmark/h009/precip/sur1'
     orig_path = basepath + 'benchmark/orig/precip/sur1'
@@ -332,11 +332,14 @@ if __name__ == '__main__':
     variable = 'rr'
     # """
 
+    # """ # PRODIGE main precip
+    netw_path = basepath + 'benchmark/h002/precip/sur1'
+    
     # print crmse_global(netw_path, orig_path, variable, md)
-    print improvement(netw_path, inho_path, orig_path, variable, md,
-                      False, True)
+    # print improvement(netw_path, inho_path, orig_path, variable, md,
+    #                  False, True)
 
-    sub = ch.Submission(netw_path, md)
+    sub = ch.Submission(netw_path, md, ['000010'])
     # print crmse_submission_cl(sub, over_station=True, over_network=True,
     #                          skip_missing=False, skip_outlier=True)
     print improvement_cl(sub, over_station=True, over_network=True,
