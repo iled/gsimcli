@@ -5,8 +5,11 @@ Created on 5 de Nov de 2013
 @author: julio
 '''
 
+import os
+
 import numpy as np
 import pandas as pd
+import parsers.costhome as ch
 import tools.grid as grd
 import tools.utils as ut
 
@@ -37,18 +40,19 @@ def dtype_filter(dataf, nodata=-999.9):
     return dataf, keys
 
 
-def xls2gslib(xlspath, nd=-999.9, cols=None, sheet=0, header=0):
+def xls2gslib(xlspath, nd=-999.9, cols=None, sheet=0, header=0,
+              skip_rows=None, filter_dtype=True):
     """Convert a file in XLS format to a point-set file in GSLIB format (.prn)
     Does not work with CSV files.
 
     """
     xlsfile = pd.ExcelFile(xlspath)
-    xlstable = xlsfile.parse(xlsfile.sheet_names[sheet], header)
-    xlstable = xlstable.fillna(nd)
+    xlstable = xlsfile.parse(xlsfile.sheet_names[sheet], header,
+                             skiprows=skip_rows, na_values=nd)
+    # parse_cols=cols doesn't preserve the list order
     if cols:
-        cols = map(int, cols.split(','))
         nvars = len(cols)
-        varnames = [xlstable.columns[int(i)] for i in cols]
+        varnames = [xlstable.columns[i] for i in cols]
     else:
         nvars = xlstable.shape[1]
         varnames = xlstable.columns
@@ -58,18 +62,78 @@ def xls2gslib(xlspath, nd=-999.9, cols=None, sheet=0, header=0):
     if header is None:
         varnames = ['var' + str(i) for i in varnames]
 
-    filtered, keys = dtype_filter(xlstable.iloc[:, cols])
+    if filter_dtype:
+        filtered, keys = dtype_filter(xlstable.iloc[:, cols])
+    else:
+        filtered = xlstable.iloc[:, cols]
+        keys = None
+
     pset = grd.PointSet(str(xlsfile.sheet_names[sheet]), nd, nvars, varnames,
                         filtered)
 
     return pset, keys
 
 
+def xls2costhome(xlspath, outpath=None, nd=-999.9, sheet=None, header=False,
+                 skip_rows=None, cols=None, network_id='ssssssss', status='xx',
+                 variable='vv', resolution='r', content='c', ftype='data',
+                 yearly_sum=False):
+    """Convert a file in GSIMCLI XLS format to a file in the COST-HOME format.
+    Does not work with CSV files.
+
+    """
+    if yearly_sum:
+        div = 12.0
+    else:
+        div = 1.0
+
+    xlsfile = pd.ExcelFile(xlspath)
+    xlstable = xlsfile.parse(sheetname=sheet, header=header, na_values=nd,
+                             skiprows=skip_rows, parse_cols=cols)
+    network = ch.Network(md=nd, network_id=network_id)
+    stations = [label for label in xlstable.columns if '_clim' in label]
+    for station in stations:
+        st = ch.Station(md=nd)
+        st.path = None
+        st.network_id = network_id
+        st.ftype = ftype
+        st.status = status
+        st.variable = variable
+        st.resolution = resolution
+        st.id = station.split('_')[0]
+        st.content = content
+        st.data = xlstable[station] / div
+        network.add(st)
+
+    if outpath:
+        network.save(outpath)
+
+    return network
+
+
 if __name__ == '__main__':
-    path = '/home/julio/Testes/test/snirh.xls'
-    pout = '/home/julio/Testes/test/rede.prn'
-    ps, ks = xls2gslib(path, header=0, cols='0, 1, 2, 4, 3')
-    ps.save(pout)
-    kout = '/home/julio/Testes/test/snirh_keys.txt'
-    ks.to_csv(kout, sep='\t', index_label='ID')
+    path = '/home/julio/Testes/cost-home/rede000005/gsimcli_results.xls'
+    pout = '/home/julio/Testes/cost-home/rede000005'
+#     xls2costhome(path, pout, -999.9, sheet='All stations', skip_rows=[1],
+#                  network_id=05, yearly_sum=True)
+#     ps, ks = xls2gslib(path, header=0, cols=[0, 1, 2, 4, 3], skip_rows=[1])
+#     ps.save(pout)
+#     kout = '/home/julio/Testes/cost-home//rede000005/keys.txt'
+#     ks.to_csv(kout, sep='\t', index_label='ID')
+
+    pathlist = list()
+    for root, dirs, files in os.walk('/home/julio/Testes/cost-home'):
+        for name in files:
+            filename, ext = os.path.splitext(name)
+            if 'gsimcli_results' in filename and ext == '.xls':
+                pathlist.append(os.path.join(root, name))
+
+    for path in pathlist:
+        print path
+        netid = os.path.basename(os.path.dirname(path))[4:]
+        xls2costhome(xlspath=path, outpath=os.path.dirname(path), nd=-999.9,
+                        sheet='All stations', header=False, skip_rows=[1],
+                        network_id=netid, status='ho',
+                        variable='rr', resolution='y', content='d',
+                        ftype='data', yearly_sum=True)
     print 'done'
