@@ -104,8 +104,9 @@ def convert_files():
     print '4. GSLIB to CSV'
     print '5. CSV to GSLIB'
     print '6. XLS to GSLIB'
-    print '7. Add header to GSLIB'
-    print '8. Remove header from GSLIB '
+    print '7. GSIMCLI to COST-HOME'
+    print '8. Add header to GSLIB'
+    print '9. Remove header from GSLIB '
     print '\n0. Back'
     i = raw_input('\nOption number: ')
 
@@ -129,7 +130,7 @@ def convert_files():
         print 'done'
         convert_files()
 
-    elif i == str(2):
+    elif i == str(3):
         pass
 
     elif i == str(6):
@@ -159,6 +160,38 @@ def convert_files():
         if keys:
             keys.to_excel(os.path.splitext(xlspath)[0] + '_keys.xls',
                           sheet_name=pointset.name)
+
+    elif i == str(7):
+        print '.' * 21
+        print 'Convert files from GSIMCLI format to COST-HOME\n'
+        print 'Insert arguments and press [ENTER]\n'
+        gsimclipath = raw_input('Full path to the GSIMCLI file: ')
+        outpath = raw_input('')
+        nd = raw_input('Place holder for missing data (default: -999.9): ')
+        sheet = raw_input('Sheet name or number containing the data to convert'
+                          '(default: All stations): ')
+        skip_rows = [1]  # FIXME: workaround for pandas bug #6260
+        network_id = os.path.basename(os.path.dirname(gsimclipath))
+        status = raw_input('Data status (default: ho): ')
+        variable = raw_input('Data variable (default: rr): ')
+        resolution = raw_input('Data temporal resolution (default: y): ')
+        content = raw_input('Data content (default: d): ')
+        ss.xls2costhome(gsimclipath, outpath, nd, sheet, False, skip_rows,
+                        None, network_id, status, variable, resolution,
+                        content, 'data')
+
+        if not nd:
+            nd = -999.9
+        if not sheet:
+            sheet = 'All stations'
+        if not status:
+            status = 'ho'
+        if not variable:
+            variable = 'rr'
+        if not resolution:
+            resolution = 'y'
+        if not content:
+            content = 'd'
 
     elif i == str(0):
         main()
@@ -402,7 +435,8 @@ def run_par(par_path):
     stations_order = (hmg.station_order
                       (method=gscpar.st_order, nd=gscpar.no_data,
                        pset_path=stations_pset, header=gscpar.data_header,
-                       userset=stations_set, md_last=gscpar.md_last))
+                       userset=stations_set, ascending=gscpar.ascending,
+                       md_last=gscpar.md_last))
 
     detect_flag = True
     if gscpar.detect_method.lower() == 'skewness':
@@ -469,8 +503,14 @@ def batch_decade(par_path, variograms_file):
                       (network_parpath, decade[1].ix['Decade']))
         results.append(run_par(gscpar))
 
-    hmg.merge_output(results, os.path.join(os.path.dirname(variograms_file),
-                     'gsimcli_results.xls'))
+    outpath = os.path.dirname(variograms_file)
+    gsimclipath = os.path.join(outpath, 'gsimcli_results.xls')
+    hmg.merge_output(results, gsimclipath)
+    ss.xls2costhome(xlspath=gsimclipath, outpath=outpath, nd=gscpar.no_data,
+                    sheet='All stations', header=False, skip_rows=[1],
+                    network_id=os.path.basename(outpath), status='ho',
+                    variable='vv', resolution='y', content='d', ftype='data',
+                    yearly_sum=True)
 
 
 def batch_networks(par_path, networks, decades=False):

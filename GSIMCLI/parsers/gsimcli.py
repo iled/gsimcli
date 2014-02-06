@@ -41,7 +41,7 @@ class GsimcliParam(ParametersFile):
                 - 'user' the user specifies which stations and their order.
         ascending: sort in ascending order ('y'/'n')
         md_last: put missing data at the end of sorted stations ('y'/'n')
-        st_user: stations IDs in order if st_order == 'user' (e.g., '3 10 1 2')
+        st_user: stations IDs in order if st_order == 'user' (e.g., '3, 10, 2')
         detect_method: detection method (comparison between upper and lower
                        percentiles and the simulated values):
                         - 'mean' compares with the mean
