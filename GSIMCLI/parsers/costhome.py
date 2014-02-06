@@ -48,10 +48,11 @@ class Station(object):
         elif self.ftype != 'data':
             raise ValueError('The file {} was not parsed as a data file.'.
                              format(self.path))
-        elif self.content == 'd':
-            self.data = pc.datafile(self.path, self.resolution, self.md)
-        elif self.content == 'f':
-            self.quality = pc.qualityfile(self.path, self.resolution)
+# FIXME: check if this is a problem
+#         elif self.content == 'd':
+#             self.data = pc.datafile(self.path, self.resolution, self.md)
+#         elif self.content == 'f':
+#             self.quality = pc.qualityfile(self.path, self.resolution)
 
     def load_outliers(self, path=None):
         """List of the dates with detected outliers.
@@ -135,7 +136,8 @@ class Station(object):
         self.load()
         filename = (self.status + self.variable + self.resolution + self.id +
                     self.content + '.txt')
-        self.data.to_csv(os.path.join(path, filename), sep='\t', header=False)
+        self.data.to_csv(os.path.join(path, filename), sep='\t', header=False,
+                         float_format='%6.1f')
 
 
 class Network(object):
@@ -154,7 +156,7 @@ class Network(object):
         self.stations_spec = list()
         self.stations_path = list()
         self.stations_number = 0
-        
+
         if path:
             if type(path) == str and os.path.isdir(path):
                 parsed = pc.directory_walk_v1(path)
@@ -178,6 +180,20 @@ class Network(object):
         self.stations = list()
         for station in self.stations_path:
             self.stations.append(Station(station, self.md))
+
+    def add(self, station):
+        """Add a Station to the network.
+
+        """
+        if not hasattr(self, 'stations'):
+            self.stations = list()
+
+        self.stations.append(station)
+        self.stations_id.append(station.id)
+        self.stations_spec += [station.ftype, station.status, station.variable,
+                               station.resolution, station.id, station.content]
+        self.stations_path.append(station.path)
+        self.stations_number += 1
 
     def average(self, orig=False):
         """Calculate the average per year of all stations in the network.
@@ -253,7 +269,7 @@ class Network(object):
         TODO: stations, detected
         """
         self.setup()
-        path = os.path.join(path, self.id)
+        path = os.path.join(path, str(self.id))
         if not os.path.exists(path):
             os.mkdir(path)
         for station in self.stations:
