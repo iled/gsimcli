@@ -12,6 +12,7 @@ import warnings
 import numpy as np
 import pandas as pd
 import parsers.cost as pc
+import parsers.spreadsheet as ss
 import tools.grid as gr
 import tools.utils as ut
 
@@ -308,6 +309,16 @@ class Network(object):
             st.content = content
             st.network_id = self.id
             self.stations.append(st)
+
+    def update_ids(self, keys):
+        """Update Station IDs according to the given keys.
+
+        """
+        if type(keys) == str and os.path.isfile(keys):
+            keys = ss.read_keys
+        for i, station in enumerate(self.stations):
+            station.id = keys.loc[station.id]
+            self.stations_id[i] = station.id
 
 
 class Submission(object):

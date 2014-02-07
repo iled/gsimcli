@@ -56,7 +56,6 @@ def xls2gslib(xlspath, nd=-999.9, cols=None, sheet=0, header=0,
     else:
         nvars = xlstable.shape[1]
         varnames = xlstable.columns
-        # varnames = [col for col in xlstable.columns]
         cols = range(nvars)
 
     if header is None:
@@ -77,7 +76,7 @@ def xls2gslib(xlspath, nd=-999.9, cols=None, sheet=0, header=0,
 def xls2costhome(xlspath, outpath=None, nd=-999.9, sheet=None, header=False,
                  skip_rows=None, cols=None, network_id='ssssssss', status='xx',
                  variable='vv', resolution='r', content='c', ftype='data',
-                 yearly_sum=False):
+                 yearly_sum=False, keys_path=None):
     """Convert a file in GSIMCLI XLS format to a file in the COST-HOME format.
     Does not work with CSV files.
 
@@ -86,12 +85,19 @@ def xls2costhome(xlspath, outpath=None, nd=-999.9, sheet=None, header=False,
         div = 12.0
     else:
         div = 1.0
-
+        
     xlsfile = pd.ExcelFile(xlspath)
     xlstable = xlsfile.parse(sheetname=sheet, header=header, na_values=nd,
                              skiprows=skip_rows, parse_cols=cols)
+    
     network = ch.Network(md=nd, network_id=network_id)
     stations = [label for label in xlstable.columns if '_clim' in label]
+    
+    if keys_path:
+        network.update_ids(keys_path)
+    else:
+        keys = None
+        
     for station in stations:
         st = ch.Station(md=nd)
         st.path = None
@@ -100,7 +106,8 @@ def xls2costhome(xlspath, outpath=None, nd=-999.9, sheet=None, header=False,
         st.status = status
         st.variable = variable
         st.resolution = resolution
-        st.id = station.split('_')[0]
+        if not keys:
+            st.id = station.split('_')[0]
         st.content = content
         st.data = xlstable[station] / div
         network.add(st)
@@ -109,6 +116,15 @@ def xls2costhome(xlspath, outpath=None, nd=-999.9, sheet=None, header=False,
         network.save(outpath)
 
     return network
+
+
+def read_keys(path):
+    """Reads a TSV file with the keys to the converted station IDs.
+
+    """
+    keys = pd.read_csv(path, sep='\t', index_col=0)
+
+    return keys
 
 
 if __name__ == '__main__':
