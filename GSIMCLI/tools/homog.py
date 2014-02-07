@@ -87,10 +87,8 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
     # find and fill missing values
     fn = 0
     if obs.values.shape[0] < grids.dz:
-        varcol = obs.varnames.index('clim')
-        obs, fn = fill_station(obs, meanvalues, varcol,
-                               grids.zi, grids.zi + grids.dz, grids.cellz,
-                               header)
+        obs, fn = fill_station(obs, meanvalues, grids.zi, grids.zi + grids.dz,
+                               grids.cellz, header)
 
     # detect irregularities
     hom_where = ~obs.values['clim'].between(vline_stats.values['lperc'],
@@ -122,11 +120,10 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
     return homogenized, detected_number, fn + nodatas
 
 
-def fill_station(pset_file, values, varcol, time_min, time_max, time_step=1,
+def fill_station(pset_file, values, time_min, time_max, time_step=1,
                  header=True):
     """Look for missing data in a station and fill them with a given value.
 
-    TODO: tirar dependência do varcol
     """
     if isinstance(pset_file, gr.PointSet):
         pset = pset_file
@@ -134,6 +131,7 @@ def fill_station(pset_file, values, varcol, time_min, time_max, time_step=1,
         pset = gr.PointSet()
         pset.load(pset_file, header)
 
+    varcol = pset.varnames.index('clim')
     filled_count = 0
     j = 0
     timeserie = np.arange(time_min, time_max, time_step)
@@ -152,25 +150,6 @@ def fill_station(pset_file, values, varcol, time_min, time_max, time_step=1,
     pset.values = pd.DataFrame(filled, columns=pset.values.columns)
 
     return pset, filled_count
-
-
-def station_col(pset_file, header):
-    """Try to find the column which has the station ID's.
-
-    DEPRECATED
-    """
-    if isinstance(pset_file, gr.PointSet):
-        pset = pset_file
-    else:
-        pset = gr.PointSet()
-        pset.load(pset_file, header=header)
-
-    if header and 'station' in pset.varnames:
-        stcol = pset.varnames.index('station')
-    else:
-        stcol = None
-
-    return stcol
 
 
 def list_stations(pset_file, h=True):
@@ -321,8 +300,6 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
 
     TODO:
         .checkar
-        .tirar dependência do stcol
-
     """
     if isinstance(pset_file, gr.PointSet):
         pset = pset_file
@@ -330,7 +307,6 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
         pset = gr.PointSet()
         pset.load(pset_file, header)
 
-    flagged = ('Flag' in pset.varnames)
     if fformat == 'normal':
         with open(outfile, 'wb') as csvfile:
             out = csv.writer(csvfile, dialect='excel')
@@ -344,39 +320,27 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
     elif fformat == 'gsimcli':
         # year, time (month)
         csvheader = ['time']
-        # csvfile = open(outfile, 'wb')
-        # out = csv.writer(csvfile, dialect='excel')
-        if station_split and flagged:
-            # year, time (month), stationID_VAR, stationID_FLAG
-            st_col = pset.varnames.index('station')
-            stations = list_stations(pset, st_col)
-            varname = pset.varnames[-2]  # TODO: deprecated?
-            headerline = [[str(stations[i]) + '_' + varname,
-                           str(stations[i]) + '_FLAG']
-                          for i in xrange(len(stations))]
-            csvheader += itertools.chain.from_iterable(headerline)
-            outdf = pd.DataFrame(index=np.arange(pset.values['time'].min(),
-                                                 pset.values['time'].max()
-                                                 + 1),
-                                 columns=csvheader[1:])
-            for i in xrange(len(stations)):
-                temp = pset.values[pset.values['station'] == stations[i]
-                                   ][['time', 'clim', 'Flag']]
-                tempdf = pd.DataFrame(temp[['clim', 'Flag']])
-                tempdf.index = temp['time']
-                tempdf.columns = csvheader[2 * i + 1:2 * i + 3]
-                outdf.update(tempdf)
-        else:  # TODO: falta sem station_split; vale a pena?
-            # year, time (month), station, VAR, FLAG (if flagged)
-            # csvheader.append([pset.varnames[i] for i in
-            #               xrange(5, pset.nvars)])
-            # cols = pset.values[:, 5:]
+        # year, time (month), stationID_VAR, stationID_FLAG
+        st_col = pset.varnames.index('station')
+        stations = list_stations(pset, st_col)
+        varname = pset.varnames[-2]
+        headerline = [[str(stations[i]) + '_' + varname,
+                       str(stations[i]) + '_FLAG']
+                      for i in xrange(len(stations))]
+        csvheader += itertools.chain.from_iterable(headerline)
+        outdf = pd.DataFrame(index=np.arange(pset.values['time'].min(),
+                                             pset.values['time'].max()
+                                             + 1),
+                             columns=csvheader[1:])
+        for i in xrange(len(stations)):
+            temp = pset.values[pset.values['station'] == stations[i]
+                               ][['time', 'clim', 'Flag']]
+            tempdf = pd.DataFrame(temp[['clim', 'Flag']])
+            tempdf.index = temp['time']
+            tempdf.columns = csvheader[2 * i + 1:2 * i + 3]
+            outdf.update(tempdf)
+        if append_year:  # TODO: perhaps for monthly data
             raise NotImplementedError
-        # out.writerow(csvheader)
-        # out.writerows(cols)
-        # csvfile.close()
-        if append_year:
-            raise BaseException('not done yet')
             years = 0
             outdf.insert(0, 'year', years)
         outdf.to_csv(outfile, index_label='year')
