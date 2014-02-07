@@ -412,7 +412,7 @@ def merge_output(results, path, homog_order=False):
             labels_sort = labels_i
         df = df.reindex_axis(labels_sort, axis=1)
         df.columns = list(labels_sort)
-        df.to_excel(merged, group)
+        df.to_excel(merged, group, merge_cells=False)
 
         summary = summary.append([st_order, detected_n, filled_n],
                                  ignore_index=True)
@@ -423,8 +423,10 @@ def merge_output(results, path, homog_order=False):
                 ['Stations ID order', 'Detections number', 'Missing data']],
                names=['Decade', '']))
     summary = pd.DataFrame(summary.values, index=colidx)
-    alldf.to_excel(merged, 'All stations', index_label='year')
-    summary.to_excel(merged, 'Summary', header=range(1, len(st_order) + 1))
+    alldf.to_excel(merged, 'All stations', index_label='year',
+                   merge_cells=False)
+    summary.to_excel(merged, 'Summary', header=range(1, len(st_order) + 1),
+                     merge_cells=False)
     merged.save()
 
 
@@ -441,7 +443,7 @@ def ask_add_header(pset):
 if __name__ == '__main__':
     macpath = '/Users/julio/Desktop/testes/cost-home/500_dflt_16_allvar_vind/'
     mintpath = '/home/julio/Testes/cost-home/500_dflt_16_allvar_vintermedia/'
-    basepath = mintpath
+    basepath = macpath
 
     netw_pset = '/Users/julio/Desktop/testes/cost-home/rede000009/dec_sgems_rede9/dec1900_1909_rede9.txt'
     # """
