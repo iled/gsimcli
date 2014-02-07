@@ -14,56 +14,6 @@ import pandas as pd
 from tools.utils import skip_lines
 
 
-class PointSetOLD:
-    """Class for storing point-set data.
-    DEPRECATED
-    """
-    def __init__(self, name='', nodata=-999.9, nvars=0, varnames=list(),
-                 values=np.zeros(0), psetpath=str(), header=True):
-        self.path = psetpath
-        if os.path.isfile(self.path):
-            self.load(self.path, nodata, header)
-        else:
-            self.name = name
-            self.nvars = nvars
-            self.nodata = nodata
-            self.varnames = varnames
-            self.values = values
-
-    def load(self, psetfile, nd=-999.9, header=True):
-        """Loads a point-set from a file in GSLIB format.
-
-        """
-        self.path = psetfile
-        fid = open(psetfile, 'r')
-        if header:
-            self.name = fid.readline().strip()
-            self.nvars = int(fid.readline())
-            for i in xrange(self.nvars):  # @UnusedVariable
-                self.varnames.append(fid.readline().strip())
-        self.values = np.loadtxt(fid)
-        if not header:
-            self.name = os.path.splitext(os.path.basename(psetfile))[0]
-            self.nvars = self.values.shape[1]
-            self.varnames = ['var{}'.format(i)
-                             for i in xrange(1, self.nvars + 1)]
-        fid.close()
-
-    def save(self, psetfile=None, header=True):
-        """Writes a point-set to a file in GSLIB format.
-        """
-        if not psetfile:
-            psetfile = self.path
-        else:
-            self.path = psetfile
-        fid = open(psetfile, 'w')
-        if header:
-            fid.write(self.name + '\n' + str(self.nvars) + '\n' +
-                      '\n'.join(self.varnames) + '\n')
-        np.savetxt(fid, self.values, fmt='%-10.6f')
-        fid.close()
-
-
 class PointSet:
     """Class for storing point-set data.
     """

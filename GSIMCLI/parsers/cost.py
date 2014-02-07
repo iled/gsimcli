@@ -324,21 +324,6 @@ def breakpointsfile(filepath):
     return breakpoints
 
 
-def start_pset(filepath):
-    """DEPRECATED
-    Deletes existing filepath and creates a new file with gslib
-    point-set header.
-    """
-    # if os.path.isfile(filepath):
-    #    os.remove(filepath)
-    pset = open(filepath, 'w')
-    pset.writelines(os.path.splitext(os.path.basename(filepath))[0] +
-                    '\n' + repr(6) + '\n' + 'lat' + '\n' + 'lon' + '\n' +
-                    'time' + '\n' + 'value' + '\n' + 'network' + '\n' +
-                    'station' + '\n')
-    return pset
-
-
 def station_coord(network, station_path, coordinates_file=None):
     """Extracts station coordinates (lat, long) from network file.
     """
@@ -422,9 +407,6 @@ def convert_gslib(files, merge=False, md=-999.9, to_year=None,
             network = networkfile(network_path)
             network_number = file_type[0]
             if not merge:
-                """pset_file.close()
-                pset_file = start_pset(os.path.join(os.path.dirname(file_path),
-                                  str(network_number) + '_pset.prn'))"""
                 pset.save(pset_file, header=True)
                 pset = gr.PointSet(name=str(network_number) + '_pset',
                                    nodata=md, nvars=nvar,
@@ -556,28 +538,6 @@ def files_select(parsed, network=None, ftype=None, status=None, variable=None,
         parsed_items.sort(key=lambda x: x[1][0])
 
     return parsed_items
-
-
-def match_orig(stations_spec, orig_path):
-    """Select orig files according to given station files.
-
-    DEPRECATED in favor of match_sets
-    """
-    orig_spec = list()
-    netw = None
-    for st_spec in stations_spec:
-        spec = st_spec[1]
-        if netw != spec[0]:
-            orig_parsed = files_select(parsed=orig_path, network=spec[0],
-                                         ftype=spec[1], variable=spec[3],
-                                         content=spec[6])
-            orig_spec.append(orig_parsed)
-            netw = spec[0]
-
-    orig_spec = list(itertools.chain.from_iterable(orig_spec))
-    if len(orig_spec) != len(stations_spec):
-        raise ValueError('Mismatch between homogenized and original files.')
-    return orig_spec
 
 
 def match_sets(subset_path, mainset_path):
