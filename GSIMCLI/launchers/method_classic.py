@@ -16,6 +16,7 @@ import sys
 sys.path.append('/home/julio/git/gsimcli/GSIMCLI')
 
 import launchers.dss as dss
+import multiprocessing as mp
 import numpy as np
 import pandas as pd
 import parsers.cost as pcost
@@ -170,15 +171,18 @@ def convert_files():
         nd = raw_input('Place holder for missing data (default: -999.9): ')
         sheet = raw_input('Sheet name or number containing the data to convert'
                           '(default: All stations): ')
-        skip_rows = [1]  # FIXME: workaround for pandas bug #6260
         network_id = os.path.basename(os.path.dirname(gsimclipath))
         status = raw_input('Data status (default: ho): ')
         variable = raw_input('Data variable (default: rr): ')
         resolution = raw_input('Data temporal resolution (default: y): ')
         content = raw_input('Data content (default: d): ')
-        ss.xls2costhome(gsimclipath, outpath, nd, sheet, False, skip_rows,
-                        None, network_id, status, variable, resolution,
-                        content, 'data')
+        # TODO: yearly_sum, keys_path
+        ss.xls2costhome(xlspath=gsimclipath, outpath=outpath, nd=nd,
+                        sheet=sheet, header=False, skip_rows=None, cols=None,
+                        network_id=network_id, status=status,
+                        variable=variable, resolution=resolution,
+                        content=content, ftype='data', yearly_sum=False,
+                        keys_path=None)
 
         if not nd:
             nd = -999.9
@@ -258,6 +262,7 @@ def ask_stations_method(pset, header=True):
         . escolhe uma e depois faz por proximidade
         . investigar outros métodos
         . precisa do no data para o station_order
+        . ascrescentar as outras opções desenvolvidas
     """
     print '·' * 21
     print 'Stations are homogenized one by one. Each homogenized station will'
@@ -298,10 +303,27 @@ def ask_stations_method(pset, header=True):
 
 def gsimcli(stations_file, stations_h, no_data, stations_order, detect_method,
          detect_prob, detect_flag, detect_save, exe_path, par_file, outfolder,
-         purge_sims, detect_skew=None):
+         purge_sims, detect_skew=None, cores=None):
     """Main cycle to run GSIMCLI homogenization procedure in a set of stations
 
     """
+    def _update_paths(dsspar):
+        """Update the parameters related to file paths. Prepends '..\..\'.
+        Necessary to call multiprocessing DSS launcher.
+
+        """
+        params = ['datapath', 'transfile', 'debugfile', 'corrpath', 'secpath']
+
+        for param in params:
+            val = getattr(dsspar.par, param)
+            if val and val != 'no file':
+                # FIXME: not a pretty solution... code smell
+                setattr(dsspar.par, param, '..\\..\\' + val)
+
+    if not cores or cores > mp.cpu_count():
+        cores = mp.cpu_count()
+    print 'GSIMCLI using {} cores'.format(cores)
+
     dbgfile = os.path.join(outfolder, 'dsscmd.txt')  # TODO: opt for dbg
     if os.path.isfile(dbgfile):
         os.remove(dbgfile)
@@ -350,15 +372,18 @@ def gsimcli(stations_file, stations_h, no_data, stations_order, detect_method,
         oldpar = pdss.DssParam()
         oldpar.load_old(parfile)
         oldpar.nsim = 1
-        for sim in xrange(1, dsspar.nsim + 1):
+        for sim in xrange(1, dsspar.nsim + 1, cores):
             print ('[{}/{}] Working on realization {}'.
                    format(i + 1, len(stations_order), sim))
-            oldpar.save_old(os.path.join(os.path.dirname(exe_path),
-                                         'DSSim.par'))
-            dss.exec_ssdir(exe_path, parfile, dbgfile)
-            oldfilent = (ntpath.splitext(outfile_nt)[0] + str(sim + 1) +
-                         ntpath.splitext(outfile_nt)[1])
-            oldpar.update(['output', 'seed'], [oldfilent, oldpar.seed + 2])
+            # oldpar.save_old(os.path.join(os.path.dirname(exe_path),
+            #                             'DSSim.par'))
+            _update_paths(oldpar)
+            # dss.exec_ssdir(exe_path, parfile, dbgfile)
+            dss.mp_exec(exe_path, oldpar, outfile_nt, sim, dbgfile,
+                        cores=cores, purge=False, stop=dsspar.nsim)
+            # oldfilent = (ntpath.splitext(outfile_nt)[0] + str(sim + 1) +
+            #              ntpath.splitext(outfile_nt)[1])
+            # oldpar.update(['output', 'seed'], [oldfilent, oldpar.seed + 2])
 
         # raw_input('Go and run DSS with these parameters: {}'.format(parfile))
         # prepare detection
@@ -543,6 +568,7 @@ def batch_networks(par_path, networks, decades=False):
 def main():
     """Text interface: main menu
 
+    TODO: outdated
     """
     print '······ GSIMCLI ······\n'
     print 'Main menu\n'

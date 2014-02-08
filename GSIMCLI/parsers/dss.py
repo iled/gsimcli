@@ -6,7 +6,7 @@ Created on 07/10/2013
 '''
 
 import ntpath
-import os
+# import os
 
 import numpy as np
 import tools.grid as gr
