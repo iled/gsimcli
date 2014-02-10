@@ -315,10 +315,10 @@ def gsimcli(stations_file, stations_h, no_data, stations_order, detect_method,
         params = ['datapath', 'transfile', 'debugfile', 'corrpath', 'secpath']
 
         for param in params:
-            val = getattr(dsspar.par, param)
+            val = getattr(dsspar, param)
             if val and val != 'no file':
                 # FIXME: not a pretty solution... code smell
-                setattr(dsspar.par, param, '..\\..\\' + val)
+                setattr(dsspar, param, '..\\..\\' + val)
 
     if not cores or cores > mp.cpu_count():
         cores = mp.cpu_count()
@@ -379,8 +379,9 @@ def gsimcli(stations_file, stations_h, no_data, stations_order, detect_method,
             #                             'DSSim.par'))
             _update_paths(oldpar)
             # dss.exec_ssdir(exe_path, parfile, dbgfile)
-            dss.mp_exec(exe_path, oldpar, outfile_nt, sim, dbgfile,
-                        cores=cores, purge=False, stop=dsspar.nsim)
+            dss.mp_exec(dss_path=exe_path, par_path=oldpar, output=outfile_nt,
+                        simnum=sim, dbgfile, cores=cores, purge=False,
+                        stop=dsspar.nsim)
             # oldfilent = (ntpath.splitext(outfile_nt)[0] + str(sim + 1) +
             #              ntpath.splitext(outfile_nt)[1])
             # oldpar.update(['output', 'seed'], [oldfilent, oldpar.seed + 2])
@@ -656,6 +657,6 @@ if __name__ == '__main__':
                 os.path.join(base, 'rede000010'),
                 os.path.join(base, 'rede000020')]
     #"""
-    networks = [os.path.join(base, 'rede000009')]
+    networks = [os.path.join(base, 'rede000010')]
     batch_networks(par, networks, decades=True)
     print 'done'

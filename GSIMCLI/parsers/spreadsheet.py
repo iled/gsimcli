@@ -9,7 +9,6 @@ import os
 
 import numpy as np
 import pandas as pd
-import parsers.costhome as ch
 import tools.grid as grd
 import tools.utils as ut
 
@@ -81,23 +80,25 @@ def xls2costhome(xlspath, outpath=None, nd=-999.9, sheet=None, header=False,
     Does not work with CSV files.
 
     """
+    import parsers.costhome as ch
+
     if yearly_sum:
         div = 12.0
     else:
         div = 1.0
-        
+
     xlsfile = pd.ExcelFile(xlspath)
     xlstable = xlsfile.parse(sheetname=sheet, header=header, na_values=nd,
                              skiprows=skip_rows, parse_cols=cols)
-    
+
     network = ch.Network(md=nd, network_id=network_id)
     stations = [label for label in xlstable.columns if '_clim' in label]
-    
+
     if keys_path:
         network.update_ids(keys_path)
     else:
         keys = None
-        
+
     for station in stations:
         st = ch.Station(md=nd)
         st.path = None
