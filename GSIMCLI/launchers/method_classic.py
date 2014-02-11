@@ -307,25 +307,13 @@ def gsimcli(stations_file, stations_h, no_data, stations_order, detect_method,
     """Main cycle to run GSIMCLI homogenization procedure in a set of stations
 
     """
-    def _update_paths(dsspar):
-        """Update the parameters related to file paths. Prepends '..\..\'.
-        Necessary to call multiprocessing DSS launcher.
-
-        """
-        params = ['datapath', 'transfile', 'debugfile', 'corrpath', 'secpath']
-
-        for param in params:
-            val = getattr(dsspar, param)
-            if val and val != 'no file':
-                # FIXME: not a pretty solution... code smell
-                setattr(dsspar, param, '..\\..\\' + val)
-
     if not cores or cores > mp.cpu_count():
         cores = mp.cpu_count()
     print 'GSIMCLI using {} cores'.format(cores)
 
-    dbgfile = os.path.join(outfolder, 'dsscmd.txt')  # TODO: opt for dbg
-    if os.path.isfile(dbgfile):
+    # dbgfile = os.path.join(outfolder, 'dsscmd.txt')  # TODO: opt for dbg
+    dbgfile = None
+    if dbgfile is not None and os.path.isfile(dbgfile):
         os.remove(dbgfile)
     # load data and prepare the iterative process
     if isinstance(stations_file, gr.PointSet):
@@ -362,6 +350,10 @@ def gsimcli(stations_file, stations_h, no_data, stations_order, detect_method,
                                     commonpath)
         outfile_nt = ntpath.relpath(os.path.join(outfolder, outname),
                                     commonpath)
+        # workaround for mp_exec, it needs one less directory in the tree
+        reffile_nt = reffile_nt[reffile_nt.index('\\') + 1:]
+        outfile_nt = outfile_nt[outfile_nt.index('\\') + 1:]
+        
         parfile = os.path.join(outfolder, parname)
         references.save(psetfile=reffile, header=False)
         if detect_save:
@@ -372,16 +364,18 @@ def gsimcli(stations_file, stations_h, no_data, stations_order, detect_method,
         oldpar = pdss.DssParam()
         oldpar.load_old(parfile)
         oldpar.nsim = 1
+        purge_temp = False
         for sim in xrange(1, dsspar.nsim + 1, cores):
             print ('[{}/{}] Working on realization {}'.
                    format(i + 1, len(stations_order), sim))
             # oldpar.save_old(os.path.join(os.path.dirname(exe_path),
             #                             'DSSim.par'))
-            _update_paths(oldpar)
             # dss.exec_ssdir(exe_path, parfile, dbgfile)
-            dss.mp_exec(dss_path=exe_path, par_path=oldpar, output=outfile_nt,
-                        simnum=sim, dbgfile, cores=cores, purge=False,
-                        stop=dsspar.nsim)
+            if sim >= dsspar.nsim + 1 - cores:
+                purge_temp = True
+#             dss.mp_exec(dss_path=exe_path, par_path=oldpar, output=outfile_nt,
+#                         simnum=sim, dbg=dbgfile, cores=cores, purge=purge_temp,
+#                         stop=dsspar.nsim)
             # oldfilent = (ntpath.splitext(outfile_nt)[0] + str(sim + 1) +
             #              ntpath.splitext(outfile_nt)[1])
             # oldpar.update(['output', 'seed'], [oldfilent, oldpar.seed + 2])

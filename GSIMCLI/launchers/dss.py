@@ -7,6 +7,7 @@ Created on 04/10/2013
 
 # import sarge
 
+import copy
 import datetime
 import ntpath
 import os
@@ -16,6 +17,7 @@ import sys
 import multiprocessing as mp
 import parsers.dss as pdss
 import subprocess as sp
+from tools.utils import path_up
 
 
 class DssEnvironment(object):
@@ -28,7 +30,7 @@ class DssEnvironment(object):
 
         """
         if isinstance(par_path, pdss.DssParam):
-            self.par = par_path
+            self.par = copy.copy(par_path)
             self.par_path = self.par.path
         else:
             self.par_path = par_path
@@ -45,11 +47,13 @@ class DssEnvironment(object):
         self.tempdir = os.path.join(self.pardir, 'temp')
         if not os.path.isdir(self.tempdir):
             os.mkdir(self.tempdir)
+        self._update_paths()
 
     def new(self):
         """Create a new directory and copy EXE and PAR files into it.
 
         """
+        os.chdir(self.tempdir)
         new_dir = os.path.join(self.tempdir, str(len(self.envs) + 1))
         if not os.path.isdir(new_dir):
             os.mkdir(new_dir)
@@ -61,10 +65,16 @@ class DssEnvironment(object):
         self.envs.append([new_dir, new_exe, new_par])
 
         # update path parameters and seed:
-        outpath = (ntpath.splitext(self.output)[0] + str(self.simnum) +
-                   ntpath.splitext(self.output)[1])
+        if self.simnum > 1:
+            outpath = (ntpath.splitext(self.output)[0] + str(self.simnum) +
+                       ntpath.splitext(self.output)[1])
+        else:
+            outpath = self.output
+        # remove the first directory in the the output tree
+        # splitpath = ntpath.split(outpath)
+        # outpath = ntpath.join(ntpath.basename(splitpath[0]), splitpath[1])
         keywords = ['output', 'seed']
-        values = ['..\\..\\' + outpath, self.par.seed + 2 * self.simnum]
+        values = ['..\\..\\..\\' + outpath, self.par.seed + 2 * self.simnum]
         self.par.update(keywords, values)
         self.par.save_old(new_par)
         self.simnum += 1
@@ -75,11 +85,26 @@ class DssEnvironment(object):
         """Remove all files and directories created for the environment.
 
         """
-        for env in self.envs:
-            os.remove(env[1])
-            os.remove(env[2])
-            os.rmdir(env[0])
-        os.rmdir(self.tempdir)
+        shutil.rmtree(self.tempdir)
+        
+    def reset_par_path(self):
+        """Restore the original parameter file path.
+        
+        """
+        self.par.path = os.path.join(self.pardir, self.parfile)
+        
+    def _update_paths(self):
+        """Update the parameters related to file paths. Prepends '..\..\'.
+        Necessary to call multiprocessing DSS launcher.
+
+        """
+        params = ['datapath', 'corrpath', 'secpath']
+
+        for param in params:
+            val = getattr(self.par, param)
+            if val and val != 'no file':
+                # FIXME: not a pretty solution... code smell
+                setattr(self.par, param, '..\\..\\..\\' + val)
 
 
 # def normal(exe_path, par):
@@ -198,6 +223,7 @@ def mp_exec(dss_path, par_path, output, simnum, stop=None, dbg=None,
     for run in runs:
         run.join()
 
+    dssenv.reset_par_path()
     if purge:
         dssenv.purge()
 
