@@ -7,6 +7,7 @@ Created on 14 de Out de 2013
 
 # import pandas as pd
 import csv
+import fnmatch
 import itertools
 import os
 from random import shuffle
@@ -440,6 +441,43 @@ def ask_add_header(pset):
     return pset
 
 
+def clean_leftovers(tree, maps=True, pars=True, trn=True, dbg=True, cands=True,
+                    refs=True, homogenised=True):
+    """Permanently remove all secondary files generated in the GSIMCLI process
+    in a given directory tree. Files to be removed:
+        - simulated maps (*.out)
+        - simulation parameters (*.par)
+        - simulation transformation (*.trn)
+        - simulation debug (*.dbg)
+        - candidate stations (*candidate*.prn)
+        - reference stations (*references*.prn)
+        - homogenised stations (*homogenised*.prn)
+
+    """
+    plate = list()
+    if maps:
+        plate.append('*.out')
+    if pars:
+        plate.append('*.par')
+    if trn:
+        plate.append('*.trn')
+    if dbg:
+        plate.append('*.dbg')
+    if cands:
+        plate.append('*candidate*.prn')
+    if refs:
+        plate.append('*references*.prn')
+    if homogenised:
+        plate.append('*homogenised*.prn')
+        
+    plate.append('dsscmd.txt')
+
+    for root, dirnames, filenames in os.walk(tree):  # @UnusedVariable
+        for basename in filenames:
+            for leftover in plate:
+                if fnmatch.fnmatch(basename, leftover):
+                    os.remove(os.path.join(root, basename))
+
 if __name__ == '__main__':
     macpath = '/Users/julio/Desktop/testes/cost-home/500_dflt_16_allvar_vind/'
     mintpath = '/home/julio/Testes/cost-home/500_dflt_16_allvar_vintermedia/'
@@ -458,7 +496,9 @@ if __name__ == '__main__':
                (basepath + 'rede000010/1980-1989/1980-1989_homogenized_data.csv', [9.0, 7.0, 6.0, 3.0, 8.0, 1.0, 4.0, 5.0, 2.0], [1, 0, 0, 0, 1, 5, 0, 0, 1], [0, 0, 0, 0, 0, 0, 0, 0, 0]),
                (basepath + 'rede000010/1990-1999/1990-1999_homogenized_data.csv', [8.0, 2.0, 1.0, 6.0, 4.0, 9.0, 7.0, 3.0, 5.0], [4, 2, 2, 1, 1, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0])]
     path = basepath + 'rede000010/gsimcli_results.xls'
-    merge_output(results, path)
+    # merge_output(results, path)
     # """
     # print station_order('network deviation', netw_pset)
+    # delme = '/home/julio/Testes/cost-home/rede000005'
+    # clean_leftovers(delme, pars=False)
     print 'done'
