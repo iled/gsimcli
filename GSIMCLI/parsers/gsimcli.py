@@ -49,7 +49,7 @@ class GsimcliParam(ParametersFile):
                         - 'skewness' use the sample skewness to decide whether
                                      it compares with the mean or the median
         skewness: samples skewness threshold, used if detecm == 'skewness'
-        detect_prob: probability to build an interval centered in the local pdf
+        detect_prob: probability to build an interval centred in the local pdf
 
         --- RESULTS ---
         detect_save: save intermediary files ('y'/'n'), which are:

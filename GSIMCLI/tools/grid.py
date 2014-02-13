@@ -14,7 +14,7 @@ import pandas as pd
 from tools.utils import skip_lines
 
 
-class PointSet:
+class PointSet(object):
     """Class for storing point-set data.
     """
     def __init__(self, name='', nodata=-999.9, nvars=0, varnames=list(),
@@ -89,7 +89,7 @@ class PointSet:
 #         station.data
 
 
-class GridArr:
+class GridArr(object):
     """Class for storing a single grid in memory.
 
     To do: make it possible to interact with multiple variables in same grid.
@@ -162,9 +162,11 @@ class GridArr:
         return well
 
 
-class GridFiles:
+class GridFiles(object):
     """This class keeps track of all the files containing simulation results,
     i.e., DSS realizations.
+    
+    TODO: make child of GridArr
     """
     def __init__(self):
         self.files = list()

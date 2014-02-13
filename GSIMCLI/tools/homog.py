@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
-'''
+"""
+This module contains the functions that implement climate data detection and
+homogenisation, as well other directly related functions.
+
 Created on 14 de Out de 2013
 
 @author: julio
-'''
+"""
 
 # import pandas as pd
 import csv
@@ -20,32 +23,81 @@ import tools.grid as gr
 
 def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
            flag=True, save=False, outfile=None, header=True):
-    """Tries to detect and homogenize irregularities in data series, following
+    """Tries to detect and homogenise irregularities in data series, following
     the geostatistical simulation approach:
 
     A breakpoint is identified whenever the interval of a specified probability
-    p (e.g., 0.95), centered in the local pdf, does not contain the observed
-    (real) value of the candidate station. In practice, the local pdfs are
+    p (e.g., 0.95), centred in the local PDF, does not contain the observed
+    (real) value of the candidate station. In practice, the local PDF's are
     provided by the histograms of simulated maps. Thus, this rule implies that
-    if the observed (real) value lies below or above the pre-defined
+    if the observed (real) value lies below or above the predefined
     percentiles of the histogram of a given instant in time then it is not
     considered homogeneous. If irregularities are detected in a candidate
     series, the time series can be adjusted by replacing the inhomogeneous
-    records with the mean, or median, of the pdf(s) calculated at the candidate
-    station’s location for the inhomogeneous period(s).
-                                                        (Costa & Soares, 2009)
+    records with the mean, or median, of the PDF(s) calculated at the candidate
+    station’s location for the inhomogeneous period(s). [1]
 
+    Parameters
+    ----------
+    grids: GridFiles object
+        Instance of GridFiles type containing the geostatistical simulation
+        results.
+    obs_file: PointSet object
+        Instance of PointSet type containing the observed values at the
+        candidate station.
+    method: {'mean', 'median', 'skewness'} string, default 'mean'
+        Method for the inhomogeneities detection:
+            - mean: compare observed values with the mean of simulated values;
+            - median: compare observed values with the median of simulated
+                values;
+            - skewness: use the sample skewness to decide whether it compare
+                observed values with the mean or the median of simulated
+                values.
+    prob: float, default 0.95
+        Probability value to build the detection interval centred in the local
+        PDF.
+    skewness: float, default None
+        Samples skewness threshold, used if `method == 'skewness'`.
+    save: boolean, default False
+        Save intermediary PointSet files, one containing the homogenised values
+        and the other containing simulated values at the candidate station
+        location.
+    outfile: string, default None
+        Full path where the homogenised values will be saved if `save` is True.
+        Simulated values at the candidates stations are saved in the directory
+        used to store the simulated maps.
+    header: boolean, default True
+        PointSet files (observed and homogenised values) have the GSLIB
+        standard header lines.
+
+    Returns
+    -------
+    homogenised: PointSet object
+        Instance of PointSet type containing the homogenised values.
+    detected_number: int
+        Number of detected breakpoints.
+    missing_data: int
+        Number of missing data that was interpolated.
+    
+    Notes
+    -----
     Observed and simulated data must be in the same temporal resolution (e.g.,
     monthly data). There is no down or upscale considered.
 
     Missing data will automatically be replaced according to the selected
-    method, considering its flag number (e.g., -999) is out of the variable
+    method, considering its flag number (e.g., -999.9) is out of the variable
     distribution, thus being caught in the percentile' inequation.
 
     By default it creates a new column named 'Flag' with the following values:
-        . if no homogenization took place in that cell, Flag = no_data_value
+        . if no homogenisation took place in that cell, Flag = no_data_value
         . otherwise, Flag = observed_value
-
+        
+    References
+    ----------
+    .. [1] Costa, A., & Soares, A. (2009). Homogenization of climate data:
+    review and new perspectives using geostatistics. Mathematical Geosciences,
+    41(3), 291–305. doi:10.1007/s11004-008-9203-3
+    
     """
     if method == 'mean':
         lmean = True
@@ -96,8 +148,8 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
                                             vline_stats.values['rperc'])
     detected_number = hom_where.sum()  # + fn
 
-    # homogenize irregularities
-    homogenized = gr.PointSet(obs.name + '_homogenized', obs.nodata, obs.nvars,
+    # homogenise irregularities
+    homogenised = gr.PointSet(obs.name + '_homogenised', obs.nodata, obs.nvars,
                               list(obs.varnames), obs.values.copy())
 
     if method == 'skewness' and skewness:
@@ -107,18 +159,20 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
     else:
         fixvalues = vline_stats.values['mean']
 
-    homogenized.values['clim'] = obs.values['clim'].where(~hom_where,
+    homogenised.values['clim'] = obs.values['clim'].where(~hom_where,
                                                           fixvalues.values)
     if flag:
         flag_col = obs.values['clim'].where(hom_where, obs.nodata)
-        homogenized.nvars += 1
-        homogenized.varnames.append('Flag')
-        homogenized.values['Flag'] = flag_col
+        homogenised.nvars += 1
+        homogenised.varnames.append('Flag')
+        homogenised.values['Flag'] = flag_col
 
     if save and outfile:
-        homogenized.save(outfile, header)
+        homogenised.save(outfile, header)
 
-    return homogenized, detected_number, fn + nodatas
+    missing_data = fn + nodatas
+
+    return homogenised, detected_number, missing_data
 
 
 def fill_station(pset_file, values, time_min, time_max, time_step=1,
@@ -209,8 +263,8 @@ def take_candidate(pset_file, station, h=True, save=False, path=None):
 
 def append_homog_station(pset_file, station, header=True):
     """Inserts a station in PointSet format into another pset in PointSet
-    format. This is necessary to consider already homogenized stations in the
-    iterative homogenizing process.
+    format. This is necessary to consider already homogenised stations in the
+    iterative homogenising process.
 
     """
     if isinstance(pset_file, gr.PointSet):
@@ -469,7 +523,7 @@ def clean_leftovers(tree, maps=True, pars=True, trn=True, dbg=True, cands=True,
         plate.append('*references*.prn')
     if homogenised:
         plate.append('*homogenised*.prn')
-        
+
     plate.append('dsscmd.txt')
 
     for root, dirnames, filenames in os.walk(tree):  # @UnusedVariable
