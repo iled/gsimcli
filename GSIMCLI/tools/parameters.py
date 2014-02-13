@@ -5,8 +5,9 @@ Created on 6 de Dez de 2013
 @author: julio
 '''
 
+from utils import yes_no
 
-class ParametersFile:
+class ParametersFile(object):
     """Base class to construct a ParametersClass.
     
     Each parameter is defined by the following pair:
@@ -79,10 +80,7 @@ class ParametersFile:
         elif field in self.int + self.opt_int:
             setattr(self, field, _split(value, int, self.value_sep))
         elif field in self.boolean + self.opt_boolean:
-            if value.strip().lower() == 'y':
-                setattr(self, field, True)
-            else:
-                setattr(self, field, False)
+            setattr(self, field, yes_no(value))
         else:
             setattr(self, field, value.strip())
 

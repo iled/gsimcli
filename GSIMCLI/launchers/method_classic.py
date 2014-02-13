@@ -81,17 +81,6 @@ def ask_format(way):
         return i
 
 
-def ask_merge():
-    print 'Group stations of the same network in one single file?'
-    m = raw_input('Y/N: ')
-    if m.lower() == 'y':
-        return True
-    elif m.lower == 'n':
-        return False
-    else:
-        ask_merge()
-
-
 def convert_files():
     """Options for converting files format.
 
@@ -117,7 +106,7 @@ def convert_files():
         print 'Insert arguments and press [ENTER]\n'
         folder = raw_input('Full path to the folder containing data: ')
         var = raw_input('Variable (dd, ff, nn, tm, tn, tx, pp, rr, sd): ')
-        amerge = ask_merge()
+        amerge = False
 
         for root, dirs, files in os.walk(folder):  # @UnusedVariable
             if (len(dirs) > 0 and
@@ -353,7 +342,7 @@ def gsimcli(stations_file, stations_h, no_data, stations_order, detect_method,
         # workaround for mp_exec, it needs one less directory in the tree
         reffile_nt = reffile_nt[reffile_nt.index('\\') + 1:]
         outfile_nt = outfile_nt[outfile_nt.index('\\') + 1:]
-        
+
         parfile = os.path.join(outfolder, parname)
         references.save(psetfile=reffile, header=False)
         if detect_save:
@@ -373,11 +362,11 @@ def gsimcli(stations_file, stations_h, no_data, stations_order, detect_method,
             # dss.exec_ssdir(exe_path, parfile, dbgfile)
             if sim >= dsspar.nsim + 1 - cores:
                 purge_temp = True
-#             dss.mp_exec(dss_path=exe_path, par_path=oldpar, output=outfile_nt,
-#                         simnum=sim, dbg=dbgfile, cores=cores, purge=purge_temp,
-#                         stop=dsspar.nsim)
-            # oldfilent = (ntpath.splitext(outfile_nt)[0] + str(sim + 1) +
-            #              ntpath.splitext(outfile_nt)[1])
+            dss.mp_exec(dss_path=exe_path, par_path=oldpar, output=outfile_nt,
+                        simnum=sim, dbg=dbgfile, cores=cores, purge=purge_temp,
+                        stop=dsspar.nsim)
+            #  oldfilent = (ntpath.splitext(outfile_nt)[0] + str(sim + 1) +
+            #               ntpath.splitext(outfile_nt)[1])
             # oldpar.update(['output', 'seed'], [oldfilent, oldpar.seed + 2])
 
         # raw_input('Go and run DSS with these parameters: {}'.format(parfile))
@@ -486,10 +475,10 @@ def batch_decade(par_path, variograms_file):
 
     network_parpath = gscpar.path
     variograms = pd.read_csv(variograms_file)
-    os.chdir(os.path.dirname(variograms_file))
     results = list()
 
     for decade in variograms.iterrows():
+        os.chdir(os.path.dirname(variograms_file))
         first_year = decade[1].ix['Decade'].split('-')[0].strip()
         data_folder = os.path.join(os.getcwd(), glob.glob('dec*')[0])
         data_file = os.path.join(data_folder, glob.glob
@@ -595,10 +584,7 @@ def main():
         stations_pset = gr.PointSet()
         no_data = parfile.nd
         stations_h = raw_input('Does that file have a header? (Y/N) ')
-        if stations_h.lower() == 'y':
-            stations_h = True
-        else:
-            stations_h = False
+        stations_h = ut.yes_no(stations_h)
         stations_pset.load(stations_file, no_data, stations_h)
         if not stations_h:
             stations_pset = ask_add_header(stations_pset)

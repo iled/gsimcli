@@ -67,7 +67,7 @@ def path_up(path, level):
     tail = list()
     if filename:
         tail.append(filename)
-        
+
     for i in xrange(level):  # @UnusedVariable
         head, base = os.path.split(head)
         tail.append(base)
@@ -75,3 +75,13 @@ def path_up(path, level):
     tail = os.path.join(*tail[::-1])
 
     return head, tail
+
+
+def yes_no(yn):
+    """Convert a string containing 'Y'(es) or 'N'(o) to True or False.
+
+    """
+    if yn.strip().lower() in ['y', 'yes']:
+        return True
+    else:
+        return False
