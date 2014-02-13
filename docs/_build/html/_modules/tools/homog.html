@@ -1,0 +1,650 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>tools.homog &mdash; gsimcli 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="gsimcli 0.0.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">gsimcli 0.0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for tools.homog</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module contains the functions that implement climate data detection and</span>
+<span class="sd">homogenisation, as well other directly related functions.</span>
+
+<span class="sd">Created on 14 de Out de 2013</span>
+
+<span class="sd">@author: julio</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c"># import pandas as pd</span>
+<span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">import</span> <span class="nn">fnmatch</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">shuffle</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">tools.grid</span> <span class="kn">as</span> <span class="nn">gr</span>
+<span class="c"># import parsers.cost as cost</span>
+
+
+<div class="viewcode-block" id="detect"><a class="viewcode-back" href="../../tools.html#tools.homog.detect">[docs]</a><span class="k">def</span> <span class="nf">detect</span><span class="p">(</span><span class="n">grids</span><span class="p">,</span> <span class="n">obs_file</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s">&#39;mean&#39;</span><span class="p">,</span> <span class="n">prob</span><span class="o">=</span><span class="mf">0.95</span><span class="p">,</span> <span class="n">skewness</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+           <span class="n">flag</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">outfile</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Tries to detect and homogenise irregularities in data series, following</span>
+<span class="sd">    the geostatistical simulation approach:</span>
+
+<span class="sd">    A breakpoint is identified whenever the interval of a specified probability</span>
+<span class="sd">    p (e.g., 0.95), centred in the local PDF, does not contain the observed</span>
+<span class="sd">    (real) value of the candidate station. In practice, the local PDF&#39;s are</span>
+<span class="sd">    provided by the histograms of simulated maps. Thus, this rule implies that</span>
+<span class="sd">    if the observed (real) value lies below or above the predefined</span>
+<span class="sd">    percentiles of the histogram of a given instant in time then it is not</span>
+<span class="sd">    considered homogeneous. If irregularities are detected in a candidate</span>
+<span class="sd">    series, the time series can be adjusted by replacing the inhomogeneous</span>
+<span class="sd">    records with the mean, or median, of the PDF(s) calculated at the candidate</span>
+<span class="sd">    station’s location for the inhomogeneous period(s). [1]</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    grids: GridFiles object</span>
+<span class="sd">        Instance of GridFiles type containing the geostatistical simulation</span>
+<span class="sd">        results.</span>
+<span class="sd">    obs_file: PointSet object</span>
+<span class="sd">        Instance of PointSet type containing the observed values at the</span>
+<span class="sd">        candidate station.</span>
+<span class="sd">    method: {&#39;mean&#39;, &#39;median&#39;, &#39;skewness&#39;} string, default &#39;mean&#39;</span>
+<span class="sd">        Method for the inhomogeneities detection:</span>
+<span class="sd">            - mean: compare observed values with the mean of simulated values;</span>
+<span class="sd">            - median: compare observed values with the median of simulated</span>
+<span class="sd">                values;</span>
+<span class="sd">            - skewness: use the sample skewness to decide whether it compare</span>
+<span class="sd">                observed values with the mean or the median of simulated</span>
+<span class="sd">                values.</span>
+<span class="sd">    prob: float, default 0.95</span>
+<span class="sd">        Probability value to build the detection interval centred in the local</span>
+<span class="sd">        PDF.</span>
+<span class="sd">    skewness: float, default None</span>
+<span class="sd">        Samples skewness threshold, used if `method == &#39;skewness&#39;`.</span>
+<span class="sd">    save: boolean, default False</span>
+<span class="sd">        Save intermediary PointSet files, one containing the homogenised values</span>
+<span class="sd">        and the other containing simulated values at the candidate station</span>
+<span class="sd">        location.</span>
+<span class="sd">    outfile: string, default None</span>
+<span class="sd">        Full path where the homogenised values will be saved if `save` is True.</span>
+<span class="sd">        Simulated values at the candidates stations are saved in the directory</span>
+<span class="sd">        used to store the simulated maps.</span>
+<span class="sd">    header: boolean, default True</span>
+<span class="sd">        PointSet files (observed and homogenised values) have the GSLIB</span>
+<span class="sd">        standard header lines.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    homogenised: PointSet object</span>
+<span class="sd">        Instance of PointSet type containing the homogenised values.</span>
+<span class="sd">    detected_number: int</span>
+<span class="sd">        Number of detected breakpoints.</span>
+<span class="sd">    missing_data: int</span>
+<span class="sd">        Number of missing data that was interpolated.</span>
+<span class="sd">    </span>
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Observed and simulated data must be in the same temporal resolution (e.g.,</span>
+<span class="sd">    monthly data). There is no down or upscale considered.</span>
+
+<span class="sd">    Missing data will automatically be replaced according to the selected</span>
+<span class="sd">    method, considering its flag number (e.g., -999.9) is out of the variable</span>
+<span class="sd">    distribution, thus being caught in the percentile&#39; inequation.</span>
+
+<span class="sd">    By default it creates a new column named &#39;Flag&#39; with the following values:</span>
+<span class="sd">        . if no homogenisation took place in that cell, Flag = no_data_value</span>
+<span class="sd">        . otherwise, Flag = observed_value</span>
+<span class="sd">        </span>
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [1] Costa, A., &amp; Soares, A. (2009). Homogenization of climate data:</span>
+<span class="sd">    review and new perspectives using geostatistics. Mathematical Geosciences,</span>
+<span class="sd">    41(3), 291–305. doi:10.1007/s11004-008-9203-3</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s">&#39;mean&#39;</span><span class="p">:</span>
+        <span class="n">lmean</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="n">lmed</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">lskew</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s">&#39;median&#39;</span><span class="p">:</span>
+        <span class="n">lmean</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">lmed</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="n">lskew</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s">&#39;skewness&#39;</span> <span class="ow">and</span> <span class="n">skewness</span><span class="p">:</span>
+        <span class="n">lmean</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="n">lmed</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="n">lskew</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Method {} invalid or incomplete.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">method</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obs_file</span><span class="p">,</span> <span class="n">gr</span><span class="o">.</span><span class="n">PointSet</span><span class="p">):</span>
+        <span class="n">obs</span> <span class="o">=</span> <span class="n">obs_file</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">obs</span> <span class="o">=</span> <span class="n">gr</span><span class="o">.</span><span class="n">PointSet</span><span class="p">()</span>
+        <span class="n">obs</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">obs_file</span><span class="p">,</span> <span class="n">header</span><span class="p">)</span>
+
+    <span class="n">obs_xy</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:</span><span class="mi">2</span><span class="p">])</span>
+    <span class="c"># calculate stats</span>
+    <span class="n">vline_stats</span> <span class="o">=</span> <span class="n">grids</span><span class="o">.</span><span class="n">stats_vline</span><span class="p">(</span><span class="n">obs_xy</span><span class="p">,</span> <span class="n">lmean</span><span class="p">,</span> <span class="n">lmed</span><span class="p">,</span> <span class="n">lskew</span><span class="p">,</span> <span class="n">lperc</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                                    <span class="n">p</span><span class="o">=</span><span class="n">prob</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="n">save</span><span class="p">)</span>
+
+    <span class="c"># remove lines with no-data and flags</span>
+    <span class="k">if</span> <span class="s">&#39;Flag&#39;</span> <span class="ow">in</span> <span class="n">obs</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="n">obs</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s">&#39;Flag&#39;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s">&#39;Flag&#39;</span> <span class="ow">in</span> <span class="n">obs</span><span class="o">.</span><span class="n">varnames</span><span class="p">:</span>
+            <span class="n">obs</span><span class="o">.</span><span class="n">varnames</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s">&#39;Flag&#39;</span><span class="p">)</span>
+            <span class="n">obs</span><span class="o">.</span><span class="n">nvars</span> <span class="o">-=</span> <span class="mi">1</span>
+    <span class="n">nodatas</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="s">&#39;clim&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="n">obs</span><span class="o">.</span><span class="n">nodata</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">obs</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">nodata</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+    <span class="n">meanvalues</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">vline_stats</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="s">&#39;mean&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;clim&#39;</span><span class="p">,</span>
+                           <span class="n">index</span><span class="o">=</span><span class="n">obs</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+    <span class="n">obs</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">meanvalues</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+    <span class="c"># find and fill missing values</span>
+    <span class="n">fn</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">obs</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">grids</span><span class="o">.</span><span class="n">dz</span><span class="p">:</span>
+        <span class="n">obs</span><span class="p">,</span> <span class="n">fn</span> <span class="o">=</span> <span class="n">fill_station</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">meanvalues</span><span class="p">,</span> <span class="n">grids</span><span class="o">.</span><span class="n">zi</span><span class="p">,</span> <span class="n">grids</span><span class="o">.</span><span class="n">zi</span> <span class="o">+</span> <span class="n">grids</span><span class="o">.</span><span class="n">dz</span><span class="p">,</span>
+                               <span class="n">grids</span><span class="o">.</span><span class="n">cellz</span><span class="p">,</span> <span class="n">header</span><span class="p">)</span>
+
+    <span class="c"># detect irregularities</span>
+    <span class="n">hom_where</span> <span class="o">=</span> <span class="o">~</span><span class="n">obs</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="s">&#39;clim&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="n">vline_stats</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="s">&#39;lperc&#39;</span><span class="p">],</span>
+                                            <span class="n">vline_stats</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="s">&#39;rperc&#39;</span><span class="p">])</span>
+    <span class="n">detected_number</span> <span class="o">=</span> <span class="n">hom_where</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>  <span class="c"># + fn</span>
+
+    <span class="c"># homogenise irregularities</span>
+    <span class="n">homogenised</span> <span class="o">=</span> <span class="n">gr</span><span class="o">.</span><span class="n">PointSet</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s">&#39;_homogenised&#39;</span><span class="p">,</span> <span class="n">obs</span><span class="o">.</span><span class="n">nodata</span><span class="p">,</span> <span class="n">obs</span><span class="o">.</span><span class="n">nvars</span><span class="p">,</span>
+                              <span class="nb">list</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">varnames</span><span class="p">),</span> <span class="n">obs</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+
+    <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s">&#39;skewness&#39;</span> <span class="ow">and</span> <span class="n">skewness</span><span class="p">:</span>
+        <span class="n">fixvalues</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">vline_stats</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="s">&#39;skewness&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">1.5</span><span class="p">,</span>
+                             <span class="n">vline_stats</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="s">&#39;median&#39;</span><span class="p">],</span>
+                             <span class="n">vline_stats</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="s">&#39;mean&#39;</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fixvalues</span> <span class="o">=</span> <span class="n">vline_stats</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="s">&#39;mean&#39;</span><span class="p">]</span>
+
+    <span class="n">homogenised</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="s">&#39;clim&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="s">&#39;clim&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="o">~</span><span class="n">hom_where</span><span class="p">,</span>
+                                                          <span class="n">fixvalues</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+        <span class="n">flag_col</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="s">&#39;clim&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">hom_where</span><span class="p">,</span> <span class="n">obs</span><span class="o">.</span><span class="n">nodata</span><span class="p">)</span>
+        <span class="n">homogenised</span><span class="o">.</span><span class="n">nvars</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">homogenised</span><span class="o">.</span><span class="n">varnames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;Flag&#39;</span><span class="p">)</span>
+        <span class="n">homogenised</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="s">&#39;Flag&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">flag_col</span>
+
+    <span class="k">if</span> <span class="n">save</span> <span class="ow">and</span> <span class="n">outfile</span><span class="p">:</span>
+        <span class="n">homogenised</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">outfile</span><span class="p">,</span> <span class="n">header</span><span class="p">)</span>
+
+    <span class="n">missing_data</span> <span class="o">=</span> <span class="n">fn</span> <span class="o">+</span> <span class="n">nodatas</span>
+
+    <span class="k">return</span> <span class="n">homogenised</span><span class="p">,</span> <span class="n">detected_number</span><span class="p">,</span> <span class="n">missing_data</span>
+
+</div>
+<div class="viewcode-block" id="fill_station"><a class="viewcode-back" href="../../tools.html#tools.homog.fill_station">[docs]</a><span class="k">def</span> <span class="nf">fill_station</span><span class="p">(</span><span class="n">pset_file</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">time_min</span><span class="p">,</span> <span class="n">time_max</span><span class="p">,</span> <span class="n">time_step</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                 <span class="n">header</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Look for missing data in a station and fill them with a given value.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pset_file</span><span class="p">,</span> <span class="n">gr</span><span class="o">.</span><span class="n">PointSet</span><span class="p">):</span>
+        <span class="n">pset</span> <span class="o">=</span> <span class="n">pset_file</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">pset</span> <span class="o">=</span> <span class="n">gr</span><span class="o">.</span><span class="n">PointSet</span><span class="p">()</span>
+        <span class="n">pset</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">pset_file</span><span class="p">,</span> <span class="n">header</span><span class="p">)</span>
+
+    <span class="n">varcol</span> <span class="o">=</span> <span class="n">pset</span><span class="o">.</span><span class="n">varnames</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s">&#39;clim&#39;</span><span class="p">)</span>
+    <span class="n">filled_count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">timeserie</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">time_min</span><span class="p">,</span> <span class="n">time_max</span><span class="p">,</span> <span class="n">time_step</span><span class="p">)</span>
+    <span class="n">filled</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">timeserie</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">itime</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">timeserie</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">j</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="s">&#39;time&#39;</span><span class="p">])</span> <span class="ow">and</span>
+            <span class="n">itime</span> <span class="o">==</span> <span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="s">&#39;time&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">j</span><span class="p">]):</span>
+            <span class="n">filled</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="n">j</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">filled</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="p">[</span><span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                            <span class="n">itime</span><span class="p">,</span> <span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span><span class="n">varcol</span><span class="p">],</span> <span class="n">values</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                            <span class="p">][:</span><span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+            <span class="n">filled_count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="n">pset</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">filled</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">pset</span><span class="p">,</span> <span class="n">filled_count</span>
+
+</div>
+<div class="viewcode-block" id="list_stations"><a class="viewcode-back" href="../../tools.html#tools.homog.list_stations">[docs]</a><span class="k">def</span> <span class="nf">list_stations</span><span class="p">(</span><span class="n">pset_file</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Lists all the stations in one point-set file.</span>
+<span class="sd">    It doesn&#39;t distinguish networks.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pset_file</span><span class="p">,</span> <span class="n">gr</span><span class="o">.</span><span class="n">PointSet</span><span class="p">):</span>
+        <span class="n">pset</span> <span class="o">=</span> <span class="n">pset_file</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">pset</span> <span class="o">=</span> <span class="n">gr</span><span class="o">.</span><span class="n">PointSet</span><span class="p">()</span>
+        <span class="n">pset</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">pset_file</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">h</span><span class="p">)</span>
+
+    <span class="n">stations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">station</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">stations</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="take_candidate"><a class="viewcode-back" href="../../tools.html#tools.homog.take_candidate">[docs]</a><span class="k">def</span> <span class="nf">take_candidate</span><span class="p">(</span><span class="n">pset_file</span><span class="p">,</span> <span class="n">station</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Remove a station from a point-set file and stores its points in another</span>
+<span class="sd">    file, as well the remainder (neighbours) in yet another file.</span>
+
+<span class="sd">    Drops the flag column from the resulting PointSets.</span>
+
+<span class="sd">    TODO: manter a formatação ao guardar os point sets.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pset_file</span><span class="p">,</span> <span class="n">gr</span><span class="o">.</span><span class="n">PointSet</span><span class="p">):</span>
+        <span class="n">pset</span> <span class="o">=</span> <span class="n">pset_file</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">pset</span> <span class="o">=</span> <span class="n">gr</span><span class="o">.</span><span class="n">PointSet</span><span class="p">()</span>
+        <span class="n">pset</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">pset_file</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">h</span><span class="p">)</span>
+
+    <span class="n">candidate</span> <span class="o">=</span> <span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="s">&#39;station&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">station</span><span class="p">)]</span>
+    <span class="n">neighbours</span> <span class="o">=</span> <span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="s">&#39;station&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="nb">int</span><span class="p">(</span><span class="n">station</span><span class="p">)]</span>
+
+    <span class="k">if</span> <span class="s">&#39;Flag&#39;</span> <span class="ow">in</span> <span class="n">candidate</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="n">candidate</span> <span class="o">=</span> <span class="n">candidate</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s">&#39;Flag&#39;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">cand_nvars</span> <span class="o">=</span> <span class="n">pset</span><span class="o">.</span><span class="n">nvars</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">cand_varnames</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">candidate</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">cand_nvars</span> <span class="o">=</span> <span class="n">pset</span><span class="o">.</span><span class="n">nvars</span>
+        <span class="n">cand_varnames</span> <span class="o">=</span> <span class="n">pset</span><span class="o">.</span><span class="n">varnames</span>
+
+    <span class="n">candidate_pset</span> <span class="o">=</span> <span class="n">gr</span><span class="o">.</span><span class="n">PointSet</span><span class="p">(</span><span class="s">&#39;Candidate_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">station</span><span class="p">),</span> <span class="n">pset</span><span class="o">.</span><span class="n">nodata</span><span class="p">,</span>
+                                 <span class="n">cand_nvars</span><span class="p">,</span> <span class="n">cand_varnames</span><span class="p">,</span> <span class="n">candidate</span><span class="p">)</span>
+    <span class="n">neighbours_pset</span> <span class="o">=</span> <span class="n">gr</span><span class="o">.</span><span class="n">PointSet</span><span class="p">(</span><span class="s">&#39;References_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">station</span><span class="p">),</span> <span class="n">pset</span><span class="o">.</span><span class="n">nodata</span><span class="p">,</span>
+                                  <span class="n">pset</span><span class="o">.</span><span class="n">nvars</span><span class="p">,</span> <span class="n">pset</span><span class="o">.</span><span class="n">varnames</span><span class="p">,</span> <span class="n">neighbours</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">save</span> <span class="ow">and</span> <span class="n">path</span><span class="p">:</span>
+        <span class="n">base</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">candidate_pset</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">base</span> <span class="o">+</span> <span class="s">&#39;_candidate&#39;</span> <span class="o">+</span> <span class="n">ext</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+        <span class="n">neighbours_pset</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">base</span> <span class="o">+</span> <span class="s">&#39;_neighbours&#39;</span> <span class="o">+</span> <span class="n">ext</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">candidate_pset</span><span class="p">,</span> <span class="n">neighbours_pset</span>
+
+</div>
+<div class="viewcode-block" id="append_homog_station"><a class="viewcode-back" href="../../tools.html#tools.homog.append_homog_station">[docs]</a><span class="k">def</span> <span class="nf">append_homog_station</span><span class="p">(</span><span class="n">pset_file</span><span class="p">,</span> <span class="n">station</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Inserts a station in PointSet format into another pset in PointSet</span>
+<span class="sd">    format. This is necessary to consider already homogenised stations in the</span>
+<span class="sd">    iterative homogenising process.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pset_file</span><span class="p">,</span> <span class="n">gr</span><span class="o">.</span><span class="n">PointSet</span><span class="p">):</span>
+        <span class="n">pset</span> <span class="o">=</span> <span class="n">pset_file</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">pset</span> <span class="o">=</span> <span class="n">gr</span><span class="o">.</span><span class="n">PointSet</span><span class="p">()</span>
+        <span class="n">pset</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">pset_file</span><span class="p">,</span> <span class="n">header</span><span class="p">)</span>
+
+    <span class="c"># checks if &#39;Flag&#39; column already exists</span>
+    <span class="k">if</span> <span class="s">&#39;Flag&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">pset</span><span class="o">.</span><span class="n">varnames</span><span class="p">:</span>
+        <span class="n">pset</span><span class="o">.</span><span class="n">varnames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;Flag&#39;</span><span class="p">)</span>
+        <span class="n">pset</span><span class="o">.</span><span class="n">nvars</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">pset</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="p">(</span><span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">join</span>
+                       <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">pset</span><span class="o">.</span><span class="n">nodata</span><span class="p">,</span> <span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+                                  <span class="n">name</span><span class="o">=</span><span class="s">&#39;Flag&#39;</span><span class="p">)))</span>
+    <span class="k">elif</span> <span class="n">pset</span><span class="o">.</span><span class="n">nvars</span> <span class="o">!=</span> <span class="n">station</span><span class="o">.</span><span class="n">nvars</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;PointSets {} and {} have different number of &#39;</span>
+                         <span class="s">&#39;variables.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pset</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">station</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+
+    <span class="n">pset</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">station</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">pset</span>
+
+</div>
+<div class="viewcode-block" id="station_order"><a class="viewcode-back" href="../../tools.html#tools.homog.station_order">[docs]</a><span class="k">def</span> <span class="nf">station_order</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">pset_path</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">nd</span><span class="o">=-</span><span class="mf">999.9</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                  <span class="n">userset</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">md_last</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Sort a list containing stations numbers, according to the selected</span>
+<span class="sd">    method, whether in ascending or descending order:</span>
+<span class="sd">        - random: all stations randomly sorted;</span>
+<span class="sd">        - sorted: sorts all stations in ascending or descending order;</span>
+<span class="sd">        - variance: sorts all stations by greater or lower variance;</span>
+<span class="sd">        - network deviation: sorts all stations in ascending  or descending</span>
+<span class="sd">        order according to the difference between the station average and the</span>
+<span class="sd">        network average;</span>
+<span class="sd">        - user: the user specifies which stations and their order.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">pset_path</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pset_path</span><span class="p">,</span> <span class="n">gr</span><span class="o">.</span><span class="n">PointSet</span><span class="p">):</span>
+            <span class="n">pset</span> <span class="o">=</span> <span class="n">pset_path</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pset</span> <span class="o">=</span> <span class="n">gr</span><span class="o">.</span><span class="n">PointSet</span><span class="p">(</span><span class="n">psetpath</span><span class="o">=</span><span class="n">pset_path</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=</span><span class="n">nd</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">)</span>
+
+    <span class="n">stations_list</span> <span class="o">=</span> <span class="n">list_stations</span><span class="p">(</span><span class="n">pset</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="n">header</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s">&#39;random&#39;</span><span class="p">:</span>
+        <span class="n">shuffle</span><span class="p">(</span><span class="n">stations_list</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s">&#39;sorted&#39;</span><span class="p">:</span>
+        <span class="n">stations_list</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">reverse</span><span class="o">=</span><span class="ow">not</span> <span class="n">ascending</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s">&#39;variance&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">pset_path</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;Method variance requires the stations point-set&#39;</span><span class="p">)</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">nd</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+        <span class="n">varsort</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s">&#39;station&#39;</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span><span class="o">.</span><span class="n">clim</span><span class="o">.</span><span class="n">var</span><span class="p">()</span>
+        <span class="n">varsort</span> <span class="o">=</span> <span class="n">varsort</span><span class="o">.</span><span class="n">order</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="n">ascending</span><span class="p">,</span> <span class="n">na_last</span><span class="o">=</span><span class="n">md_last</span><span class="p">)</span>
+        <span class="n">stations_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">varsort</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s">&#39;network deviation&#39;</span><span class="p">:</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">nd</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+        <span class="n">stations_mean</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s">&#39;station&#39;</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span><span class="o">.</span><span class="n">clim</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+        <span class="n">network_dev</span> <span class="o">=</span> <span class="p">((</span><span class="n">stations_mean</span> <span class="o">-</span> <span class="n">values</span><span class="o">.</span><span class="n">clim</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span>
+                       <span class="o">.</span><span class="n">order</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="n">ascending</span><span class="p">,</span> <span class="n">na_last</span><span class="o">=</span><span class="n">md_last</span><span class="p">))</span>
+        <span class="n">stations_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">network_dev</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s">&#39;user&#39;</span> <span class="ow">and</span> <span class="n">userset</span><span class="p">:</span>
+        <span class="n">stations_list</span> <span class="o">=</span> <span class="n">userset</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;Method {} not understood or invalid userset ({}).&#39;</span>
+                        <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">userset</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">stations_list</span>
+
+</div>
+<div class="viewcode-block" id="save_output"><a class="viewcode-back" href="../../tools.html#tools.homog.save_output">[docs]</a><span class="k">def</span> <span class="nf">save_output</span><span class="p">(</span><span class="n">pset_file</span><span class="p">,</span> <span class="n">outfile</span><span class="p">,</span> <span class="n">fformat</span><span class="o">=</span><span class="s">&#39;gsimcli&#39;</span><span class="p">,</span> <span class="n">lvars</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                <span class="n">network_split</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">station_split</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">save_stations</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                <span class="n">keys</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">append_year</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Handles different options for saving results to files.</span>
+
+<span class="sd">    fformat: file type and contents format</span>
+<span class="sd">        - &#39;normal&#39;: *.csv -- all the variables in the file are written in</span>
+<span class="sd">                    their existing order</span>
+<span class="sd">        - &#39;gsimcli&#39;: *.csv -- YEAR | MONTH | ID_DATA | ID_FLAG</span>
+<span class="sd">        - &#39;gslib&#39;: GSLIB standard with header, useful for visualization</span>
+<span class="sd">        PLANNED:</span>
+<span class="sd">        - &#39;cost&#39;: COST-HOME format, to export results to the benchmark</span>
+
+<span class="sd">    TODO:</span>
+<span class="sd">        .checkar</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pset_file</span><span class="p">,</span> <span class="n">gr</span><span class="o">.</span><span class="n">PointSet</span><span class="p">):</span>
+        <span class="n">pset</span> <span class="o">=</span> <span class="n">pset_file</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">pset</span> <span class="o">=</span> <span class="n">gr</span><span class="o">.</span><span class="n">PointSet</span><span class="p">()</span>
+        <span class="n">pset</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">pset_file</span><span class="p">,</span> <span class="n">header</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">fformat</span> <span class="o">==</span> <span class="s">&#39;normal&#39;</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">outfile</span><span class="p">,</span> <span class="s">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">csvfile</span><span class="p">:</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">csvfile</span><span class="p">,</span> <span class="n">dialect</span><span class="o">=</span><span class="s">&#39;excel&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">lvars</span><span class="p">:</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">pset</span><span class="o">.</span><span class="n">varnames</span><span class="p">)</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">writerows</span><span class="p">(</span><span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">writerow</span><span class="p">([</span><span class="n">pset</span><span class="o">.</span><span class="n">varnames</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">lvars</span><span class="p">])</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">writerows</span><span class="p">(</span><span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">lvars</span><span class="p">)])</span>
+
+    <span class="k">elif</span> <span class="n">fformat</span> <span class="o">==</span> <span class="s">&#39;gsimcli&#39;</span><span class="p">:</span>
+        <span class="c"># year, time (month)</span>
+        <span class="n">csvheader</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;time&#39;</span><span class="p">]</span>
+        <span class="c"># year, time (month), stationID_VAR, stationID_FLAG</span>
+        <span class="n">st_col</span> <span class="o">=</span> <span class="n">pset</span><span class="o">.</span><span class="n">varnames</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s">&#39;station&#39;</span><span class="p">)</span>
+        <span class="n">stations</span> <span class="o">=</span> <span class="n">list_stations</span><span class="p">(</span><span class="n">pset</span><span class="p">,</span> <span class="n">st_col</span><span class="p">)</span>
+        <span class="n">varname</span> <span class="o">=</span> <span class="n">pset</span><span class="o">.</span><span class="n">varnames</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">headerline</span> <span class="o">=</span> <span class="p">[[</span><span class="nb">str</span><span class="p">(</span><span class="n">stations</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">+</span> <span class="s">&#39;_&#39;</span> <span class="o">+</span> <span class="n">varname</span><span class="p">,</span>
+                       <span class="nb">str</span><span class="p">(</span><span class="n">stations</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">+</span> <span class="s">&#39;_FLAG&#39;</span><span class="p">]</span>
+                      <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">stations</span><span class="p">))]</span>
+        <span class="n">csvheader</span> <span class="o">+=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="n">headerline</span><span class="p">)</span>
+        <span class="n">outdf</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="s">&#39;time&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span>
+                                             <span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="s">&#39;time&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+                                             <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
+                             <span class="n">columns</span><span class="o">=</span><span class="n">csvheader</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">stations</span><span class="p">)):</span>
+            <span class="n">temp</span> <span class="o">=</span> <span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="s">&#39;station&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">stations</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                               <span class="p">][[</span><span class="s">&#39;time&#39;</span><span class="p">,</span> <span class="s">&#39;clim&#39;</span><span class="p">,</span> <span class="s">&#39;Flag&#39;</span><span class="p">]]</span>
+            <span class="n">tempdf</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">temp</span><span class="p">[[</span><span class="s">&#39;clim&#39;</span><span class="p">,</span> <span class="s">&#39;Flag&#39;</span><span class="p">]])</span>
+            <span class="n">tempdf</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">temp</span><span class="p">[</span><span class="s">&#39;time&#39;</span><span class="p">]</span>
+            <span class="n">tempdf</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">csvheader</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span><span class="mi">2</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span>
+            <span class="n">outdf</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">tempdf</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">append_year</span><span class="p">:</span>  <span class="c"># TODO: perhaps for monthly data</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+            <span class="n">years</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">outdf</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s">&#39;year&#39;</span><span class="p">,</span> <span class="n">years</span><span class="p">)</span>
+        <span class="n">outdf</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">outfile</span><span class="p">,</span> <span class="n">index_label</span><span class="o">=</span><span class="s">&#39;year&#39;</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">fformat</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s">&#39;gslib&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">network_split</span> <span class="ow">and</span> <span class="s">&#39;network&#39;</span> <span class="ow">in</span> <span class="n">pset</span><span class="o">.</span><span class="n">varnames</span><span class="p">:</span>
+            <span class="n">networks</span> <span class="o">=</span> <span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="s">&#39;network&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+            <span class="n">temp_varnames</span> <span class="o">=</span> <span class="n">pset</span><span class="o">.</span><span class="n">varnames</span><span class="p">[:]</span>
+            <span class="n">temp_varnames</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s">&#39;network&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">nw</span> <span class="ow">in</span> <span class="n">networks</span><span class="p">:</span>
+                <span class="n">temp</span> <span class="o">=</span> <span class="n">gr</span><span class="o">.</span><span class="n">PointSet</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">pset</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s">&#39; network: &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">nw</span><span class="p">),</span>
+                                   <span class="n">nodata</span><span class="o">=</span><span class="n">pset</span><span class="o">.</span><span class="n">nodata</span><span class="p">,</span> <span class="n">nvars</span><span class="o">=</span><span class="n">pset</span><span class="o">.</span><span class="n">nvars</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                                   <span class="n">varnames</span><span class="o">=</span><span class="n">temp_varnames</span><span class="p">)</span>
+                <span class="n">outfile</span> <span class="o">=</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">outfile</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s">&#39;_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">nw</span><span class="p">)</span> <span class="o">+</span>
+                           <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">outfile</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">temp</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="s">&#39;network&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">nw</span><span class="p">]</span>
+                <span class="n">temp</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">outfile</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pset</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">outfile</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">save_stations</span><span class="p">:</span>
+        <span class="n">st_col</span> <span class="o">=</span> <span class="n">pset</span><span class="o">.</span><span class="n">varnames</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s">&#39;station&#39;</span><span class="p">)</span>
+        <span class="n">stations</span> <span class="o">=</span> <span class="n">list_stations</span><span class="p">(</span><span class="n">pset</span><span class="p">,</span> <span class="n">st_col</span><span class="p">)</span>
+        <span class="n">stations_out</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">outfile</span><span class="p">),</span>
+                                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">outfile</span><span class="p">))</span>
+                                <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s">&#39;_stations.csv&#39;</span><span class="p">)</span>
+        <span class="n">stationsdf</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">stations</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">,</span> <span class="s">&#39;y&#39;</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">st</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">stations</span><span class="p">):</span>
+            <span class="n">stationsdf</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="s">&#39;station&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">st</span>
+                                             <span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">keys</span><span class="p">:</span>
+            <span class="n">keysdf</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="n">stationsdf</span> <span class="o">=</span> <span class="n">stationsdf</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">keysdf</span><span class="p">)</span>
+
+        <span class="n">stationsdf</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">stations_out</span><span class="p">,</span> <span class="n">index_label</span><span class="o">=</span><span class="s">&#39;Station&#39;</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="merge_output"><a class="viewcode-back" href="../../tools.html#tools.homog.merge_output">[docs]</a><span class="k">def</span> <span class="nf">merge_output</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">homog_order</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Merge the gsimcli output into one single spreadsheet file.</span>
+<span class="sd">    Each result file goes to one different sheet.</span>
+<span class="sd">    Two more sheets are added: one with the complete data set, another with</span>
+<span class="sd">    a summary of the process.</span>
+
+<span class="sd">    TODO: check what if labels_i are not previously sorted</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">merged</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">ExcelWriter</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">groups</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+    <span class="n">alldf</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+    <span class="n">summary</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+        <span class="n">outfile</span><span class="p">,</span> <span class="n">st_order</span><span class="p">,</span> <span class="n">detected_n</span><span class="p">,</span> <span class="n">filled_n</span> <span class="o">=</span> <span class="n">result</span>
+        <span class="n">group</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">outfile</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;_&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">groups</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_csv</span><span class="p">(</span><span class="n">outfile</span><span class="p">)</span>
+        <span class="n">alldf</span> <span class="o">=</span> <span class="n">alldf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+
+        <span class="n">labels_i</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">homog_order</span><span class="p">:</span>
+            <span class="n">clim</span> <span class="o">=</span> <span class="s">&#39;_&#39;</span> <span class="o">+</span> <span class="n">labels_i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;_&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">flag</span> <span class="o">=</span> <span class="s">&#39;_&#39;</span> <span class="o">+</span> <span class="n">labels_i</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;_&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">labels_sort</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span>
+                               <span class="p">([[</span><span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">k</span><span class="p">))</span> <span class="o">+</span> <span class="n">clim</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">k</span><span class="p">))</span> <span class="o">+</span> <span class="n">flag</span><span class="p">]</span>
+                                 <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">st_order</span><span class="p">]))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">labels_sort</span> <span class="o">=</span> <span class="n">labels_i</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">reindex_axis</span><span class="p">(</span><span class="n">labels_sort</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">labels_sort</span><span class="p">)</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="n">merged</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">merge_cells</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+        <span class="n">summary</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">st_order</span><span class="p">,</span> <span class="n">detected_n</span><span class="p">,</span> <span class="n">filled_n</span><span class="p">],</span>
+                                 <span class="n">ignore_index</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="n">alldf</span> <span class="o">=</span> <span class="n">alldf</span><span class="o">.</span><span class="n">reindex_axis</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">labels_i</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">colidx</span> <span class="o">=</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="o">.</span><span class="n">from_tuples</span>
+              <span class="p">([(</span><span class="n">group</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">groups</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span>
+                <span class="p">[</span><span class="s">&#39;Stations ID order&#39;</span><span class="p">,</span> <span class="s">&#39;Detections number&#39;</span><span class="p">,</span> <span class="s">&#39;Missing data&#39;</span><span class="p">]],</span>
+               <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;Decade&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">]))</span>
+    <span class="n">summary</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">summary</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">colidx</span><span class="p">)</span>
+    <span class="n">alldf</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="n">merged</span><span class="p">,</span> <span class="s">&#39;All stations&#39;</span><span class="p">,</span> <span class="n">index_label</span><span class="o">=</span><span class="s">&#39;year&#39;</span><span class="p">,</span>
+                   <span class="n">merge_cells</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">summary</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="n">merged</span><span class="p">,</span> <span class="s">&#39;Summary&#39;</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">st_order</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
+                     <span class="n">merge_cells</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">merged</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="ask_add_header"><a class="viewcode-back" href="../../tools.html#tools.homog.ask_add_header">[docs]</a><span class="k">def</span> <span class="nf">ask_add_header</span><span class="p">(</span><span class="n">pset</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Ask for the header when a point-set does not have any.&quot;&quot;&quot;</span>
+    <span class="k">print</span> <span class="s">&#39;Insert the point-set header metadata&#39;</span>
+    <span class="n">pset</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Point-set name: &#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">pset</span><span class="o">.</span><span class="n">nvars</span><span class="p">):</span>
+        <span class="n">pset</span><span class="o">.</span><span class="n">varnames</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Variable {} name: &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span>
+                            <span class="n">strip</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">pset</span>
+
+</div>
+<div class="viewcode-block" id="clean_leftovers"><a class="viewcode-back" href="../../tools.html#tools.homog.clean_leftovers">[docs]</a><span class="k">def</span> <span class="nf">clean_leftovers</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">maps</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">pars</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">trn</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">dbg</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">cands</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                    <span class="n">refs</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">homogenised</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Permanently remove all secondary files generated in the GSIMCLI process</span>
+<span class="sd">    in a given directory tree. Files to be removed:</span>
+<span class="sd">        - simulated maps (*.out)</span>
+<span class="sd">        - simulation parameters (*.par)</span>
+<span class="sd">        - simulation transformation (*.trn)</span>
+<span class="sd">        - simulation debug (*.dbg)</span>
+<span class="sd">        - candidate stations (*candidate*.prn)</span>
+<span class="sd">        - reference stations (*references*.prn)</span>
+<span class="sd">        - homogenised stations (*homogenised*.prn)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">plate</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">maps</span><span class="p">:</span>
+        <span class="n">plate</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;*.out&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">pars</span><span class="p">:</span>
+        <span class="n">plate</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;*.par&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">trn</span><span class="p">:</span>
+        <span class="n">plate</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;*.trn&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">dbg</span><span class="p">:</span>
+        <span class="n">plate</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;*.dbg&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">cands</span><span class="p">:</span>
+        <span class="n">plate</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;*candidate*.prn&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">refs</span><span class="p">:</span>
+        <span class="n">plate</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;*references*.prn&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">homogenised</span><span class="p">:</span>
+        <span class="n">plate</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;*homogenised*.prn&#39;</span><span class="p">)</span>
+
+    <span class="n">plate</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;dsscmd.txt&#39;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">root</span><span class="p">,</span> <span class="n">dirnames</span><span class="p">,</span> <span class="n">filenames</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>  <span class="c"># @UnusedVariable</span>
+        <span class="k">for</span> <span class="n">basename</span> <span class="ow">in</span> <span class="n">filenames</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">leftover</span> <span class="ow">in</span> <span class="n">plate</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="n">basename</span><span class="p">,</span> <span class="n">leftover</span><span class="p">):</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">basename</span><span class="p">))</span>
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">macpath</span> <span class="o">=</span> <span class="s">&#39;/Users/julio/Desktop/testes/cost-home/500_dflt_16_allvar_vind/&#39;</span>
+    <span class="n">mintpath</span> <span class="o">=</span> <span class="s">&#39;/home/julio/Testes/cost-home/500_dflt_16_allvar_vintermedia/&#39;</span>
+    <span class="n">basepath</span> <span class="o">=</span> <span class="n">macpath</span>
+
+    <span class="n">netw_pset</span> <span class="o">=</span> <span class="s">&#39;/Users/julio/Desktop/testes/cost-home/rede000009/dec_sgems_rede9/dec1900_1909_rede9.txt&#39;</span>
+    <span class="c"># &quot;&quot;&quot;</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="p">[(</span><span class="n">basepath</span> <span class="o">+</span> <span class="s">&#39;rede000010/1900-1909/1900-1909_homogenized_data.csv&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mf">3.0</span><span class="p">,</span> <span class="mf">7.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">,</span> <span class="mf">6.0</span><span class="p">,</span> <span class="mf">8.0</span><span class="p">,</span> <span class="mf">9.0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">]),</span>
+               <span class="p">(</span><span class="n">basepath</span> <span class="o">+</span> <span class="s">&#39;rede000010/1910-1919/1910-1919_homogenized_data.csv&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mf">8.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">7.0</span><span class="p">,</span> <span class="mf">9.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">6.0</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">]),</span>
+               <span class="p">(</span><span class="n">basepath</span> <span class="o">+</span> <span class="s">&#39;rede000010/1920-1929/1920-1929_homogenized_data.csv&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">,</span> <span class="mf">8.0</span><span class="p">,</span> <span class="mf">6.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">7.0</span><span class="p">,</span> <span class="mf">9.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">]),</span>
+               <span class="p">(</span><span class="n">basepath</span> <span class="o">+</span> <span class="s">&#39;rede000010/1930-1939/1930-1939_homogenized_data.csv&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mf">6.0</span><span class="p">,</span> <span class="mf">8.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">7.0</span><span class="p">,</span> <span class="mf">9.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span>
+               <span class="p">(</span><span class="n">basepath</span> <span class="o">+</span> <span class="s">&#39;rede000010/1940-1949/1940-1949_homogenized_data.csv&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mf">9.0</span><span class="p">,</span> <span class="mf">6.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">8.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">7.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span>
+               <span class="p">(</span><span class="n">basepath</span> <span class="o">+</span> <span class="s">&#39;rede000010/1950-1959/1950-1959_homogenized_data.csv&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mf">9.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">8.0</span><span class="p">,</span> <span class="mf">6.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">,</span> <span class="mf">7.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span>
+               <span class="p">(</span><span class="n">basepath</span> <span class="o">+</span> <span class="s">&#39;rede000010/1960-1969/1960-1969_homogenized_data.csv&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mf">6.0</span><span class="p">,</span> <span class="mf">9.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">8.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">7.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span>
+               <span class="p">(</span><span class="n">basepath</span> <span class="o">+</span> <span class="s">&#39;rede000010/1970-1979/1970-1979_homogenized_data.csv&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mf">6.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">,</span> <span class="mf">8.0</span><span class="p">,</span> <span class="mf">9.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">,</span> <span class="mf">7.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span>
+               <span class="p">(</span><span class="n">basepath</span> <span class="o">+</span> <span class="s">&#39;rede000010/1980-1989/1980-1989_homogenized_data.csv&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mf">9.0</span><span class="p">,</span> <span class="mf">7.0</span><span class="p">,</span> <span class="mf">6.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">8.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span>
+               <span class="p">(</span><span class="n">basepath</span> <span class="o">+</span> <span class="s">&#39;rede000010/1990-1999/1990-1999_homogenized_data.csv&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mf">8.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">6.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">,</span> <span class="mf">9.0</span><span class="p">,</span> <span class="mf">7.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">],</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])]</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">basepath</span> <span class="o">+</span> <span class="s">&#39;rede000010/gsimcli_results.xls&#39;</span>
+    <span class="c"># merge_output(results, path)</span>
+    <span class="c"># &quot;&quot;&quot;</span>
+    <span class="c"># print station_order(&#39;network deviation&#39;, netw_pset)</span>
+    <span class="c"># delme = &#39;/home/julio/Testes/cost-home/rede000005&#39;</span>
+    <span class="c"># clean_leftovers(delme, pars=False)</span>
+    <span class="k">print</span> <span class="s">&#39;done&#39;</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">gsimcli 0.0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, gsimcli development team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

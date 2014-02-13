@@ -1,0 +1,440 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>tools.scores &mdash; gsimcli 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="gsimcli 0.0.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">gsimcli 0.0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for tools.scores</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Created on 21/01/2014</span>
+
+<span class="sd">@author: julio</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">parsers.cost</span> <span class="kn">as</span> <span class="nn">cost</span>
+<span class="kn">import</span> <span class="nn">parsers.costhome</span> <span class="kn">as</span> <span class="nn">ch</span>
+
+
+<div class="viewcode-block" id="crmse"><a class="viewcode-back" href="../../tools.html#tools.scores.crmse">[docs]</a><span class="k">def</span> <span class="nf">crmse</span><span class="p">(</span><span class="n">station_path</span><span class="p">,</span> <span class="n">orig_path</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">md</span><span class="p">,</span> <span class="n">skip_years</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Centered Root-Mean-Square Error</span>
+
+<span class="sd">    1. load st and orig</span>
+<span class="sd">    2. yearly averages</span>
+<span class="sd">    3. centered (yearly av - serie av) (opt ?)</span>
+<span class="sd">    4. st - orig</span>
+<span class="sd">    5. SD</span>
+<span class="sd">    6. repeat all st</span>
+<span class="sd">    7. mean</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">orig</span> <span class="o">=</span> <span class="n">cost</span><span class="o">.</span><span class="n">datafile</span><span class="p">(</span><span class="n">orig_path</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">md</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">skip_years</span><span class="p">:</span>
+        <span class="n">orig</span> <span class="o">=</span> <span class="n">orig</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">skip_years</span><span class="p">)</span>
+    <span class="n">orig_yearly</span> <span class="o">=</span> <span class="n">orig</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">orig_yc</span> <span class="o">=</span> <span class="n">orig_yearly</span> <span class="o">-</span> <span class="n">orig_yearly</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+    <span class="n">station</span> <span class="o">=</span> <span class="n">cost</span><span class="o">.</span><span class="n">datafile</span><span class="p">(</span><span class="n">station_path</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">md</span><span class="p">)</span>
+    <span class="n">station_yearly</span> <span class="o">=</span> <span class="n">station</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">station_yc</span> <span class="o">=</span> <span class="n">station_yearly</span> <span class="o">-</span> <span class="n">station_yearly</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="n">diff</span> <span class="o">=</span> <span class="n">station_yc</span> <span class="o">-</span> <span class="n">orig_yc</span>
+
+    <span class="k">return</span> <span class="n">diff</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="crmse_cl"><a class="viewcode-back" href="../../tools.html#tools.scores.crmse_cl">[docs]</a><span class="k">def</span> <span class="nf">crmse_cl</span><span class="p">(</span><span class="n">homog</span><span class="p">,</span> <span class="n">orig</span><span class="p">,</span> <span class="n">skip_years</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">centered</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Centered Root-Mean-Square Error</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">skip_years</span><span class="p">:</span>
+        <span class="n">orig</span> <span class="o">=</span> <span class="n">orig</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">skip_years</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">centered</span><span class="p">:</span>
+        <span class="n">homog</span> <span class="o">-=</span> <span class="n">homog</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+        <span class="n">orig</span> <span class="o">-=</span> <span class="n">orig</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="n">diff</span> <span class="o">=</span> <span class="n">homog</span> <span class="o">-</span> <span class="n">orig</span>
+
+    <span class="k">return</span> <span class="n">diff</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="crmse_station_cl"><a class="viewcode-back" href="../../tools.html#tools.scores.crmse_station_cl">[docs]</a><span class="k">def</span> <span class="nf">crmse_station_cl</span><span class="p">(</span><span class="n">station</span><span class="p">,</span> <span class="n">skip_outliers</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">yearly</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Station CRMSE</span>
+
+<span class="sd">    TODO: handle skip_outliers when resolution != &#39;y&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">station</span><span class="o">.</span><span class="n">setup</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">yearly</span><span class="p">:</span>
+        <span class="n">homog</span> <span class="o">=</span> <span class="n">station</span><span class="o">.</span><span class="n">yearly</span><span class="p">(</span><span class="s">&#39;mean&#39;</span><span class="p">)</span>
+        <span class="n">orig</span> <span class="o">=</span> <span class="n">station</span><span class="o">.</span><span class="n">orig</span><span class="o">.</span><span class="n">yearly</span><span class="p">(</span><span class="s">&#39;mean&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">homog</span> <span class="o">=</span> <span class="n">station</span><span class="o">.</span><span class="n">data</span>
+        <span class="n">orig</span> <span class="o">=</span> <span class="n">station</span><span class="o">.</span><span class="n">orig</span><span class="o">.</span><span class="n">data</span>
+
+    <span class="n">skip_years</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">skip_outliers</span><span class="p">:</span>
+        <span class="n">station</span><span class="o">.</span><span class="n">orig</span><span class="o">.</span><span class="n">load_outliers</span><span class="p">()</span>
+        <span class="n">skip_years</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">station</span><span class="o">.</span><span class="n">orig</span><span class="o">.</span><span class="n">outliers</span><span class="o">.</span><span class="n">Year</span><span class="p">))</span>
+
+    <span class="n">st_crmse</span> <span class="o">=</span> <span class="n">crmse_cl</span><span class="p">(</span><span class="n">homog</span><span class="p">,</span> <span class="n">orig</span><span class="p">,</span> <span class="n">skip_years</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">st_crmse</span>
+
+</div>
+<div class="viewcode-block" id="crmse_network"><a class="viewcode-back" href="../../tools.html#tools.scores.crmse_network">[docs]</a><span class="k">def</span> <span class="nf">crmse_network</span><span class="p">(</span><span class="n">stations_spec</span><span class="p">,</span> <span class="n">orig_files</span><span class="p">,</span> <span class="n">md</span><span class="p">,</span> <span class="n">skip_netwmissing</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                  <span class="n">skip_outlier</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Network CRMSE</span>
+
+<span class="sd">    TODO: consider skipping when resolution != &#39;y&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">crmses</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">stations_spec</span><span class="p">))</span>
+    <span class="n">orig_parsed</span> <span class="o">=</span> <span class="n">cost</span><span class="o">.</span><span class="n">match_sets</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">stations_spec</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span>
+                                  <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span>
+                                  <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">orig_files</span><span class="o">.</span><span class="n">keys</span><span class="p">()[</span><span class="mi">0</span><span class="p">])))</span>
+    <span class="k">if</span> <span class="n">skip_netwmissing</span><span class="p">:</span>
+        <span class="n">years_missing</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">skip_years</span><span class="p">(</span><span class="n">orig_parsed</span><span class="p">,</span> <span class="n">md</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">years_missing</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">st_spec</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">stations_spec</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">skip_outlier</span><span class="p">:</span>
+            <span class="n">years_outlier</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">skip_outliers</span><span class="p">(</span><span class="n">orig_parsed</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">.</span><span class="n">Year</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">years_outlier</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="n">years</span> <span class="o">=</span> <span class="n">years_missing</span> <span class="o">+</span> <span class="n">years_outlier</span>
+        <span class="n">crmses</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">crmse</span><span class="p">(</span><span class="n">st_spec</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">orig_parsed</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">st_spec</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">4</span><span class="p">],</span> <span class="n">md</span><span class="p">,</span>
+                          <span class="n">years</span><span class="p">)</span>
+        <span class="c"># print st_spec[1][0], st_spec[1][5], crmses[i]</span>
+
+    <span class="k">return</span> <span class="n">crmses</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">crmses</span>
+
+</div>
+<div class="viewcode-block" id="crmse_network_new"><a class="viewcode-back" href="../../tools.html#tools.scores.crmse_network_new">[docs]</a><span class="k">def</span> <span class="nf">crmse_network_new</span><span class="p">(</span><span class="n">network_homog</span><span class="p">,</span> <span class="n">network_orig</span><span class="p">,</span> <span class="n">md</span><span class="p">,</span> <span class="n">skip_netwmissing</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                  <span class="n">skip_outlier</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Network Centered Root-Mean-Square Error</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">homog</span> <span class="o">=</span> <span class="n">network_average</span><span class="p">(</span><span class="n">network_homog</span><span class="p">,</span> <span class="n">md</span><span class="p">)</span>
+    <span class="n">orig</span> <span class="o">=</span> <span class="n">network_average</span><span class="p">(</span><span class="n">network_orig</span><span class="p">,</span> <span class="n">md</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">skip_years</span><span class="p">:</span>
+        <span class="n">orig</span> <span class="o">=</span> <span class="n">orig</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">skip_years</span><span class="p">)</span>
+
+    <span class="n">homog_c</span> <span class="o">=</span> <span class="n">homog</span> <span class="o">-</span> <span class="n">homog</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="n">orig_c</span> <span class="o">=</span> <span class="n">orig</span> <span class="o">-</span> <span class="n">orig</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+    <span class="n">diff</span> <span class="o">=</span> <span class="n">homog_c</span> <span class="o">-</span> <span class="n">orig_c</span>
+    <span class="k">return</span> <span class="n">diff</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="crmse_network_cl"><a class="viewcode-back" href="../../tools.html#tools.scores.crmse_network_cl">[docs]</a><span class="k">def</span> <span class="nf">crmse_network_cl</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">skip_missing</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">skip_outlier</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Network CRMSE</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">network</span><span class="o">.</span><span class="n">setup</span><span class="p">()</span>
+    <span class="n">homog</span><span class="p">,</span> <span class="n">orig</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">orig</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="n">skip_years</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">skip_years</span><span class="p">(</span><span class="n">skip_missing</span><span class="p">,</span> <span class="n">skip_outlier</span><span class="p">)</span>
+
+    <span class="n">netw_crmse</span> <span class="o">=</span> <span class="n">crmse_cl</span><span class="p">(</span><span class="n">homog</span><span class="p">,</span> <span class="n">orig</span><span class="p">,</span> <span class="n">skip_years</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">netw_crmse</span>
+
+</div>
+<div class="viewcode-block" id="crmse_global"><a class="viewcode-back" href="../../tools.html#tools.scores.crmse_global">[docs]</a><span class="k">def</span> <span class="nf">crmse_global</span><span class="p">(</span><span class="n">homog_path</span><span class="p">,</span> <span class="n">orig_path</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">md</span><span class="p">,</span> <span class="n">skip_netwmissing</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                 <span class="n">skip_outlier</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Submission average CRMSE.</span>
+
+<span class="sd">    TODO: support list of variables</span>
+<span class="sd">    FIXME: stick to one averaging method and/or enhance the second</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">homog_path</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">homog_files</span> <span class="o">=</span> <span class="n">cost</span><span class="o">.</span><span class="n">directory_walk_v1</span><span class="p">(</span><span class="n">homog_path</span><span class="p">)</span>
+        <span class="n">homog_parsed</span> <span class="o">=</span> <span class="n">cost</span><span class="o">.</span><span class="n">files_select</span><span class="p">(</span><span class="n">parsed</span><span class="o">=</span><span class="n">homog_files</span><span class="p">,</span> <span class="n">ftype</span><span class="o">=</span><span class="s">&#39;data&#39;</span><span class="p">,</span>
+                                         <span class="n">variable</span><span class="o">=</span><span class="n">variable</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="s">&#39;d&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">homog_parsed</span> <span class="o">=</span> <span class="n">homog_path</span>
+
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">orig_path</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">orig_files</span> <span class="o">=</span> <span class="n">cost</span><span class="o">.</span><span class="n">directory_walk_v1</span><span class="p">(</span><span class="n">orig_path</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">orig_files</span> <span class="o">=</span> <span class="n">orig_path</span>
+
+    <span class="n">networks</span> <span class="o">=</span> <span class="n">cost</span><span class="o">.</span><span class="n">agg_network</span><span class="p">(</span><span class="n">homog_parsed</span><span class="p">)</span>
+    <span class="n">network_crmse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">networks</span><span class="p">))</span>
+    <span class="n">todos</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">network</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">networks</span><span class="p">):</span>
+        <span class="n">network_crmse</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">bla</span> <span class="o">=</span> <span class="n">crmse_network</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">orig_files</span><span class="p">,</span> <span class="n">md</span><span class="p">,</span>
+                                              <span class="n">skip_netwmissing</span><span class="p">,</span> <span class="n">skip_outlier</span><span class="p">)</span>
+        <span class="n">todos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bla</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">network_crmse</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span>
+                                             <span class="n">from_iterable</span><span class="p">(</span><span class="n">todos</span><span class="p">)))</span>
+
+</div>
+<div class="viewcode-block" id="crmse_submission_cl"><a class="viewcode-back" href="../../tools.html#tools.scores.crmse_submission_cl">[docs]</a><span class="k">def</span> <span class="nf">crmse_submission_cl</span><span class="p">(</span><span class="n">submission</span><span class="p">,</span> <span class="n">over_station</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">over_network</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                        <span class="n">skip_missing</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">skip_outlier</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Submission average CRMSE.</span>
+<span class="sd">    The average can be calculated over all the stations and/or over the</span>
+<span class="sd">    networks of a given submission.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">over_network</span><span class="p">:</span>
+        <span class="c"># network_crmses = np.zeros(len(submission.networks))</span>
+        <span class="n">network_crmses</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">submission</span><span class="o">.</span><span class="n">networks_id</span><span class="p">,</span>
+                                   <span class="n">name</span><span class="o">=</span><span class="s">&#39;Network CRMSE&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">over_station</span><span class="p">:</span>
+        <span class="c"># station_crmses = np.zeros(submission.stations_number)</span>
+        <span class="n">station_crmses</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">submission</span><span class="o">.</span><span class="n">networks_id</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">network</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">submission</span><span class="o">.</span><span class="n">networks</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">over_network</span><span class="p">:</span>
+            <span class="n">network_crmses</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">crmse_network_cl</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">skip_missing</span><span class="p">,</span>
+                                                     <span class="n">skip_outlier</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">over_station</span><span class="p">:</span>
+            <span class="n">network</span><span class="o">.</span><span class="n">setup</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">station</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">stations</span><span class="p">):</span>
+                <span class="n">station_crmses</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">crmse_station_cl</span><span class="p">(</span><span class="n">station</span><span class="p">,</span>
+                                                             <span class="n">skip_outlier</span><span class="p">)</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">over_network</span><span class="p">:</span>
+        <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">network_crmses</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">over_station</span><span class="p">:</span>
+        <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">station_crmses</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+
+    <span class="k">return</span> <span class="n">results</span>
+
+</div>
+<div class="viewcode-block" id="skip_years"><a class="viewcode-back" href="../../tools.html#tools.scores.skip_years">[docs]</a><span class="k">def</span> <span class="nf">skip_years</span><span class="p">(</span><span class="n">orig_spec</span><span class="p">,</span> <span class="n">md</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;List of the years where any station has missing data.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">skip_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">spec</span> <span class="ow">in</span> <span class="n">orig_spec</span><span class="p">:</span>
+        <span class="n">orig</span> <span class="o">=</span> <span class="n">cost</span><span class="o">.</span><span class="n">datafile</span><span class="p">(</span><span class="n">spec</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">spec</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">4</span><span class="p">],</span> <span class="n">md</span><span class="p">)</span>
+        <span class="n">skip_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">orig</span><span class="p">[</span><span class="n">orig</span><span class="o">.</span><span class="n">isnull</span><span class="p">()</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)]</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+    <span class="n">skip_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="n">skip_list</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">skip_list</span>
+
+</div>
+<div class="viewcode-block" id="skip_outliers"><a class="viewcode-back" href="../../tools.html#tools.scores.skip_outliers">[docs]</a><span class="k">def</span> <span class="nf">skip_outliers</span><span class="p">(</span><span class="n">station_spec</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;List of the dates with outliers detected in each station.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">netw_path</span><span class="p">,</span> <span class="n">station</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">station_spec</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">netw_path</span><span class="p">)</span>
+    <span class="n">breakpoints_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">netw_path</span><span class="p">,</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s">&#39;*detected.txt&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">breakpoints</span> <span class="o">=</span> <span class="n">cost</span><span class="o">.</span><span class="n">breakpointsfile</span><span class="p">(</span><span class="n">breakpoints_file</span><span class="p">)</span>
+    <span class="n">break_dates</span> <span class="o">=</span> <span class="n">breakpoints</span><span class="p">[((</span><span class="n">breakpoints</span><span class="o">.</span><span class="n">Station</span> <span class="o">==</span> <span class="n">station</span><span class="p">)</span> <span class="o">&amp;</span>
+                              <span class="p">(</span><span class="n">breakpoints</span><span class="o">.</span><span class="n">Type</span> <span class="o">==</span> <span class="s">&#39;OUTLIE&#39;</span><span class="p">))]</span><span class="o">.</span><span class="n">ix</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">:]</span>
+    <span class="k">return</span> <span class="n">break_dates</span>
+
+</div>
+<div class="viewcode-block" id="improvement"><a class="viewcode-back" href="../../tools.html#tools.scores.improvement">[docs]</a><span class="k">def</span> <span class="nf">improvement</span><span class="p">(</span><span class="n">homog_path</span><span class="p">,</span> <span class="n">inhomog_path</span><span class="p">,</span> <span class="n">orig_path</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">md</span><span class="p">,</span>
+                <span class="n">skip_md</span><span class="p">,</span> <span class="n">skip_outlier</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The improvement over the inhomogeneous data is computed as the quotient</span>
+<span class="sd">    of the mean CRMSE of the homogenized networks and the mean CRMSE of the</span>
+<span class="sd">    same inhomogeneous networks.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">inhomog_matched</span> <span class="o">=</span> <span class="n">cost</span><span class="o">.</span><span class="n">match_sets</span><span class="p">(</span><span class="n">homog_path</span><span class="p">,</span> <span class="n">inhomog_path</span><span class="p">)</span>
+    <span class="n">homog_crmse</span> <span class="o">=</span> <span class="n">crmse_global</span><span class="p">(</span><span class="n">homog_path</span><span class="p">,</span> <span class="n">orig_path</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">md</span><span class="p">,</span>
+                               <span class="n">skip_md</span><span class="p">,</span> <span class="n">skip_outlier</span><span class="p">)</span>
+    <span class="n">inhomog_crmse</span> <span class="o">=</span> <span class="n">crmse_global</span><span class="p">(</span><span class="n">inhomog_matched</span><span class="p">,</span> <span class="n">orig_path</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">md</span><span class="p">,</span>
+                                 <span class="n">skip_md</span><span class="p">,</span> <span class="n">skip_outlier</span><span class="p">)</span>
+
+    <span class="k">print</span> <span class="n">homog_crmse</span>
+    <span class="k">print</span> <span class="n">inhomog_crmse</span>
+
+    <span class="k">return</span> <span class="n">homog_crmse</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">inhomog_crmse</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">homog_crmse</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">inhomog_crmse</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+</div>
+<div class="viewcode-block" id="improvement_cl"><a class="viewcode-back" href="../../tools.html#tools.scores.improvement_cl">[docs]</a><span class="k">def</span> <span class="nf">improvement_cl</span><span class="p">(</span><span class="n">submission</span><span class="p">,</span> <span class="n">over_station</span><span class="p">,</span> <span class="n">over_network</span><span class="p">,</span> <span class="n">skip_missing</span><span class="p">,</span>
+                   <span class="n">skip_outlier</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The improvement over the inhomogeneous data is computed as the quotient</span>
+<span class="sd">    of the mean CRMSE of the homogenized networks and the mean CRMSE of the</span>
+<span class="sd">    same inhomogeneous networks.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">homog_crmse</span> <span class="o">=</span> <span class="n">crmse_submission_cl</span><span class="p">(</span><span class="n">submission</span><span class="p">,</span> <span class="n">over_station</span><span class="p">,</span> <span class="n">over_network</span><span class="p">,</span>
+                                <span class="n">skip_missing</span><span class="p">,</span> <span class="n">skip_outlier</span><span class="p">)</span>
+
+    <span class="n">inho_path</span> <span class="o">=</span> <span class="n">ch</span><span class="o">.</span><span class="n">match_sub</span><span class="p">(</span><span class="n">submission</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s">&#39;inho&#39;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">inho_sub</span> <span class="o">=</span> <span class="n">ch</span><span class="o">.</span><span class="n">Submission</span><span class="p">(</span><span class="n">inho_path</span><span class="p">,</span> <span class="n">submission</span><span class="o">.</span><span class="n">md</span><span class="p">,</span> <span class="n">submission</span><span class="o">.</span><span class="n">networks_id</span><span class="p">)</span>
+    <span class="n">inho_crmse</span> <span class="o">=</span> <span class="n">crmse_submission_cl</span><span class="p">(</span><span class="n">inho_sub</span><span class="p">,</span> <span class="n">over_station</span><span class="p">,</span> <span class="n">over_network</span><span class="p">,</span>
+                                     <span class="n">skip_missing</span><span class="p">,</span> <span class="n">skip_outlier</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">homog_crmse</span><span class="p">,</span> <span class="n">inho_crmse</span><span class="p">,</span>
+            <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">homog_crmse</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">inho_crmse</span><span class="p">)))</span>
+
+</div>
+<div class="viewcode-block" id="network_average"><a class="viewcode-back" href="../../tools.html#tools.scores.network_average">[docs]</a><span class="k">def</span> <span class="nf">network_average</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">md</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Calculate the average of all stations in a network per year.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">first</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="k">for</span> <span class="n">st_spec</span> <span class="ow">in</span> <span class="n">network</span><span class="p">:</span>
+        <span class="n">station</span> <span class="o">=</span> <span class="n">cost</span><span class="o">.</span><span class="n">datafile</span><span class="p">(</span><span class="n">st_spec</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">st_spec</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">4</span><span class="p">],</span> <span class="n">md</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">first</span><span class="p">:</span>
+            <span class="n">average</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">station</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">average</span> <span class="o">=</span> <span class="n">station</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">first</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="k">continue</span>
+        <span class="n">average</span> <span class="o">+=</span> <span class="n">station</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">average</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">network</span><span class="p">)</span>
+
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">md</span> <span class="o">=</span> <span class="o">-</span><span class="mf">999.9</span>
+
+    <span class="n">macpath</span> <span class="o">=</span> <span class="s">&#39;/Users/julio/Desktop/testes/cost-home/&#39;</span>
+    <span class="n">mintpath</span> <span class="o">=</span> <span class="s">&#39;/home/julio/Testes/&#39;</span>
+    <span class="n">basepath</span> <span class="o">=</span> <span class="n">macpath</span>
+
+    <span class="sd">&quot;&quot;&quot; # inho syn1</span>
+<span class="sd">    netw_path = basepath + &#39;benchmark/inho/precip/syn1&#39;</span>
+<span class="sd">    orig_path = basepath + &#39;benchmark/orig/precip/syn1&#39;</span>
+<span class="sd">    inho_path = basepath + &#39;benchmark/inho/precip/syn1&#39;</span>
+<span class="sd">    variable = &#39;rr&#39;</span>
+<span class="sd">    # &quot;&quot;&quot;</span>
+
+    <span class="sd">&quot;&quot;&quot; # inho sur1 precip</span>
+<span class="sd">    # st 7.3 1.00 netw 3.1 1.00</span>
+<span class="sd">    netw_path = basepath + &#39;benchmark/inho/precip/sur1&#39;</span>
+<span class="sd">    orig_path = basepath + &#39;benchmark/orig/precip/sur1&#39;</span>
+<span class="sd">    inho_path = basepath + &#39;benchmark/inho/precip/sur1&#39;</span>
+<span class="sd">    variable = &#39;rr&#39;</span>
+<span class="sd">    # &quot;&quot;&quot;</span>
+
+    <span class="sd">&quot;&quot;&quot; # inho sur1 temp</span>
+<span class="sd">    # st 0.47 1.00 netw 0.20 1.00</span>
+<span class="sd">    netw_path = basepath + &#39;benchmark/inho/temp/sur1&#39;</span>
+<span class="sd">    orig_path = basepath + &#39;benchmark/orig/temp/sur1&#39;</span>
+<span class="sd">    inho_path = basepath + &#39;benchmark/inho/temp/sur1&#39;</span>
+<span class="sd">    variable = None  # &#39;tn&#39;</span>
+<span class="sd">    # &quot;&quot;&quot;</span>
+
+    <span class="sd">&quot;&quot;&quot; # AnClim SNHT</span>
+<span class="sd">    # st 0.52 1.02 netw 0.31 1.16</span>
+<span class="sd">    netw_path = basepath + &#39;benchmark/h019/temp/sur1&#39;</span>
+<span class="sd">    orig_path = basepath + &#39;benchmark/orig/temp/sur1&#39;</span>
+<span class="sd">    inho_path = basepath + &#39;benchmark/inho/temp/sur1&#39;</span>
+<span class="sd">    variable = None  # &#39;tn&#39;</span>
+<span class="sd">    # &quot;&quot;&quot;</span>
+
+    <span class="sd">&quot;&quot;&quot; # MASH Marinova precip</span>
+<span class="sd">    # st 3.6 0.56 netw 1.6 0.69</span>
+<span class="sd">    netw_path = basepath + &#39;benchmark/h009/precip/sur1&#39;</span>
+<span class="sd">    orig_path = basepath + &#39;benchmark/orig/precip/sur1&#39;</span>
+<span class="sd">    inho_path = basepath + &#39;benchmark/inho/precip/sur1&#39;</span>
+<span class="sd">    variable = &#39;rr&#39;</span>
+<span class="sd">    # &quot;&quot;&quot;</span>
+
+    <span class="c"># &quot;&quot;&quot; # PRODIGE main precip</span>
+    <span class="n">netw_path</span> <span class="o">=</span> <span class="n">basepath</span> <span class="o">+</span> <span class="s">&#39;benchmark/h002/precip/sur1&#39;</span>
+    
+    <span class="c"># print crmse_global(netw_path, orig_path, variable, md)</span>
+    <span class="c"># print improvement(netw_path, inho_path, orig_path, variable, md,</span>
+    <span class="c">#                  False, True)</span>
+
+    <span class="n">sub</span> <span class="o">=</span> <span class="n">ch</span><span class="o">.</span><span class="n">Submission</span><span class="p">(</span><span class="n">netw_path</span><span class="p">,</span> <span class="n">md</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;000010&#39;</span><span class="p">])</span>
+    <span class="c"># print crmse_submission_cl(sub, over_station=True, over_network=True,</span>
+    <span class="c">#                          skip_missing=False, skip_outlier=True)</span>
+    <span class="k">print</span> <span class="n">improvement_cl</span><span class="p">(</span><span class="n">sub</span><span class="p">,</span> <span class="n">over_station</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">over_network</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                         <span class="n">skip_missing</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">skip_outlier</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="k">print</span> <span class="s">&#39;done&#39;</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">gsimcli 0.0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, gsimcli development team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

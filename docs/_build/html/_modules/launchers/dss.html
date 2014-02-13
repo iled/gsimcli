@@ -1,0 +1,334 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>launchers.dss &mdash; gsimcli 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="gsimcli 0.0.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">gsimcli 0.0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for launchers.dss</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Created on 04/10/2013</span>
+
+<span class="sd">@author: jcaineta</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="c"># import sarge</span>
+
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">ntpath</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">import</span> <span class="nn">multiprocessing</span> <span class="kn">as</span> <span class="nn">mp</span>
+<span class="kn">import</span> <span class="nn">parsers.dss</span> <span class="kn">as</span> <span class="nn">pdss</span>
+<span class="kn">import</span> <span class="nn">subprocess</span> <span class="kn">as</span> <span class="nn">sp</span>
+<span class="kn">from</span> <span class="nn">tools.utils</span> <span class="kn">import</span> <span class="n">path_up</span>
+
+
+<div class="viewcode-block" id="DssEnvironment"><a class="viewcode-back" href="../../launchers.html#launchers.dss.DssEnvironment">[docs]</a><span class="k">class</span> <span class="nc">DssEnvironment</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Handle the environment to run DSS old version, where the parameters file</span>
+<span class="sd">    path is hard coded as DSSim.PAR.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dss_path</span><span class="p">,</span> <span class="n">par_path</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s">&#39;dssim.out&#39;</span><span class="p">,</span> <span class="n">simnum</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructor.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">par_path</span><span class="p">,</span> <span class="n">pdss</span><span class="o">.</span><span class="n">DssParam</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">par</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">par_path</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">par_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">par</span><span class="o">.</span><span class="n">path</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">par_path</span> <span class="o">=</span> <span class="n">par_path</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">par</span> <span class="o">=</span> <span class="n">pdss</span><span class="o">.</span><span class="n">DssParam</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">par</span><span class="o">.</span><span class="n">load_old</span><span class="p">(</span><span class="n">par_path</span><span class="p">)</span>  <span class="c"># TODO: old</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">envs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dss_path</span> <span class="o">=</span> <span class="n">dss_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exedir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">exefile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">dss_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pardir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">par_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output</span> <span class="o">=</span> <span class="n">output</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">simnum</span> <span class="o">=</span> <span class="n">simnum</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">tempdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pardir</span><span class="p">,</span> <span class="s">&#39;temp&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tempdir</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tempdir</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_paths</span><span class="p">()</span>
+
+<div class="viewcode-block" id="DssEnvironment.new"><a class="viewcode-back" href="../../launchers.html#launchers.dss.DssEnvironment.new">[docs]</a>    <span class="k">def</span> <span class="nf">new</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a new directory and copy EXE and PAR files into it.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tempdir</span><span class="p">)</span>
+        <span class="n">new_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tempdir</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">envs</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">new_dir</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">new_dir</span><span class="p">)</span>
+
+        <span class="n">new_exe</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">new_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">exefile</span><span class="p">)</span>
+        <span class="n">new_par</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">new_dir</span><span class="p">,</span> <span class="s">&#39;DSSim.PAR&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">new_exe</span><span class="p">):</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copyfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dss_path</span><span class="p">,</span> <span class="n">new_exe</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">envs</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">new_dir</span><span class="p">,</span> <span class="n">new_exe</span><span class="p">,</span> <span class="n">new_par</span><span class="p">])</span>
+
+        <span class="c"># update path parameters and seed:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simnum</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">outpath</span> <span class="o">=</span> <span class="p">(</span><span class="n">ntpath</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">simnum</span><span class="p">)</span> <span class="o">+</span>
+                       <span class="n">ntpath</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">outpath</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output</span>
+        <span class="c"># remove the first directory in the the output tree</span>
+        <span class="c"># splitpath = ntpath.split(outpath)</span>
+        <span class="c"># outpath = ntpath.join(ntpath.basename(splitpath[0]), splitpath[1])</span>
+        <span class="n">keywords</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;output&#39;</span><span class="p">,</span> <span class="s">&#39;seed&#39;</span><span class="p">]</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;..</span><span class="se">\\</span><span class="s">..</span><span class="se">\\</span><span class="s">..</span><span class="se">\\</span><span class="s">&#39;</span> <span class="o">+</span> <span class="n">outpath</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">par</span><span class="o">.</span><span class="n">seed</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">simnum</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">par</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">keywords</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">par</span><span class="o">.</span><span class="n">save_old</span><span class="p">(</span><span class="n">new_par</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">simnum</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">new_exe</span><span class="p">,</span> <span class="n">new_par</span>
+</div>
+<div class="viewcode-block" id="DssEnvironment.purge"><a class="viewcode-back" href="../../launchers.html#launchers.dss.DssEnvironment.purge">[docs]</a>    <span class="k">def</span> <span class="nf">purge</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove all files and directories created for the environment.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tempdir</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="DssEnvironment.reset_par_path"><a class="viewcode-back" href="../../launchers.html#launchers.dss.DssEnvironment.reset_par_path">[docs]</a>    <span class="k">def</span> <span class="nf">reset_par_path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Restore the original parameter file path.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">par</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pardir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parfile</span><span class="p">)</span>
+        </div>
+    <span class="k">def</span> <span class="nf">_update_paths</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update the parameters related to file paths. Prepends &#39;..\..\&#39;.</span>
+<span class="sd">        Necessary to call multiprocessing DSS launcher.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;datapath&#39;</span><span class="p">,</span> <span class="s">&#39;corrpath&#39;</span><span class="p">,</span> <span class="s">&#39;secpath&#39;</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">par</span><span class="p">,</span> <span class="n">param</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">val</span> <span class="ow">and</span> <span class="n">val</span> <span class="o">!=</span> <span class="s">&#39;no file&#39;</span><span class="p">:</span>
+                <span class="c"># FIXME: not a pretty solution... code smell</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">par</span><span class="p">,</span> <span class="n">param</span><span class="p">,</span> <span class="s">&#39;..</span><span class="se">\\</span><span class="s">..</span><span class="se">\\</span><span class="s">..</span><span class="se">\\</span><span class="s">&#39;</span> <span class="o">+</span> <span class="n">val</span><span class="p">)</span>
+
+
+<span class="c"># def normal(exe_path, par):</span></div>
+<span class="sd">&quot;&quot;&quot;Launch normal version of DSS&quot;&quot;&quot;</span>
+<span class="sd">&quot;&quot;&quot;    os.chdir(os.path.dirname(exe_path))</span>
+<span class="sd">    if os.name == &#39;posix&#39;:</span>
+<span class="sd">        cmd = [&#39;wine&#39;, os.path.basename(exe_path), par]</span>
+<span class="sd">    else:</span>
+<span class="sd">        cmd = [os.path.basename(exe_path), par]</span>
+<span class="sd">    prog = sarge.Command(cmd, shell=False,</span>
+<span class="sd">                        stdout=sarge.Capture(buffer_size=1))</span>
+<span class="sd">    progrun = prog.run(input=sp.PIPE, async=True)</span>
+
+<span class="sd">    return progrun</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="execute"><a class="viewcode-back" href="../../launchers.html#launchers.dss.execute">[docs]</a><span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="n">command</span><span class="p">):</span>
+    <span class="n">process</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">sp</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">sp</span><span class="o">.</span><span class="n">STDOUT</span><span class="p">)</span>
+
+    <span class="c"># Poll process for new output until finished</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">nextline</span> <span class="o">=</span> <span class="n">process</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">nextline</span> <span class="o">==</span> <span class="s">&#39;&#39;</span> <span class="ow">and</span> <span class="n">process</span><span class="o">.</span><span class="n">poll</span><span class="p">()</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">nextline</span><span class="p">)</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+    <span class="n">output</span> <span class="o">=</span> <span class="n">process</span><span class="o">.</span><span class="n">communicate</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">exitCode</span> <span class="o">=</span> <span class="n">process</span><span class="o">.</span><span class="n">returncode</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">exitCode</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">output</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ProcessException</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">exitCode</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>  <span class="c"># @UndefinedVariable</span>
+
+</div>
+<div class="viewcode-block" id="exec_ssdir"><a class="viewcode-back" href="../../launchers.html#launchers.dss.exec_ssdir">[docs]</a><span class="k">def</span> <span class="nf">exec_ssdir</span><span class="p">(</span><span class="n">dss_path</span><span class="p">,</span> <span class="n">par_path</span><span class="p">,</span> <span class="n">dbg</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">print_status</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="c"># print &#39;Running {}...&#39;.format(os.path.basename(dss_path))</span>
+    <span class="k">print</span> <span class="n">mp</span><span class="o">.</span><span class="n">current_process</span><span class="p">()</span><span class="o">.</span><span class="n">name</span>
+
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s">&#39;posix&#39;</span><span class="p">:</span>
+        <span class="n">env</span> <span class="o">=</span> <span class="s">&#39;wine &#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">env</span> <span class="o">=</span> <span class="nb">str</span><span class="p">()</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="n">env</span> <span class="o">+</span> <span class="n">dss_path</span> <span class="o">+</span> <span class="s">&#39; &#39;</span> <span class="o">+</span> <span class="n">par_path</span>
+    <span class="n">wd</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">dss_path</span><span class="p">)</span>
+    <span class="n">process</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">sp</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">sp</span><span class="o">.</span><span class="n">STDOUT</span><span class="p">,</span>
+                       <span class="n">cwd</span><span class="o">=</span><span class="n">wd</span><span class="p">)</span>
+
+    <span class="c"># sys.stdout = os.fdopen(sys.stdout.fileno(), &#39;w&#39;, 0)</span>
+
+    <span class="k">if</span> <span class="n">dbg</span><span class="p">:</span>
+        <span class="n">dbgtest</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">dbg</span><span class="p">,</span> <span class="s">&#39;ab&#39;</span><span class="p">)</span>
+
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">nextline</span> <span class="o">=</span> <span class="n">process</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">print_status</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s">&#39;realization number&#39;</span> <span class="ow">in</span> <span class="n">nextline</span><span class="p">:</span>
+                <span class="k">print</span> <span class="n">nextline</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="c"># sys.stdout.write(nextline)</span>
+                <span class="c"># sys.stdout.flush()</span>
+            <span class="c"># if &#39;progress&#39; in nextline:</span>
+                <span class="c"># print &#39;Progress: {}&#39;.format(nextline.split()[-1])</span>
+                <span class="c"># sys.stdout.write(nextline)</span>
+                <span class="c"># sys.stdout.flush()</span>
+            <span class="k">if</span> <span class="s">&#39;error&#39;</span> <span class="ow">in</span> <span class="n">nextline</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                <span class="k">print</span> <span class="n">nextline</span>
+                <span class="c"># sys.stdout.write(nextline)</span>
+                <span class="c"># sys.stdout.flush()</span>
+            <span class="k">if</span> <span class="s">&#39;elapsed time&#39;</span> <span class="ow">in</span> <span class="n">nextline</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                <span class="k">print</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">nextline</span><span class="o">.</span><span class="n">split</span><span class="p">()[:</span><span class="mi">4</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">nextline</span> <span class="ow">and</span> <span class="n">process</span><span class="o">.</span><span class="n">poll</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="c"># sys.stdout.write(nextline)</span>
+        <span class="c"># sys.stdout.flush()</span>
+        <span class="k">if</span> <span class="n">dbg</span><span class="p">:</span>
+            <span class="n">dbgtest</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">())</span> <span class="o">+</span> <span class="s">&#39;  &#39;</span><span class="p">)</span>
+            <span class="n">dbgtest</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">nextline</span><span class="p">)</span>
+            <span class="n">dbgtest</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+    <span class="n">output</span> <span class="o">=</span> <span class="n">process</span><span class="o">.</span><span class="n">communicate</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">exitCode</span> <span class="o">=</span> <span class="n">process</span><span class="o">.</span><span class="n">returncode</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">exitCode</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">output</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">SystemError</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">exitCode</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="mp_exec"><a class="viewcode-back" href="../../launchers.html#launchers.dss.mp_exec">[docs]</a><span class="k">def</span> <span class="nf">mp_exec</span><span class="p">(</span><span class="n">dss_path</span><span class="p">,</span> <span class="n">par_path</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">simnum</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">dbg</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">print_dss_status</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">cores</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">print_mp_status</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+            <span class="n">purge</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Launch multiple instances of DSS at the same time, at different cores.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">cores</span><span class="p">:</span>
+        <span class="n">cores</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">print_mp_status</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&#39;Running {} in {} cores&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">dss_path</span><span class="p">),</span>
+                                                <span class="n">cores</span><span class="p">)</span>
+
+    <span class="n">runs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+    <span class="n">dssenv</span> <span class="o">=</span> <span class="n">DssEnvironment</span><span class="p">(</span><span class="n">dss_path</span><span class="p">,</span> <span class="n">par_path</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">simnum</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">run</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">cores</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">stop</span> <span class="ow">and</span> <span class="n">simnum</span> <span class="o">+</span> <span class="n">run</span> <span class="o">&gt;</span> <span class="n">stop</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">dss_run</span><span class="p">,</span> <span class="n">par_run</span> <span class="o">=</span> <span class="n">dssenv</span><span class="o">.</span><span class="n">new</span><span class="p">()</span>
+        <span class="n">run_exe</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Process</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">exec_ssdir</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">dss_run</span><span class="p">,</span> <span class="n">par_run</span><span class="p">,</span>
+                                                      <span class="n">dbg</span><span class="p">,</span> <span class="n">print_dss_status</span><span class="p">))</span>
+        <span class="n">runs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">run_exe</span><span class="p">)</span>
+        <span class="n">run_exe</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">run</span> <span class="ow">in</span> <span class="n">runs</span><span class="p">:</span>
+        <span class="n">run</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+
+    <span class="n">dssenv</span><span class="o">.</span><span class="n">reset_par_path</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">purge</span><span class="p">:</span>
+        <span class="n">dssenv</span><span class="o">.</span><span class="n">purge</span><span class="p">()</span>
+
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">dssexe</span> <span class="o">=</span> <span class="s">&#39;/Users/julio/Desktop/testes/newDSSIntelRelease.exe&#39;</span>
+    <span class="n">dsspar</span> <span class="o">=</span> <span class="s">&#39;/Users/julio/Desktop/testes/DSSim.PAR&#39;</span>
+    <span class="c"># print &#39;Running DSS...&#39;</span>
+    <span class="c"># dssn = normal(dssexe, dsspar)</span>
+    <span class="c"># execute(dssexe)</span>
+    <span class="c"># exec_ssdir(dssexe, dsspar)</span>
+    <span class="c"># raw_input()</span>
+    <span class="c"># dssn.terminate()</span>
+    <span class="n">mp_exec</span><span class="p">(</span><span class="n">dssexe</span><span class="p">,</span> <span class="n">dsspar</span><span class="p">,</span> <span class="s">&#39;testinho.out&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">print_dss_status</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+            <span class="n">print_mp_status</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">print</span> <span class="s">&#39;done&#39;</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">gsimcli 0.0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, gsimcli development team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

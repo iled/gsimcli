@@ -1,0 +1,248 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>parsers.spreadsheet &mdash; gsimcli 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="gsimcli 0.0.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">gsimcli 0.0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for parsers.spreadsheet</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Created on 5 de Nov de 2013</span>
+
+<span class="sd">@author: julio</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">tools.grid</span> <span class="kn">as</span> <span class="nn">grd</span>
+<span class="kn">import</span> <span class="nn">tools.utils</span> <span class="kn">as</span> <span class="nn">ut</span>
+
+
+<div class="viewcode-block" id="dtype_filter"><a class="viewcode-back" href="../../parsers.html#parsers.spreadsheet.dtype_filter">[docs]</a><span class="k">def</span> <span class="nf">dtype_filter</span><span class="p">(</span><span class="n">dataf</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=-</span><span class="mf">999.9</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Filter dtypes from a pandas DataFrame, converting non-numbers into a</span>
+<span class="sd">    keyed index.</span>
+<span class="sd">    Return the DataFrame with the new values and a DataFrame with its keys.</span>
+<span class="sd">    Missing or no-data values also count as a unique key.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dataf</span> <span class="o">=</span> <span class="n">dataf</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="n">nodata</span><span class="p">)</span>
+    <span class="n">keys</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">dt</span> <span class="ow">in</span> <span class="n">dataf</span><span class="o">.</span><span class="n">dtypes</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>  <span class="c"># @UnusedVariable</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ut</span><span class="o">.</span><span class="n">is_number</span><span class="p">(</span><span class="n">dataf</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">dataf</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
+            <span class="n">temp</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="n">dataf</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataf</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+                <span class="n">temp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+            <span class="n">keys</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp</span>
+            <span class="n">dataf</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataf</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">convert_objects</span><span class="p">(</span><span class="n">convert_numeric</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="n">keys</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">keys</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">keys</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">return</span> <span class="n">dataf</span><span class="p">,</span> <span class="n">keys</span>
+
+</div>
+<div class="viewcode-block" id="xls2gslib"><a class="viewcode-back" href="../../parsers.html#parsers.spreadsheet.xls2gslib">[docs]</a><span class="k">def</span> <span class="nf">xls2gslib</span><span class="p">(</span><span class="n">xlspath</span><span class="p">,</span> <span class="n">nd</span><span class="o">=-</span><span class="mf">999.9</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">sheet</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+              <span class="n">skip_rows</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">filter_dtype</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert a file in XLS format to a point-set file in GSLIB format (.prn)</span>
+<span class="sd">    Does not work with CSV files.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">xlsfile</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">ExcelFile</span><span class="p">(</span><span class="n">xlspath</span><span class="p">)</span>
+    <span class="n">xlstable</span> <span class="o">=</span> <span class="n">xlsfile</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">xlsfile</span><span class="o">.</span><span class="n">sheet_names</span><span class="p">[</span><span class="n">sheet</span><span class="p">],</span> <span class="n">header</span><span class="p">,</span>
+                             <span class="n">skiprows</span><span class="o">=</span><span class="n">skip_rows</span><span class="p">,</span> <span class="n">na_values</span><span class="o">=</span><span class="n">nd</span><span class="p">)</span>
+    <span class="c"># parse_cols=cols doesn&#39;t preserve the list order</span>
+    <span class="k">if</span> <span class="n">cols</span><span class="p">:</span>
+        <span class="n">nvars</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cols</span><span class="p">)</span>
+        <span class="n">varnames</span> <span class="o">=</span> <span class="p">[</span><span class="n">xlstable</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">cols</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">nvars</span> <span class="o">=</span> <span class="n">xlstable</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">varnames</span> <span class="o">=</span> <span class="n">xlstable</span><span class="o">.</span><span class="n">columns</span>
+        <span class="n">cols</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">nvars</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">header</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">varnames</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;var&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">varnames</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">filter_dtype</span><span class="p">:</span>
+        <span class="n">filtered</span><span class="p">,</span> <span class="n">keys</span> <span class="o">=</span> <span class="n">dtype_filter</span><span class="p">(</span><span class="n">xlstable</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="n">cols</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">filtered</span> <span class="o">=</span> <span class="n">xlstable</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="n">cols</span><span class="p">]</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="n">pset</span> <span class="o">=</span> <span class="n">grd</span><span class="o">.</span><span class="n">PointSet</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">xlsfile</span><span class="o">.</span><span class="n">sheet_names</span><span class="p">[</span><span class="n">sheet</span><span class="p">]),</span> <span class="n">nd</span><span class="p">,</span> <span class="n">nvars</span><span class="p">,</span> <span class="n">varnames</span><span class="p">,</span>
+                        <span class="n">filtered</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">pset</span><span class="p">,</span> <span class="n">keys</span>
+
+</div>
+<div class="viewcode-block" id="xls2costhome"><a class="viewcode-back" href="../../parsers.html#parsers.spreadsheet.xls2costhome">[docs]</a><span class="k">def</span> <span class="nf">xls2costhome</span><span class="p">(</span><span class="n">xlspath</span><span class="p">,</span> <span class="n">outpath</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">nd</span><span class="o">=-</span><span class="mf">999.9</span><span class="p">,</span> <span class="n">sheet</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                 <span class="n">skip_rows</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">network_id</span><span class="o">=</span><span class="s">&#39;ssssssss&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="s">&#39;xx&#39;</span><span class="p">,</span>
+                 <span class="n">variable</span><span class="o">=</span><span class="s">&#39;vv&#39;</span><span class="p">,</span> <span class="n">resolution</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="s">&#39;c&#39;</span><span class="p">,</span> <span class="n">ftype</span><span class="o">=</span><span class="s">&#39;data&#39;</span><span class="p">,</span>
+                 <span class="n">yearly_sum</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">keys_path</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert a file in GSIMCLI XLS format to a file in the COST-HOME format.</span>
+<span class="sd">    Does not work with CSV files.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">parsers.costhome</span> <span class="kn">as</span> <span class="nn">ch</span>
+
+    <span class="k">if</span> <span class="n">yearly_sum</span><span class="p">:</span>
+        <span class="n">div</span> <span class="o">=</span> <span class="mf">12.0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">div</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+    <span class="n">xlsfile</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">ExcelFile</span><span class="p">(</span><span class="n">xlspath</span><span class="p">)</span>
+    <span class="n">xlstable</span> <span class="o">=</span> <span class="n">xlsfile</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">sheetname</span><span class="o">=</span><span class="n">sheet</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">,</span> <span class="n">na_values</span><span class="o">=</span><span class="n">nd</span><span class="p">,</span>
+                             <span class="n">skiprows</span><span class="o">=</span><span class="n">skip_rows</span><span class="p">,</span> <span class="n">parse_cols</span><span class="o">=</span><span class="n">cols</span><span class="p">)</span>
+
+    <span class="n">network</span> <span class="o">=</span> <span class="n">ch</span><span class="o">.</span><span class="n">Network</span><span class="p">(</span><span class="n">md</span><span class="o">=</span><span class="n">nd</span><span class="p">,</span> <span class="n">network_id</span><span class="o">=</span><span class="n">network_id</span><span class="p">)</span>
+    <span class="n">stations</span> <span class="o">=</span> <span class="p">[</span><span class="n">label</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">xlstable</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="s">&#39;_clim&#39;</span> <span class="ow">in</span> <span class="n">label</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">keys_path</span><span class="p">:</span>
+        <span class="n">network</span><span class="o">.</span><span class="n">update_ids</span><span class="p">(</span><span class="n">keys_path</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">for</span> <span class="n">station</span> <span class="ow">in</span> <span class="n">stations</span><span class="p">:</span>
+        <span class="n">st</span> <span class="o">=</span> <span class="n">ch</span><span class="o">.</span><span class="n">Station</span><span class="p">(</span><span class="n">md</span><span class="o">=</span><span class="n">nd</span><span class="p">)</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">network_id</span> <span class="o">=</span> <span class="n">network_id</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">ftype</span> <span class="o">=</span> <span class="n">ftype</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">status</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">variable</span> <span class="o">=</span> <span class="n">variable</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">resolution</span> <span class="o">=</span> <span class="n">resolution</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">keys</span><span class="p">:</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">station</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;_&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">content</span> <span class="o">=</span> <span class="n">content</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">xlstable</span><span class="p">[</span><span class="n">station</span><span class="p">]</span> <span class="o">/</span> <span class="n">div</span>
+        <span class="n">network</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">st</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">outpath</span><span class="p">:</span>
+        <span class="n">network</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">outpath</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">network</span>
+
+</div>
+<div class="viewcode-block" id="read_keys"><a class="viewcode-back" href="../../parsers.html#parsers.spreadsheet.read_keys">[docs]</a><span class="k">def</span> <span class="nf">read_keys</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Reads a TSV file with the keys to the converted station IDs.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">keys</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">keys</span>
+
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/home/julio/Testes/cost-home/rede000005/gsimcli_results.xls&#39;</span>
+    <span class="n">pout</span> <span class="o">=</span> <span class="s">&#39;/home/julio/Testes/cost-home/rede000005&#39;</span>
+<span class="c">#     xls2costhome(path, pout, -999.9, sheet=&#39;All stations&#39;, skip_rows=[1],</span>
+<span class="c">#                  network_id=05, yearly_sum=True)</span>
+<span class="c">#     ps, ks = xls2gslib(path, header=0, cols=[0, 1, 2, 4, 3], skip_rows=[1])</span>
+<span class="c">#     ps.save(pout)</span>
+<span class="c">#     kout = &#39;/home/julio/Testes/cost-home//rede000005/keys.txt&#39;</span>
+<span class="c">#     ks.to_csv(kout, sep=&#39;\t&#39;, index_label=&#39;ID&#39;)</span>
+
+    <span class="n">pathlist</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">root</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="s">&#39;/home/julio/Testes/cost-home&#39;</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+            <span class="n">filename</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s">&#39;gsimcli_results&#39;</span> <span class="ow">in</span> <span class="n">filename</span> <span class="ow">and</span> <span class="n">ext</span> <span class="o">==</span> <span class="s">&#39;.xls&#39;</span><span class="p">:</span>
+                <span class="n">pathlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">pathlist</span><span class="p">:</span>
+        <span class="k">print</span> <span class="n">path</span>
+        <span class="n">netid</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">path</span><span class="p">))[</span><span class="mi">4</span><span class="p">:]</span>
+        <span class="n">xls2costhome</span><span class="p">(</span><span class="n">xlspath</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">outpath</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="n">nd</span><span class="o">=-</span><span class="mf">999.9</span><span class="p">,</span>
+                        <span class="n">sheet</span><span class="o">=</span><span class="s">&#39;All stations&#39;</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">skip_rows</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                        <span class="n">network_id</span><span class="o">=</span><span class="n">netid</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="s">&#39;ho&#39;</span><span class="p">,</span>
+                        <span class="n">variable</span><span class="o">=</span><span class="s">&#39;rr&#39;</span><span class="p">,</span> <span class="n">resolution</span><span class="o">=</span><span class="s">&#39;y&#39;</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="s">&#39;d&#39;</span><span class="p">,</span>
+                        <span class="n">ftype</span><span class="o">=</span><span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="n">yearly_sum</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="k">print</span> <span class="s">&#39;done&#39;</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">gsimcli 0.0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, gsimcli development team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

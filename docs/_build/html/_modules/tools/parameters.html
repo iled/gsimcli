@@ -1,0 +1,265 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>tools.parameters &mdash; gsimcli 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="gsimcli 0.0.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">gsimcli 0.0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for tools.parameters</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Created on 6 de Dez de 2013</span>
+
+<span class="sd">@author: julio</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">from</span> <span class="nn">utils</span> <span class="kn">import</span> <span class="n">yes_no</span>
+
+<div class="viewcode-block" id="ParametersFile"><a class="viewcode-back" href="../../tools.html#tools.parameters.ParametersFile">[docs]</a><span class="k">class</span> <span class="nc">ParametersFile</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base class to construct a ParametersClass.</span>
+<span class="sd">    </span>
+<span class="sd">    Each parameter is defined by the following pair:</span>
+<span class="sd">        - field: the name of the parameter which will be used both as an</span>
+<span class="sd">                 attribute of this class, and;</span>
+<span class="sd">        - value: which is the value of that same parameter.</span>
+<span class="sd">        </span>
+<span class="sd">    Fields are separated into lists of predetermined types: str (text), float</span>
+<span class="sd">    (real_n), int (int_n) and bool (boolean).</span>
+<span class="sd">    </span>
+<span class="sd">    Fields can be mandatory or optional (opt_).</span>
+<span class="sd">    </span>
+<span class="sd">    Fields are separated from values with a given separator (field_sep). Values</span>
+<span class="sd">    can be a single value or a list of values, which are separated with yet</span>
+<span class="sd">    another given separator (values_sep).</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field_sep</span><span class="p">,</span> <span class="n">value_sep</span><span class="p">,</span> <span class="n">par_set</span><span class="o">=</span><span class="nb">str</span><span class="p">(),</span> <span class="n">par_file</span><span class="o">=</span><span class="nb">str</span><span class="p">(),</span>
+                 <span class="n">text</span><span class="o">=</span><span class="nb">list</span><span class="p">(),</span> <span class="n">real_n</span><span class="o">=</span><span class="nb">list</span><span class="p">(),</span> <span class="n">int_n</span><span class="o">=</span><span class="nb">list</span><span class="p">(),</span> <span class="n">boolean</span><span class="o">=</span><span class="nb">list</span><span class="p">(),</span>
+                 <span class="n">opt_text</span><span class="o">=</span><span class="nb">list</span><span class="p">(),</span> <span class="n">opt_real</span><span class="o">=</span><span class="nb">list</span><span class="p">(),</span> <span class="n">opt_int</span><span class="o">=</span><span class="nb">list</span><span class="p">(),</span>
+                 <span class="n">opt_boolean</span><span class="o">=</span><span class="nb">list</span><span class="p">(),</span> <span class="n">parpath</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructor.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">parpath</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">field_sep</span> <span class="o">=</span> <span class="n">field_sep</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value_sep</span> <span class="o">=</span> <span class="n">value_sep</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">par_set</span> <span class="o">=</span> <span class="n">par_set</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">par_file</span> <span class="o">=</span> <span class="n">par_file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">text</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">real</span> <span class="o">=</span> <span class="n">real_n</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">int</span> <span class="o">=</span> <span class="n">int_n</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">boolean</span> <span class="o">=</span> <span class="n">boolean</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opt_text</span> <span class="o">=</span> <span class="n">opt_text</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opt_real</span> <span class="o">=</span> <span class="n">opt_real</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opt_int</span> <span class="o">=</span> <span class="n">opt_int</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opt_boolean</span> <span class="o">=</span> <span class="n">opt_boolean</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optional</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opt_text</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_real</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_int</span>
+                         <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_boolean</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fields</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">real</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">int</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">boolean</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="n">order</span>
+        <span class="k">if</span> <span class="n">order</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">order</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fields</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">optional</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Incomplete list of ordered fields.&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">parpath</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">parpath</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ParametersFile.template"><a class="viewcode-back" href="../../tools.html#tools.parameters.ParametersFile.template">[docs]</a>    <span class="k">def</span> <span class="nf">template</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par_path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write a parameter file with the template to follow, which must have</span>
+<span class="sd">        been defined in the docstring.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">par_path</span>
+        <span class="n">par_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">par_path</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__doc__</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+            <span class="n">par_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="ParametersFile.set_field"><a class="viewcode-back" href="../../tools.html#tools.parameters.ParametersFile.set_field">[docs]</a>    <span class="k">def</span> <span class="nf">set_field</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create or update the value of an attr called field, given the</span>
+<span class="sd">        desired object type.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_text</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">_split</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="o">.</span><span class="n">strip</span><span class="p">,</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">value_sep</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">real</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_real</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">_split</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">value_sep</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">int</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_int</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">_split</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">value_sep</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">boolean</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_boolean</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">yes_no</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+</div>
+<div class="viewcode-block" id="ParametersFile.load"><a class="viewcode-back" href="../../tools.html#tools.parameters.ParametersFile.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par_path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Load a parameter file.</span>
+
+<span class="sd">        TODO: load ordered</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">par_path</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span> <span class="k">as</span> <span class="n">fid</span><span class="p">:</span>
+            <span class="n">lines</span> <span class="o">=</span> <span class="n">fid</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+        <span class="n">checklist</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+            <span class="n">field</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">field_sep</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">optional</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">field_sep</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">set_field</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">:</span>
+                    <span class="n">checklist</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">field</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">checklist</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s">&#39;There are missing parameters: {}.&#39;</span>
+                                 <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">checklist</span><span class="p">))))</span>
+</div>
+<div class="viewcode-block" id="ParametersFile.save"><a class="viewcode-back" href="../../tools.html#tools.parameters.ParametersFile.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par_path</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write the parameters file.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">par_path</span><span class="p">:</span>
+            <span class="n">par_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">par_path</span>
+        <span class="n">par</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">par_path</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;·&#39;</span> <span class="o">*</span> <span class="p">(</span><span class="mi">25</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">par_set</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;·····  {} parameters  ·····</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">par_set</span><span class="p">))</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;·&#39;</span> <span class="o">*</span> <span class="p">(</span><span class="mi">25</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">par_set</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="p">:</span>
+            <span class="n">fields</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">order</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fields</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">optional</span>
+        <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">):</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">field</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">text</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_text</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">real</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">int</span>
+                             <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_real</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_int</span><span class="p">):</span>
+                    <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">field</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">field_sep</span> <span class="o">+</span> <span class="s">&#39; &#39;</span>
+                              <span class="o">+</span> <span class="n">_join</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">value_sep</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">boolean</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_boolean</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">value</span><span class="p">:</span>
+                        <span class="n">value</span> <span class="o">=</span> <span class="s">&#39;y&#39;</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">value</span> <span class="o">=</span> <span class="s">&#39;n&#39;</span>
+                    <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">field</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">field_sep</span> <span class="o">+</span> <span class="s">&#39; &#39;</span> <span class="o">+</span> <span class="n">value</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="ParametersFile.update"><a class="viewcode-back" href="../../tools.html#tools.parameters.ParametersFile.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">par_path</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates a list of existing fields with the corresponding values.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">field</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">fields</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">optional</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">set_field</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">values</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">save</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">par_path</span><span class="p">)</span>
+
+</div></div>
+<span class="k">def</span> <span class="nf">_split</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="n">to_type</span><span class="p">,</span> <span class="n">sep</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert a string into a give type, returning a single converted value or</span>
+<span class="sd">    a list of converted values.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">string</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">to_type</span><span class="p">,</span> <span class="n">string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">sep</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">to_type</span><span class="p">,</span> <span class="p">[</span><span class="n">string</span><span class="p">])</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">items</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">items</span>
+
+
+<span class="k">def</span> <span class="nf">_join</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="n">sep</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert a list of items or a single item into a string, separating items</span>
+<span class="sd">    with the given sep.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">sep</span> <span class="o">+</span> <span class="s">&#39; &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">items</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">gsimcli 0.0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, gsimcli development team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

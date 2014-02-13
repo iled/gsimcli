@@ -1,0 +1,699 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>parsers.cost &mdash; gsimcli 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="gsimcli 0.0.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">gsimcli 0.0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for parsers.cost</h1><div class="highlight"><pre>
+<span class="c"># encoding: utf-8</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Created on 19/09/2013</span>
+
+<span class="sd">@author: jcaineta</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">tools.grid</span> <span class="kn">as</span> <span class="nn">gr</span>
+<span class="kn">import</span> <span class="nn">tools.utils</span> <span class="kn">as</span> <span class="nn">ut</span>
+
+
+<div class="viewcode-block" id="directory_walk_v1"><a class="viewcode-back" href="../../parsers.html#parsers.cost.directory_walk_v1">[docs]</a><span class="k">def</span> <span class="nf">directory_walk_v1</span><span class="p">(</span><span class="n">base</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Walk through a directory tree, according to version 13.11.2009</span>
+
+<span class="sd">    Format: iiii / dddd / nnnnnn</span>
+
+<span class="sd">    @base: path for iiii / dddd /</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">networks</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="n">parsed_files</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">root</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">base</span><span class="p">):</span>  <span class="c"># @UnusedVariable</span>
+        <span class="n">network</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">network</span> <span class="ow">in</span> <span class="n">networks</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;There is no support for networks with the same&#39;</span>
+                             <span class="s">&#39;ID in the same submission directory tree: {}&#39;</span><span class="o">.</span>
+                             <span class="n">format</span><span class="p">(</span><span class="n">network</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">network</span><span class="o">.</span><span class="n">isdigit</span><span class="p">()</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">network</span><span class="p">)</span> <span class="o">==</span> <span class="mi">6</span><span class="p">:</span>
+            <span class="n">networks</span><span class="p">[</span><span class="n">network</span><span class="p">]</span> <span class="o">=</span> <span class="n">files</span>
+
+    <span class="c"># este ciclo deve dar para integrar no anterior</span>
+    <span class="k">for</span> <span class="n">network</span><span class="p">,</span> <span class="n">stations</span> <span class="ow">in</span> <span class="n">networks</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">station</span> <span class="ow">in</span> <span class="n">stations</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">base</span><span class="p">)</span> <span class="o">==</span> <span class="n">network</span><span class="p">:</span>
+                <span class="n">direc</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">station</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">direc</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">network</span><span class="p">,</span> <span class="n">station</span><span class="p">)</span>
+            <span class="n">parsed_files</span><span class="p">[</span><span class="n">direc</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">network</span><span class="p">]</span> <span class="o">+</span> <span class="n">filename_parse</span><span class="p">(</span><span class="n">direc</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">parsed_files</span>
+
+</div>
+<div class="viewcode-block" id="directory_walk_v2"><a class="viewcode-back" href="../../parsers.html#parsers.cost.directory_walk_v2">[docs]</a><span class="k">def</span> <span class="nf">directory_walk_v2</span><span class="p">(</span><span class="n">root</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Walk through a directory tree, according to version 30.09.2010</span>
+
+<span class="sd">    Format: network / type</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="directory_convert"><a class="viewcode-back" href="../../parsers.html#parsers.cost.directory_convert">[docs]</a><span class="k">def</span> <span class="nf">directory_convert</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="n">ftype</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">variable</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                   <span class="n">network</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">merge</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">to_year</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">coords</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                   <span class="n">md</span><span class="o">=-</span><span class="mf">999.9</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">root</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">fpath</span><span class="p">):</span>  <span class="c"># @UnusedVariable</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dirs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="o">==</span> <span class="mi">6</span> <span class="ow">and</span> <span class="n">d</span><span class="o">.</span><span class="n">isdigit</span><span class="p">()</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dirs</span><span class="p">]):</span>
+            <span class="k">print</span> <span class="s">&#39;processing &#39;</span> <span class="o">+</span> <span class="n">root</span>
+            <span class="n">parsed_files</span> <span class="o">=</span> <span class="n">directory_walk_v1</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+            <span class="n">selected_files</span> <span class="o">=</span> <span class="n">files_select</span><span class="p">(</span><span class="n">parsed</span><span class="o">=</span><span class="n">parsed_files</span><span class="p">,</span> <span class="n">ftype</span><span class="o">=</span><span class="n">ftype</span><span class="p">,</span>
+                                          <span class="n">variable</span><span class="o">=</span><span class="n">variable</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="n">content</span><span class="p">,</span>
+                                          <span class="n">network</span><span class="o">=</span><span class="n">network</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">selected_files</span><span class="p">:</span>
+                <span class="n">convert_gslib</span><span class="p">(</span><span class="n">selected_files</span><span class="p">,</span> <span class="n">merge</span><span class="p">,</span> <span class="n">md</span><span class="p">,</span> <span class="n">to_year</span><span class="p">,</span> <span class="n">coords</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="filename_parse"><a class="viewcode-back" href="../../parsers.html#parsers.cost.filename_parse">[docs]</a><span class="k">def</span> <span class="nf">filename_parse</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">station_n</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">network_n</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Recognizes file type and properties.</span>
+
+<span class="sd">    @filepath: path to file (xxvvrssssssssc.txt)</span>
+<span class="sd">    @station_n: number of digits for the stations code (default in</span>
+<span class="sd">                version 13.11.2009 is 8)</span>
+<span class="sd">    @network_n: number of digits for the network (default in version</span>
+<span class="sd">                30.09.2010 is 3; default in version 13.11.2009 is 6)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">bne</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="n">bn</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">bne</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">bne</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c"># identify stations network file (nnnstations.txt)</span>
+    <span class="k">if</span> <span class="n">bne</span><span class="p">[</span><span class="o">-</span><span class="mi">12</span><span class="p">:]</span> <span class="o">==</span> <span class="s">&#39;stations.txt&#39;</span><span class="p">:</span>
+        <span class="n">filetype</span> <span class="o">=</span> <span class="s">&#39;network&#39;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">filetype</span><span class="p">]</span>
+    <span class="c"># identify break-points file (nnnvvdetected.txt)</span>
+    <span class="k">if</span> <span class="n">bne</span><span class="p">[</span><span class="o">-</span><span class="mi">12</span><span class="p">:]</span> <span class="o">==</span> <span class="s">&#39;detected.txt&#39;</span><span class="p">:</span>
+        <span class="n">filetype</span> <span class="o">=</span> <span class="s">&#39;breakpoint&#39;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">filetype</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">ext</span> <span class="o">==</span> <span class="s">&#39;.txt&#39;</span><span class="p">:</span>
+        <span class="n">filetype</span> <span class="o">=</span> <span class="s">&#39;data&#39;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        xx: Data status, quality (the status relates to the full dataset)</span>
+<span class="sd">        &#39;ra&#39;: #raw data (with possible outliers, missing data</span>
+<span class="sd">            and inhomogeneities)</span>
+<span class="sd">        &#39;qc&#39;: #quality controlled (outliers removed, but may still exist</span>
+<span class="sd">            missing data and inhomogeneities)</span>
+<span class="sd">        &#39;ho&#39;: #homogenized data (outliers removed, missing data filled,</span>
+<span class="sd">            detected inhomogeneities removed)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">xx</span> <span class="o">=</span> <span class="n">bn</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">xx</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;ra&#39;</span><span class="p">,</span> <span class="s">&#39;qc&#39;</span><span class="p">,</span> <span class="s">&#39;ho&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s">&#39;Unrecognized data status.&#39;</span><span class="p">)</span>
+
+        <span class="c"># vv: Measured variable</span>
+        <span class="c"># &#39;dd&#39;: #wind direction</span>
+        <span class="c"># &#39;ff&#39;: #wind speed</span>
+        <span class="c"># &#39;nn&#39;: #cloud cover</span>
+        <span class="c"># &#39;tm&#39;: #mean temperature</span>
+        <span class="c"># &#39;tn&#39;: #minimum temperature</span>
+        <span class="c"># &#39;tx&#39;: #maximum temperature</span>
+        <span class="c"># &#39;pp&#39;: #pressure</span>
+        <span class="c"># &#39;rr&#39;: #precipitation</span>
+        <span class="c"># &#39;sd&#39;: #sunshine duration</span>
+        <span class="n">vv</span> <span class="o">=</span> <span class="n">bn</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">vv</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;dd&#39;</span><span class="p">,</span> <span class="s">&#39;ff&#39;</span><span class="p">,</span> <span class="s">&#39;nn&#39;</span><span class="p">,</span> <span class="s">&#39;tm&#39;</span><span class="p">,</span> <span class="s">&#39;tn&#39;</span><span class="p">,</span> <span class="s">&#39;tx&#39;</span><span class="p">,</span> <span class="s">&#39;pp&#39;</span><span class="p">,</span> <span class="s">&#39;rr&#39;</span><span class="p">,</span> <span class="s">&#39;sd&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s">&#39;Unrecognized measured variable.&#39;</span><span class="p">)</span>
+
+        <span class="c"># r: Resolution (averaging period of the data)</span>
+        <span class="c"># &#39;y&#39;: #yearly</span>
+        <span class="c"># &#39;m&#39;: #monthly</span>
+        <span class="c"># &#39;d&#39;: #daily</span>
+        <span class="c"># &#39;s&#39;: #subdaily</span>
+        <span class="c"># &#39;x&#39;: #other</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">bn</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">r</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;y&#39;</span><span class="p">,</span> <span class="s">&#39;m&#39;</span><span class="p">,</span> <span class="s">&#39;d&#39;</span><span class="p">,</span> <span class="s">&#39;s&#39;</span><span class="p">,</span> <span class="s">&#39;x&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s">&#39;Unrecognized data resolution.&#39;</span><span class="p">)</span>
+
+        <span class="c"># ssssssss: Station number (number of characters to be</span>
+                    <span class="c"># specified by the user, default is station_n = 8)</span>
+        <span class="n">ssssssss</span> <span class="o">=</span> <span class="n">bn</span><span class="p">[</span><span class="mi">5</span><span class="p">:</span><span class="mi">5</span> <span class="o">+</span> <span class="n">station_n</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ssssssss</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">bn</span><span class="p">)</span> <span class="o">-</span> <span class="mi">6</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s">&#39;Invalid station number.&#39;</span><span class="p">)</span>
+
+        <span class="c"># c: Content</span>
+        <span class="c"># &#39;d&#39;: #data, meteorological variables</span>
+        <span class="c"># &#39;f&#39;: #quality flags</span>
+        <span class="c"># &#39;g&#39;: #graphics and pictures (it may come with an extra suffix, hence</span>
+                <span class="c"># the file name might be longer)</span>
+        <span class="c"># &#39;c&#39;: #corrections</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">bn</span><span class="p">[</span><span class="mi">5</span> <span class="o">+</span> <span class="n">station_n</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;d&#39;</span><span class="p">,</span> <span class="s">&#39;f&#39;</span><span class="p">,</span> <span class="s">&#39;g&#39;</span><span class="p">,</span> <span class="s">&#39;c&#39;</span><span class="p">]:</span>  <span class="c"># nunca vai encontrar o g...</span>
+            <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s">&#39;Unrecognized content.&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">[</span><span class="n">filetype</span><span class="p">,</span> <span class="n">xx</span><span class="p">,</span> <span class="n">vv</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">ssssssss</span><span class="p">,</span> <span class="n">c</span><span class="p">]</span>
+
+    <span class="c"># file extension must be .txt (except for images)</span>
+    <span class="k">elif</span> <span class="n">ext</span> <span class="o">!=</span> <span class="s">&#39;.txt&#39;</span><span class="p">:</span>  <span class="c"># and c != &#39;g&#39;:</span>
+        <span class="n">filetype</span> <span class="o">=</span> <span class="s">&#39;other&#39;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">filetype</span><span class="p">]</span>
+        <span class="c"># raise NameError(&#39;Invalid file type.&#39;)</span>
+
+</div>
+<div class="viewcode-block" id="datafile"><a class="viewcode-back" href="../../parsers.html#parsers.cost.datafile">[docs]</a><span class="k">def</span> <span class="nf">datafile</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">md</span><span class="o">=-</span><span class="mf">999.9</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Reads COST-formatted data files.</span>
+<span class="sd">    @filepath: path to data file.</span>
+<span class="sd">    @res: resolution</span>
+<span class="sd">    @md: missing data value</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">res</span> <span class="o">==</span> <span class="s">&#39;y&#39;</span><span class="p">:</span>
+        <span class="n">header_names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Year&#39;</span><span class="p">,</span> <span class="s">&#39;Data&#39;</span><span class="p">]</span>
+        <span class="n">ncols</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">res</span> <span class="o">==</span> <span class="s">&#39;m&#39;</span><span class="p">:</span>
+        <span class="n">header_names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Year&#39;</span><span class="p">,</span> <span class="s">&#39;Jan&#39;</span><span class="p">,</span> <span class="s">&#39;Feb&#39;</span><span class="p">,</span> <span class="s">&#39;Mar&#39;</span><span class="p">,</span> <span class="s">&#39;Apr&#39;</span><span class="p">,</span> <span class="s">&#39;May&#39;</span><span class="p">,</span> <span class="s">&#39;Jun&#39;</span><span class="p">,</span>
+                        <span class="s">&#39;Jul&#39;</span><span class="p">,</span> <span class="s">&#39;Aug&#39;</span><span class="p">,</span> <span class="s">&#39;Sep&#39;</span><span class="p">,</span> <span class="s">&#39;Oct&#39;</span><span class="p">,</span> <span class="s">&#39;Nov&#39;</span><span class="p">,</span> <span class="s">&#39;Dec&#39;</span><span class="p">]</span>
+        <span class="n">ncols</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">13</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">res</span> <span class="o">==</span> <span class="s">&#39;d&#39;</span><span class="p">:</span>
+        <span class="n">header_names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Year&#39;</span><span class="p">,</span> <span class="s">&#39;Month&#39;</span><span class="p">,</span> <span class="s">&#39;Day&#39;</span><span class="p">,</span> <span class="s">&#39;Data&#39;</span><span class="p">]</span>
+        <span class="n">ncols</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">res</span> <span class="o">==</span> <span class="s">&#39;s&#39;</span><span class="p">:</span>
+        <span class="n">header_names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Year&#39;</span><span class="p">,</span> <span class="s">&#39;Month&#39;</span><span class="p">,</span> <span class="s">&#39;Day&#39;</span><span class="p">,</span> <span class="s">&#39;Time&#39;</span><span class="p">,</span> <span class="s">&#39;Data&#39;</span><span class="p">]</span>
+        <span class="n">ncols</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">res</span> <span class="o">==</span> <span class="s">&#39;x&#39;</span><span class="p">:</span>
+        <span class="c"># not handled yet</span>
+        <span class="k">pass</span>
+
+    <span class="n">climdata</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_table</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">na_values</span><span class="o">=</span><span class="n">md</span><span class="p">,</span>
+                             <span class="n">usecols</span><span class="o">=</span><span class="n">ncols</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="n">header_names</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">climdata</span>
+
+</div>
+<div class="viewcode-block" id="qualityfile"><a class="viewcode-back" href="../../parsers.html#parsers.cost.qualityfile">[docs]</a><span class="k">def</span> <span class="nf">qualityfile</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">res</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Reads COST-formatted files with quality flags.</span>
+
+<span class="sd">    Same file format as data files, but the last column is replaced by</span>
+<span class="sd">    an integer:</span>
+
+<span class="sd">    1. Raw (not passed QC)</span>
+<span class="sd">    2. Controlled (not homogenized; has passed some QC)</span>
+<span class="sd">    3. Homogenized</span>
+<span class="sd">    4. Reconstitution (if the original data was missing or did not pass the QC)</span>
+<span class="sd">    5. Exceptional (in some cases, the original data is not an error,</span>
+<span class="sd">        but has weird values, that should not be taken into account</span>
+<span class="sd">        during correction estimations. This may occur for violent but</span>
+<span class="sd">        local thunderstorms for example.</span>
+<span class="sd">    9. Missing</span>
+
+<span class="sd">    @filepath: path to quality flags file.</span>
+<span class="sd">    @res: resolution</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">res</span> <span class="o">==</span> <span class="s">&#39;y&#39;</span><span class="p">:</span>
+        <span class="n">header_names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Year&#39;</span><span class="p">,</span> <span class="s">&#39;Flag&#39;</span><span class="p">]</span>
+        <span class="n">ncols</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">res</span> <span class="o">==</span> <span class="s">&#39;m&#39;</span><span class="p">:</span>
+        <span class="n">header_names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Year&#39;</span><span class="p">,</span> <span class="s">&#39;Jan&#39;</span><span class="p">,</span> <span class="s">&#39;Feb&#39;</span><span class="p">,</span> <span class="s">&#39;Mar&#39;</span><span class="p">,</span> <span class="s">&#39;Apr&#39;</span><span class="p">,</span> <span class="s">&#39;May&#39;</span><span class="p">,</span> <span class="s">&#39;Jun&#39;</span><span class="p">,</span>
+                        <span class="s">&#39;Jul&#39;</span><span class="p">,</span> <span class="s">&#39;Aug&#39;</span><span class="p">,</span> <span class="s">&#39;Sep&#39;</span><span class="p">,</span> <span class="s">&#39;Oct&#39;</span><span class="p">,</span> <span class="s">&#39;Nov&#39;</span><span class="p">,</span> <span class="s">&#39;Dec&#39;</span><span class="p">]</span>
+        <span class="n">ncols</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">13</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">res</span> <span class="o">==</span> <span class="s">&#39;d&#39;</span><span class="p">:</span>
+        <span class="n">header_names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Year&#39;</span><span class="p">,</span> <span class="s">&#39;Month&#39;</span><span class="p">,</span> <span class="s">&#39;Day&#39;</span><span class="p">,</span> <span class="s">&#39;Flag&#39;</span><span class="p">]</span>
+        <span class="n">ncols</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">res</span> <span class="o">==</span> <span class="s">&#39;s&#39;</span><span class="p">:</span>
+        <span class="n">header_names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Year&#39;</span><span class="p">,</span> <span class="s">&#39;Month&#39;</span><span class="p">,</span> <span class="s">&#39;Day&#39;</span><span class="p">,</span> <span class="s">&#39;Time&#39;</span><span class="p">,</span> <span class="s">&#39;Flag&#39;</span><span class="p">]</span>
+        <span class="n">ncols</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">res</span> <span class="o">==</span> <span class="s">&#39;x&#39;</span><span class="p">:</span>
+        <span class="c"># not handled yet</span>
+        <span class="k">pass</span>
+
+    <span class="n">qualityflags</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_table</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                 <span class="n">usecols</span><span class="o">=</span><span class="n">ncols</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="n">header_names</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">qualityflags</span>
+
+</div>
+<div class="viewcode-block" id="correctionsfile"><a class="viewcode-back" href="../../parsers.html#parsers.cost.correctionsfile">[docs]</a><span class="k">def</span> <span class="nf">correctionsfile</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">md</span><span class="o">=-</span><span class="mf">999.9</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Reads COST-formatted files with applied correction.</span>
+
+<span class="sd">    The correction file has the same format as the data file format.</span>
+<span class="sd">    It is the result of the comparison between homogenized series and</span>
+<span class="sd">    raw or qc series if exists. In the case of reconstitution of</span>
+<span class="sd">    missing values, the reconstituted value is given.</span>
+
+<span class="sd">    @filepath: path to data corrections file.</span>
+<span class="sd">    @res: resolution</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">res</span> <span class="o">==</span> <span class="s">&#39;y&#39;</span><span class="p">:</span>
+        <span class="n">header_names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Year&#39;</span><span class="p">,</span> <span class="s">&#39;Correction&#39;</span><span class="p">]</span>
+        <span class="n">ncols</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">res</span> <span class="o">==</span> <span class="s">&#39;m&#39;</span><span class="p">:</span>
+        <span class="n">header_names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Year&#39;</span><span class="p">,</span> <span class="s">&#39;Jan&#39;</span><span class="p">,</span> <span class="s">&#39;Feb&#39;</span><span class="p">,</span> <span class="s">&#39;Mar&#39;</span><span class="p">,</span> <span class="s">&#39;Apr&#39;</span><span class="p">,</span> <span class="s">&#39;May&#39;</span><span class="p">,</span> <span class="s">&#39;Jun&#39;</span><span class="p">,</span>
+                        <span class="s">&#39;Jul&#39;</span><span class="p">,</span> <span class="s">&#39;Aug&#39;</span><span class="p">,</span> <span class="s">&#39;Sep&#39;</span><span class="p">,</span> <span class="s">&#39;Oct&#39;</span><span class="p">,</span> <span class="s">&#39;Nov&#39;</span><span class="p">,</span> <span class="s">&#39;Dec&#39;</span><span class="p">]</span>
+        <span class="n">ncols</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">13</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">res</span> <span class="o">==</span> <span class="s">&#39;d&#39;</span><span class="p">:</span>
+        <span class="n">header_names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Year&#39;</span><span class="p">,</span> <span class="s">&#39;Month&#39;</span><span class="p">,</span> <span class="s">&#39;Day&#39;</span><span class="p">,</span> <span class="s">&#39;Correction&#39;</span><span class="p">]</span>
+        <span class="n">ncols</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">res</span> <span class="o">==</span> <span class="s">&#39;s&#39;</span><span class="p">:</span>
+        <span class="n">header_names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Year&#39;</span><span class="p">,</span> <span class="s">&#39;Month&#39;</span><span class="p">,</span> <span class="s">&#39;Day&#39;</span><span class="p">,</span> <span class="s">&#39;Time&#39;</span><span class="p">,</span> <span class="s">&#39;Correction&#39;</span><span class="p">]</span>
+        <span class="n">ncols</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">res</span> <span class="o">==</span> <span class="s">&#39;x&#39;</span><span class="p">:</span>
+        <span class="c"># not handled yet</span>
+        <span class="k">pass</span>
+
+    <span class="n">correction</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_table</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                               <span class="n">na_values</span><span class="o">=</span><span class="n">md</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="n">ncols</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="n">header_names</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">correction</span>
+
+</div>
+<div class="viewcode-block" id="networkfile"><a class="viewcode-back" href="../../parsers.html#parsers.cost.networkfile">[docs]</a><span class="k">def</span> <span class="nf">networkfile</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Reads COST-formatted network (list of stations) files.</span>
+
+<span class="sd">    @filepath: path to network file.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">network</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_table</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+    <span class="n">ncols</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">ncols</span> <span class="o">==</span> <span class="mi">9</span><span class="p">:</span>
+        <span class="n">network</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Station&#39;</span><span class="p">,</span> <span class="s">&#39;LatDeg&#39;</span><span class="p">,</span> <span class="s">&#39;LatMin&#39;</span><span class="p">,</span> <span class="s">&#39;LatSec&#39;</span><span class="p">,</span> <span class="s">&#39;LonDeg&#39;</span><span class="p">,</span>
+                           <span class="s">&#39;LonMin&#39;</span><span class="p">,</span> <span class="s">&#39;LonSec&#39;</span><span class="p">,</span> <span class="s">&#39;Alt&#39;</span><span class="p">,</span> <span class="s">&#39;Name&#39;</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">ncols</span> <span class="o">==</span> <span class="mi">5</span><span class="p">:</span>
+        <span class="n">network</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Station&#39;</span><span class="p">,</span> <span class="s">&#39;Lat&#39;</span><span class="p">,</span> <span class="s">&#39;Lon&#39;</span><span class="p">,</span> <span class="s">&#39;Alt&#39;</span><span class="p">,</span> <span class="s">&#39;Name&#39;</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">network</span>
+
+</div>
+<div class="viewcode-block" id="find_netwfile"><a class="viewcode-back" href="../../parsers.html#parsers.cost.find_netwfile">[docs]</a><span class="k">def</span> <span class="nf">find_netwfile</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Tries to find the path for the corresponding network file of a</span>
+<span class="sd">        data file.</span>
+
+<span class="sd">    @filepath: path to data file.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">base</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">filepath</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">network</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">base</span><span class="p">)</span>
+    <span class="n">netwfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">network</span> <span class="o">+</span> <span class="s">&#39;stations.txt&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">netwfile</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">netwfile</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">root</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">base</span><span class="p">):</span>  <span class="c"># @UnusedVariable</span>
+            <span class="n">netwfile</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">files</span> <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">12</span><span class="p">:]</span> <span class="o">==</span> <span class="s">&#39;stations.txt&#39;</span><span class="p">),</span>
+                            <span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">netwfile</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">netwfile</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s">&#39;Network file not found.&#39;</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="breakpointsfile"><a class="viewcode-back" href="../../parsers.html#parsers.cost.breakpointsfile">[docs]</a><span class="k">def</span> <span class="nf">breakpointsfile</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Reads COST-formatted break-points files.</span>
+
+<span class="sd">    @filepath: path to break-points file.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">breakpoints</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_table</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+    <span class="n">ncols</span> <span class="o">=</span> <span class="n">breakpoints</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">header_names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Station&#39;</span><span class="p">,</span> <span class="s">&#39;Type&#39;</span><span class="p">,</span> <span class="s">&#39;Year&#39;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">ncols</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="n">header_names</span> <span class="o">+=</span> <span class="p">[</span><span class="s">&#39;Month&#39;</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">ncols</span> <span class="o">==</span> <span class="mi">5</span><span class="p">:</span>
+        <span class="n">header_names</span> <span class="o">+=</span> <span class="p">[</span><span class="s">&#39;Month&#39;</span><span class="p">,</span> <span class="s">&#39;Day&#39;</span><span class="p">]</span>
+
+    <span class="n">breakpoints</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">header_names</span>
+
+    <span class="k">return</span> <span class="n">breakpoints</span>
+
+</div>
+<div class="viewcode-block" id="station_coord"><a class="viewcode-back" href="../../parsers.html#parsers.cost.station_coord">[docs]</a><span class="k">def</span> <span class="nf">station_coord</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">station_path</span><span class="p">,</span> <span class="n">coordinates_file</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extracts station coordinates (lat, long) from network file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">coordinates_file</span><span class="p">:</span>
+        <span class="n">network</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">coordinates_file</span><span class="p">)</span>
+
+    <span class="n">station_coord</span> <span class="o">=</span> <span class="n">network</span><span class="p">[</span><span class="n">network</span><span class="o">.</span><span class="n">Station</span> <span class="o">==</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">station_path</span><span class="p">)]</span>
+
+    <span class="k">if</span> <span class="n">coordinates_file</span><span class="p">:</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">station_coord</span><span class="o">.</span><span class="n">coordx</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">station_coord</span><span class="o">.</span><span class="n">coordy</span>
+    <span class="k">elif</span> <span class="n">station_coord</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">9</span><span class="p">:</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">ut</span><span class="o">.</span><span class="n">dms2dec</span><span class="p">(</span><span class="n">station_coord</span><span class="o">.</span><span class="n">LatDeg</span><span class="p">,</span> <span class="n">station_coord</span><span class="o">.</span><span class="n">LatMin</span><span class="p">,</span>
+                       <span class="n">station_coord</span><span class="o">.</span><span class="n">LatSec</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">ut</span><span class="o">.</span><span class="n">dms2dec</span><span class="p">(</span><span class="n">station_coord</span><span class="o">.</span><span class="n">LonDeg</span><span class="p">,</span> <span class="n">station_coord</span><span class="o">.</span><span class="n">LonMin</span><span class="p">,</span>
+                       <span class="n">station_coord</span><span class="o">.</span><span class="n">LonSec</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">station_coord</span><span class="o">.</span><span class="n">Lat</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">station_coord</span><span class="o">.</span><span class="n">Lon</span>
+
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="convert_gslib"><a class="viewcode-back" href="../../parsers.html#parsers.cost.convert_gslib">[docs]</a><span class="k">def</span> <span class="nf">convert_gslib</span><span class="p">(</span><span class="n">files</span><span class="p">,</span> <span class="n">merge</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">md</span><span class="o">=-</span><span class="mf">999.9</span><span class="p">,</span> <span class="n">to_year</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                  <span class="n">coordinates_file</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Load selected files type, previously parsed. Then converts them</span>
+<span class="sd">    to GSLIB format. By default it generates one file per network.</span>
+
+
+<span class="sd">    @files: list containing files path and type, selected before hand.</span>
+<span class="sd">    @merge: flag to generate one file per group of networks.</span>
+<span class="sd">    @md: place holder for missing data.</span>
+
+<span class="sd">    TODO:</span>
+<span class="sd">    .considerar a hipótese de carregar mais do que um tipo simultaneamente</span>
+<span class="sd">    .permitir fazer diferentes variáveis (ou inserir isso no interface)</span>
+<span class="sd">    .deal with leap years.</span>
+<span class="sd">    .now its dropping the column with the year; put back again for res != &#39;y&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c"># collect info from the first network</span>
+    <span class="n">network_number</span> <span class="o">=</span> <span class="n">files</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">network_path</span> <span class="o">=</span> <span class="n">find_netwfile</span><span class="p">(</span><span class="n">files</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">network</span> <span class="o">=</span> <span class="n">networkfile</span><span class="p">(</span><span class="n">network_path</span><span class="p">)</span>
+    <span class="n">station_x</span><span class="p">,</span> <span class="n">station_y</span> <span class="o">=</span> <span class="n">station_coord</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">files</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+                                         <span class="n">coordinates_file</span><span class="p">)</span>
+    <span class="n">var</span> <span class="o">=</span> <span class="n">files</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span>
+    <span class="c"># resol = files[0][1][4]</span>
+
+    <span class="n">savedir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">files</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="k">if</span> <span class="n">merge</span><span class="p">:</span>
+        <span class="c"># savedir = os.path.dirname(os.path.dirname(files[0][0]))</span>
+        <span class="n">fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">savedir</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c"># savedir = os.path.dirname(files[0][0])</span>
+        <span class="n">fname</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">network_number</span><span class="p">)</span>
+
+    <span class="n">pset_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">savedir</span><span class="p">,</span> <span class="n">fname</span> <span class="o">+</span> <span class="s">&#39;_&#39;</span> <span class="o">+</span> <span class="n">var</span> <span class="o">+</span> <span class="s">&#39;_pset.prn&#39;</span><span class="p">)</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    # temporary, depends on leap years</span>
+<span class="sd">    if resol in [&#39;y&#39;, &#39;m&#39;]:</span>
+<span class="sd">        nvar = 7</span>
+<span class="sd">        pset = gr.PointSet(name=fname + &#39;_pset&#39;, nodata=md, nvars=nvar,</span>
+<span class="sd">                       varnames=[&#39;lat&#39;, &#39;lon&#39;, &#39;time&#39;, &#39;year&#39;, &#39;network&#39;,</span>
+<span class="sd">                                 &#39;station&#39;, var], values=np.zeros((0, nvar)))</span>
+<span class="sd">    else:</span>
+<span class="sd">        nvar = 6</span>
+<span class="sd">        pset = gr.PointSet(name=fname + &#39;_pset&#39;, nodata=md, nvars=nvar,</span>
+<span class="sd">                       varnames=[&#39;lat&#39;, &#39;lon&#39;, &#39;time&#39;, &#39;network&#39;, &#39;station&#39;,</span>
+<span class="sd">                                 var], values=np.zeros((0, nvar)))</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">nvar</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">pset</span> <span class="o">=</span> <span class="n">gr</span><span class="o">.</span><span class="n">PointSet</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">fname</span> <span class="o">+</span> <span class="s">&#39;_pset&#39;</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=</span><span class="n">md</span><span class="p">,</span> <span class="n">nvars</span><span class="o">=</span><span class="n">nvar</span><span class="p">,</span>
+                       <span class="n">varnames</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;lon&#39;</span><span class="p">,</span> <span class="s">&#39;lat&#39;</span><span class="p">,</span> <span class="s">&#39;time&#39;</span><span class="p">,</span> <span class="s">&#39;station&#39;</span><span class="p">,</span> <span class="n">var</span><span class="p">])</span>
+
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+        <span class="n">file_path</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">file_type</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">network_number</span> <span class="o">!=</span> <span class="n">file_type</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="c"># collect info from the next network</span>
+            <span class="n">network_path</span> <span class="o">=</span> <span class="n">find_netwfile</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+            <span class="n">network</span> <span class="o">=</span> <span class="n">networkfile</span><span class="p">(</span><span class="n">network_path</span><span class="p">)</span>
+            <span class="n">network_number</span> <span class="o">=</span> <span class="n">file_type</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">merge</span><span class="p">:</span>
+                <span class="n">pset</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">pset_file</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                <span class="n">pset</span> <span class="o">=</span> <span class="n">gr</span><span class="o">.</span><span class="n">PointSet</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">network_number</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;_pset&#39;</span><span class="p">,</span>
+                                   <span class="n">nodata</span><span class="o">=</span><span class="n">md</span><span class="p">,</span> <span class="n">nvars</span><span class="o">=</span><span class="n">nvar</span><span class="p">,</span>
+                                   <span class="n">varnames</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;lon&#39;</span><span class="p">,</span> <span class="s">&#39;lat&#39;</span><span class="p">,</span> <span class="s">&#39;time&#39;</span><span class="p">,</span> <span class="s">&#39;station&#39;</span><span class="p">,</span>
+                                             <span class="n">var</span><span class="p">])</span>
+                <span class="n">pset_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">savedir</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">network_number</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;_&#39;</span> <span class="o">+</span>
+                                         <span class="n">var</span> <span class="o">+</span> <span class="s">&#39;_pset.prn&#39;</span><span class="p">)</span>
+                <span class="c"># pset.values = np.zeros((0, nvar))</span>
+                <span class="c"># pset.values = pd.DataFrame(np.zeros((0, nvar)))</span>
+
+        <span class="n">station_x</span><span class="p">,</span> <span class="n">station_y</span> <span class="o">=</span> <span class="n">station_coord</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">file_path</span><span class="p">,</span>
+                                             <span class="n">coordinates_file</span><span class="p">)</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">((</span><span class="n">cost2gslib</span><span class="p">(</span><span class="n">station_x</span><span class="p">,</span> <span class="n">station_y</span><span class="p">,</span>
+                                        <span class="n">datafile</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">file_type</span><span class="p">[</span><span class="mi">4</span><span class="p">]),</span> <span class="n">md</span><span class="p">,</span>
+                                        <span class="n">to_year</span><span class="p">)),</span>
+                            <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;lon&#39;</span><span class="p">,</span> <span class="s">&#39;lat&#39;</span><span class="p">,</span> <span class="s">&#39;time&#39;</span><span class="p">,</span> <span class="s">&#39;year&#39;</span><span class="p">,</span> <span class="n">var</span><span class="p">])</span>
+
+        <span class="c"># temp[np.isnan(temp)] == md</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        temp = np.column_stack((temp[:, :-1], np.repeat(int(network_number),</span>
+<span class="sd">                                                temp.shape[0]),</span>
+<span class="sd">                                np.repeat(int(filename_parse(file_path)[4]),</span>
+<span class="sd">                                          temp.shape[0]), temp[:, -1]))</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># temp = (temp.iloc[:, :3].</span>
+        <span class="c">#        join(pd.Series(np.repeat(int(filename_parse(file_path)[4]),</span>
+        <span class="c">#                                 temp.shape[0]), name=&#39;station&#39;)))</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="n">temp</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s">&#39;year&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">temp</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="s">&#39;station&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">filename_parse</span><span class="p">(</span><span class="n">file_path</span><span class="p">)[</span><span class="mi">4</span><span class="p">]),</span>
+                                         <span class="n">temp</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="c"># temp = temp.join(pd.Series(temp.iloc[:, -1], name=var))</span>
+        <span class="c"># np.savetxt(pset_file, temp,</span>
+        <span class="c">#          fmt=[&#39;%-10.6f&#39;, &#39;%10.6f&#39;, &#39;%10i&#39;, &#39;%10.4f&#39;, &#39;%06i&#39;, &#39;%08i&#39;])</span>
+        <span class="c"># pset.values = np.vstack((pset.values, temp))</span>
+        <span class="n">pset</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="c"># pset_file.close()</span>
+    <span class="n">pset</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">pset_file</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="cost2gslib"><a class="viewcode-back" href="../../parsers.html#parsers.cost.cost2gslib">[docs]</a><span class="k">def</span> <span class="nf">cost2gslib</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">nd</span><span class="o">=-</span><span class="mf">999.9</span><span class="p">,</span> <span class="n">to_year</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Converts data from one station to the GSLIB standard (point-set).</span>
+
+<span class="sd">    @x, y: station coordinates</span>
+<span class="sd">    @data: data contents as pd.DataFrame</span>
+
+<span class="sd">    TODO: deal with leap years.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">resolution</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">resolution</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c"># yearly</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">index</span>
+        <span class="n">var</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>  <span class="c"># TODO: pd.S ?</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">elif</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">12</span><span class="p">:</span>  <span class="c"># monthly</span>
+        <span class="k">if</span> <span class="n">to_year</span> <span class="o">==</span> <span class="s">&#39;sum&#39;</span><span class="p">:</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">index</span>
+            <span class="n">var</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">skipna</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">to_year</span> <span class="o">==</span> <span class="s">&#39;mean&#39;</span><span class="p">:</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">index</span>
+            <span class="n">var</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">skipna</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="c"># TODO: confirmar NaN quando só falta alguns meses num ano</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># years with months in decimal place</span>
+            <span class="c"># z = [data.index[i] + float(j)/12 for i in xrange(0,data.shape[0])</span>
+            <span class="c">#     for j in xrange(0,12)]</span>
+
+            <span class="c"># converted to months</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="mi">12</span> <span class="o">+</span> <span class="n">j</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                 <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">12</span><span class="p">)]</span>
+            <span class="n">var</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="mi">12</span>
+    <span class="c"># daily -- converted to days (not considering leap years)</span>
+    <span class="k">elif</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">365</span> <span class="o">+</span> <span class="mi">365</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span>
+             <span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">timetuple</span><span class="p">()</span>
+              <span class="o">.</span><span class="n">tm_yday</span><span class="p">)</span>
+             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span>
+        <span class="n">var</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c"># not implemented, depends on leap years</span>
+    <span class="c"># subdaily -- same as daily but with hours in decimal place</span>
+    <span class="k">elif</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">365</span> <span class="o">+</span> <span class="mi">365</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span>
+             <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">timetuple</span><span class="p">()</span>
+                           <span class="o">.</span><span class="n">tm_yday</span><span class="p">)</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span> <span class="o">/</span> <span class="mi">24</span>
+             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span>
+        <span class="n">var</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c"># not implemented, depends on leap years</span>
+
+    <span class="k">if</span> <span class="n">m</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c"># temporary</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">var</span><span class="o">.</span><span class="n">size</span><span class="p">),</span>
+                                 <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">var</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">z</span><span class="p">,</span> <span class="n">var</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="n">nd</span><span class="p">))))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">var</span><span class="o">.</span><span class="n">size</span><span class="p">),</span>
+                                 <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">var</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">z</span><span class="p">,</span>
+                                 <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">m</span><span class="p">),</span> <span class="n">var</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="n">nd</span><span class="p">))))</span>
+
+</div>
+<div class="viewcode-block" id="files_select"><a class="viewcode-back" href="../../parsers.html#parsers.cost.files_select">[docs]</a><span class="k">def</span> <span class="nf">files_select</span><span class="p">(</span><span class="n">parsed</span><span class="p">,</span> <span class="n">network</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">ftype</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">variable</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">resolution</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Sort and filter parsed files according to user criteria.</span>
+
+<span class="sd">    @parsed: dict containing files path and type.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parsed_items</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">parsed</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()]</span>
+
+    <span class="k">if</span> <span class="n">network</span><span class="p">:</span>
+        <span class="n">parsed_items</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">parsed_items</span> <span class="k">if</span> <span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">network</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">ftype</span><span class="p">:</span>
+        <span class="n">parsed_items</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">parsed_items</span> <span class="k">if</span> <span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">ftype</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">status</span> <span class="ow">and</span> <span class="n">ftype</span> <span class="o">==</span> <span class="s">&#39;data&#39;</span><span class="p">:</span>
+        <span class="n">parsed_items</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">parsed_items</span> <span class="k">if</span> <span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="n">status</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">variable</span> <span class="ow">and</span> <span class="n">ftype</span> <span class="o">==</span> <span class="s">&#39;data&#39;</span><span class="p">:</span>
+        <span class="n">parsed_items</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">parsed_items</span> <span class="k">if</span> <span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="n">variable</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">resolution</span> <span class="ow">and</span> <span class="n">ftype</span> <span class="o">==</span> <span class="s">&#39;data&#39;</span><span class="p">:</span>
+        <span class="n">parsed_items</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">parsed_items</span> <span class="k">if</span> <span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="n">resolution</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">content</span> <span class="ow">and</span> <span class="n">ftype</span> <span class="o">==</span> <span class="s">&#39;data&#39;</span><span class="p">:</span>
+        <span class="n">parsed_items</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">parsed_items</span> <span class="k">if</span> <span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">6</span><span class="p">]</span> <span class="o">==</span> <span class="n">content</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">ftype</span> <span class="o">==</span> <span class="s">&#39;data&#39;</span><span class="p">:</span>
+        <span class="c"># sort by network number and then by station number</span>
+        <span class="n">parsed_items</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">5</span><span class="p">]))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c"># sort by network number</span>
+        <span class="n">parsed_items</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">parsed_items</span>
+
+</div>
+<div class="viewcode-block" id="match_sets"><a class="viewcode-back" href="../../parsers.html#parsers.cost.match_sets">[docs]</a><span class="k">def</span> <span class="nf">match_sets</span><span class="p">(</span><span class="n">subset_path</span><span class="p">,</span> <span class="n">mainset_path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Select a stations subset from a mainset, given both paths.</span>
+<span class="sd">    Only appliable to data files.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">subset_files</span> <span class="o">=</span> <span class="n">directory_walk_v1</span><span class="p">(</span><span class="n">subset_path</span><span class="p">)</span>
+    <span class="n">mainset_files</span> <span class="o">=</span> <span class="n">directory_walk_v1</span><span class="p">(</span><span class="n">mainset_path</span><span class="p">)</span>
+    <span class="n">subset_parsed</span> <span class="o">=</span> <span class="n">files_select</span><span class="p">(</span><span class="n">parsed</span><span class="o">=</span><span class="n">subset_files</span><span class="p">,</span> <span class="n">ftype</span><span class="o">=</span><span class="s">&#39;data&#39;</span><span class="p">,</span>
+                                 <span class="n">content</span><span class="o">=</span><span class="s">&#39;d&#39;</span><span class="p">)</span>
+    <span class="n">subset_agg</span> <span class="o">=</span> <span class="n">agg_network</span><span class="p">(</span><span class="n">subset_parsed</span><span class="p">)</span>
+
+    <span class="n">mainset_parsed</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">subset_agg</span><span class="p">:</span>
+        <span class="n">network</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">mainset_parsed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">files_select</span><span class="p">(</span><span class="n">parsed</span><span class="o">=</span><span class="n">mainset_files</span><span class="p">,</span> <span class="n">ftype</span><span class="o">=</span><span class="s">&#39;data&#39;</span><span class="p">,</span>
+                                  <span class="n">content</span><span class="o">=</span><span class="s">&#39;d&#39;</span><span class="p">,</span> <span class="n">network</span><span class="o">=</span><span class="n">network</span><span class="p">))</span>
+
+    <span class="n">mainset_parsed</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="n">mainset_parsed</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">subset_parsed</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mainset_parsed</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;{} is not a subset of {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">subset_path</span><span class="p">,</span>
+                                                            <span class="n">mainset_path</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">mainset_parsed</span>
+
+</div>
+<div class="viewcode-block" id="agg_network"><a class="viewcode-back" href="../../parsers.html#parsers.cost.agg_network">[docs]</a><span class="k">def</span> <span class="nf">agg_network</span><span class="p">(</span><span class="n">stations_parsed</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Aggreggate stations by network.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">networks</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+    <span class="n">netw</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="k">for</span> <span class="n">station</span> <span class="ow">in</span> <span class="n">stations_parsed</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">netw</span> <span class="o">!=</span> <span class="n">station</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="n">netw</span> <span class="o">=</span> <span class="n">station</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">netw_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">st</span> <span class="k">for</span> <span class="n">st</span> <span class="ow">in</span> <span class="n">stations_parsed</span>
+                         <span class="k">if</span> <span class="n">st</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">netw</span><span class="p">]</span>
+            <span class="n">networks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">netw_list</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">networks</span>
+
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">macpath</span> <span class="o">=</span> <span class="s">&#39;/Users/julio/Desktop/testes/cost-home/&#39;</span>
+    <span class="n">mintpath</span> <span class="o">=</span> <span class="s">&#39;/home/julio/Testes/&#39;</span>
+    <span class="n">basepath</span> <span class="o">=</span> <span class="n">mintpath</span>
+
+    <span class="n">rede</span> <span class="o">=</span> <span class="n">basepath</span> <span class="o">+</span> <span class="s">&#39;benchmark/h009/precip/sur1/000005&#39;</span>
+
+    <span class="n">benchmark</span> <span class="o">=</span> <span class="s">&#39;/home/julio/Testes/benchmark/inho/precip/sur1&#39;</span>
+    <span class="n">coords</span> <span class="o">=</span> <span class="s">&#39;/home/julio/Dropbox/ISEGI/cost-home/rede000016/tab_coordenadas_projetadas_rede000016.txt&#39;</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    for root, dirs, files in os.walk(benchmark):  # @UnusedVariable</span>
+<span class="sd">        if len(dirs) &gt; 0 and all([len(d) == 6 and d.isdigit() for d in dirs]):</span>
+<span class="sd">            print &#39;processing &#39; + root</span>
+<span class="sd">            parsed_files = directory_walk_v1(root)</span>
+<span class="sd">            selected_files = files_select(parsed=parsed_files, ftype=&#39;data&#39;,</span>
+<span class="sd">                                          variable=&#39;rr&#39;, content=&#39;d&#39;,</span>
+<span class="sd">                                          network=&#39;000016&#39;)</span>
+<span class="sd">            if selected_files:</span>
+<span class="sd">                convert_gslib(selected_files, merge=False, to_year=&#39;sum&#39;,</span>
+<span class="sd">                              coordinates_file=coords)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dirwalk</span> <span class="o">=</span> <span class="n">directory_walk_v1</span><span class="p">(</span><span class="n">rede</span><span class="p">)</span>
+    <span class="k">print</span> <span class="n">dirwalk</span>
+    <span class="k">print</span> <span class="s">&#39;done&#39;</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">gsimcli 0.0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, gsimcli development team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

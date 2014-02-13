@@ -1,0 +1,337 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>parsers.gsimcli &mdash; gsimcli 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="gsimcli 0.0.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">gsimcli 0.0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for parsers.gsimcli</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Created on 5 de Dez de 2013</span>
+
+<span class="sd">@author: julio</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="kn">import</span> <span class="nn">ntpath</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">parsers.dss</span> <span class="kn">as</span> <span class="nn">pdss</span>
+<span class="kn">import</span> <span class="nn">tools.grid</span> <span class="kn">as</span> <span class="nn">gr</span>
+<span class="kn">from</span> <span class="nn">tools.parameters</span> <span class="kn">import</span> <span class="n">ParametersFile</span>
+
+
+<div class="viewcode-block" id="GsimcliParam"><a class="viewcode-back" href="../../parsers.html#parsers.gsimcli.GsimcliParam">[docs]</a><span class="k">class</span> <span class="nc">GsimcliParam</span><span class="p">(</span><span class="n">ParametersFile</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;GSIMCLI parameters</span>
+
+<span class="sd">        --- DATA ---</span>
+<span class="sd">        data: path to the file containing the stations data</span>
+<span class="sd">        no_data: number representing missing data (e.g., -999.9)</span>
+<span class="sd">        data_header: header lines on the data file (&#39;y&#39;/&#39;n&#39;)</span>
+<span class="sd">        if not, specify</span>
+<span class="sd">        name: data set name</span>
+<span class="sd">        variables: variables name (e.g, &#39;x, y, time, station, var1, var2&#39;)</span>
+<span class="sd">        The following variables are mandatory, here or in the header lines of</span>
+<span class="sd">        the data file:</span>
+<span class="sd">        - &#39;x&#39; coordinate X</span>
+<span class="sd">        - &#39;y&#39; coordinate Y</span>
+<span class="sd">        - &#39;time&#39; unit of time</span>
+<span class="sd">        - &#39;station&#39; stations IDs</span>
+<span class="sd">        - &#39;clim&#39; climatic variable to homogenize</span>
+
+<span class="sd">        --- DETECTION ---</span>
+<span class="sd">        st_order: method for setting candidates order:</span>
+<span class="sd">                - &#39;random&#39; all stations are randomly sorted;</span>
+<span class="sd">                - &#39;sorted&#39; sorts all stations in ascending or descending order;</span>
+<span class="sd">                - &#39;variance&#39; sorts all stations by greater or lower variance;</span>
+<span class="sd">                - &#39;network deviation&#39; sorts all stations in ascending  or</span>
+<span class="sd">                descending order according to the difference between the</span>
+<span class="sd">                station average and the network average;</span>
+<span class="sd">                - &#39;user&#39; the user specifies which stations and their order.</span>
+<span class="sd">        ascending: sort in ascending order (&#39;y&#39;/&#39;n&#39;)</span>
+<span class="sd">        md_last: put missing data at the end of sorted stations (&#39;y&#39;/&#39;n&#39;)</span>
+<span class="sd">        st_user: stations IDs in order if st_order == &#39;user&#39; (e.g., &#39;3, 10, 2&#39;)</span>
+<span class="sd">        detect_method: detection method (comparison between upper and lower</span>
+<span class="sd">                       percentiles and the simulated values):</span>
+<span class="sd">                        - &#39;mean&#39; compares with the mean</span>
+<span class="sd">                        - &#39;median&#39; compares with the median</span>
+<span class="sd">                        - &#39;skewness&#39; use the sample skewness to decide whether</span>
+<span class="sd">                                     it compares with the mean or the median</span>
+<span class="sd">        skewness: samples skewness threshold, used if detecm == &#39;skewness&#39;</span>
+<span class="sd">        detect_prob: probability to build an interval centred in the local pdf</span>
+
+<span class="sd">        --- RESULTS ---</span>
+<span class="sd">        detect_save: save intermediary files (&#39;y&#39;/&#39;n&#39;), which are:</span>
+<span class="sd">                    - candidates point-set</span>
+<span class="sd">                    - references point-set</span>
+<span class="sd">                    - local simulated values</span>
+<span class="sd">                    - homogenized candidates</span>
+<span class="sd">                    - dss parameters</span>
+<span class="sd">                    - dss debug</span>
+<span class="sd">        sim_purge: delete simulated maps (&#39;y&#39;/&#39;n&#39;)</span>
+<span class="sd">        results: path to the folder where results will be saved</span>
+
+<span class="sd">        --- DSS ---</span>
+<span class="sd">        dss_par: path to the DSS parameters file (optional; if none, default</span>
+<span class="sd">                 values will be used)</span>
+<span class="sd">        dss_exe: path to the DSS executable</span>
+<span class="sd">        number_simulations: number of simulations</span>
+<span class="sd">        krig_type: krigging type (OK, SK)</span>
+
+<span class="sd">        --- DSS: variogram ---</span>
+<span class="sd">        model: model type (S = spherical, E = exponential, G = gaussian)</span>
+<span class="sd">        nugget: nugget effect (C0) in normalised variance</span>
+<span class="sd">        sill: sill in normalised variance</span>
+<span class="sd">        ranges: ranges (dir. 1, dir. 2, dir. 3), in the data scale</span>
+<span class="sd">        angles: direction angles</span>
+
+<span class="sd">        --- DSS: grid ---</span>
+<span class="sd">        max_search_nodes: maximum number of nodes to be found</span>
+<span class="sd">        XX_nodes_number: number of nodes in x-axis</span>
+<span class="sd">        XX_minimum: minimum coordinate in x-axis</span>
+<span class="sd">        XX_spacing: distance between nodes (or node size) in x-axis</span>
+<span class="sd">        YY_nodes_number: number of nodes in y-axis</span>
+<span class="sd">        YY_minimum: minimum coordinate in y-axis</span>
+<span class="sd">        YY_spacing: distance between nodes (or node size) in y-axis</span>
+<span class="sd">        ZZ_nodes_number: number of nodes in z-axis</span>
+<span class="sd">        ZZ_minimum: minimum coordinate in z-axis</span>
+<span class="sd">        ZZ_spacing: distance between nodes (or node size) in z-axis</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par_path</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructor. Include wrapper for the DSS parameters.</span>
+
+<span class="sd">        TODO: - for now it just supports one structure in the variogram</span>
+<span class="sd">              - consider every dss parameters as optional?</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">par_set</span> <span class="o">=</span> <span class="s">&#39;GSIMCLI&#39;</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="s">&#39;st_order&#39;</span><span class="p">,</span> <span class="s">&#39;detect_method&#39;</span><span class="p">,</span> <span class="s">&#39;results&#39;</span><span class="p">,</span> <span class="s">&#39;dss_exe&#39;</span><span class="p">]</span>
+        <span class="n">real_n</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;detect_prob&#39;</span><span class="p">,</span> <span class="s">&#39;no_data&#39;</span><span class="p">]</span>
+        <span class="n">boolean</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;data_header&#39;</span><span class="p">,</span> <span class="s">&#39;detect_save&#39;</span><span class="p">,</span> <span class="s">&#39;sim_purge&#39;</span><span class="p">]</span>
+        <span class="n">opt_text</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;dss_par&#39;</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">,</span> <span class="s">&#39;variables&#39;</span><span class="p">,</span> <span class="s">&#39;krig_type&#39;</span><span class="p">,</span> <span class="s">&#39;model&#39;</span><span class="p">]</span>
+        <span class="n">opt_int</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;st_user&#39;</span><span class="p">,</span> <span class="s">&#39;number_simulations&#39;</span><span class="p">,</span> <span class="s">&#39;max_search_nodes&#39;</span><span class="p">,</span>
+                   <span class="s">&#39;angles&#39;</span><span class="p">,</span> <span class="s">&#39;XX_nodes_number&#39;</span><span class="p">,</span> <span class="s">&#39;XX_minimum&#39;</span><span class="p">,</span> <span class="s">&#39;XX_spacing&#39;</span><span class="p">,</span>
+                   <span class="s">&#39;YY_nodes_number&#39;</span><span class="p">,</span> <span class="s">&#39;YY_minimum&#39;</span><span class="p">,</span> <span class="s">&#39;YY_spacing&#39;</span><span class="p">,</span>
+                   <span class="s">&#39;ZZ_nodes_number&#39;</span><span class="p">,</span> <span class="s">&#39;ZZ_minimum&#39;</span><span class="p">,</span> <span class="s">&#39;ZZ_spacing&#39;</span><span class="p">]</span>
+        <span class="n">opt_real</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;skewness&#39;</span><span class="p">,</span> <span class="s">&#39;nugget&#39;</span><span class="p">,</span> <span class="s">&#39;sill&#39;</span><span class="p">,</span> <span class="s">&#39;ranges&#39;</span><span class="p">]</span>
+        <span class="n">opt_boolean</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;ascending&#39;</span><span class="p">,</span> <span class="s">&#39;md_last&#39;</span><span class="p">]</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="s">&#39;no_data&#39;</span><span class="p">,</span> <span class="s">&#39;data_header&#39;</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">,</span>
+                 <span class="s">&#39;variables&#39;</span><span class="p">,</span> <span class="s">&#39;st_order&#39;</span><span class="p">,</span> <span class="s">&#39;ascending&#39;</span><span class="p">,</span> <span class="s">&#39;md_last&#39;</span><span class="p">,</span> <span class="s">&#39;st_user&#39;</span><span class="p">,</span>
+                 <span class="s">&#39;detect_method&#39;</span><span class="p">,</span> <span class="s">&#39;skewness&#39;</span><span class="p">,</span> <span class="s">&#39;detect_prob&#39;</span><span class="p">,</span> <span class="s">&#39;detect_save&#39;</span><span class="p">,</span>
+                 <span class="s">&#39;sim_purge&#39;</span><span class="p">,</span> <span class="s">&#39;results&#39;</span><span class="p">,</span> <span class="s">&#39;dss_par&#39;</span><span class="p">,</span> <span class="s">&#39;dss_exe&#39;</span><span class="p">,</span>
+                 <span class="s">&#39;number_simulations&#39;</span><span class="p">,</span> <span class="s">&#39;krig_type&#39;</span><span class="p">,</span> <span class="s">&#39;model&#39;</span><span class="p">,</span> <span class="s">&#39;nugget&#39;</span><span class="p">,</span> <span class="s">&#39;sill&#39;</span><span class="p">,</span>
+                 <span class="s">&#39;ranges&#39;</span><span class="p">,</span> <span class="s">&#39;angles&#39;</span><span class="p">,</span> <span class="s">&#39;max_search_nodes&#39;</span><span class="p">,</span>
+                 <span class="s">&#39;XX_nodes_number&#39;</span><span class="p">,</span> <span class="s">&#39;XX_minimum&#39;</span><span class="p">,</span> <span class="s">&#39;XX_spacing&#39;</span><span class="p">,</span>
+                 <span class="s">&#39;YY_nodes_number&#39;</span><span class="p">,</span> <span class="s">&#39;YY_minimum&#39;</span><span class="p">,</span> <span class="s">&#39;YY_spacing&#39;</span><span class="p">,</span>
+                 <span class="s">&#39;ZZ_nodes_number&#39;</span><span class="p">,</span> <span class="s">&#39;ZZ_minimum&#39;</span><span class="p">,</span> <span class="s">&#39;ZZ_spacing&#39;</span><span class="p">]</span>
+
+        <span class="n">ParametersFile</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field_sep</span><span class="o">=</span><span class="s">&#39;:&#39;</span><span class="p">,</span> <span class="n">value_sep</span><span class="o">=</span><span class="s">&#39;,&#39;</span><span class="p">,</span>
+                                <span class="n">par_set</span><span class="o">=</span><span class="n">par_set</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">,</span> <span class="n">real_n</span><span class="o">=</span><span class="n">real_n</span><span class="p">,</span>
+                                <span class="n">boolean</span><span class="o">=</span><span class="n">boolean</span><span class="p">,</span> <span class="n">opt_text</span><span class="o">=</span><span class="n">opt_text</span><span class="p">,</span>
+                                <span class="n">opt_int</span><span class="o">=</span><span class="n">opt_int</span><span class="p">,</span> <span class="n">opt_real</span><span class="o">=</span><span class="n">opt_real</span><span class="p">,</span>
+                                <span class="n">opt_boolean</span><span class="o">=</span><span class="n">opt_boolean</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n">order</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">par_path</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">par_path</span><span class="p">)</span>
+
+<div class="viewcode-block" id="GsimcliParam.load"><a class="viewcode-back" href="../../parsers.html#parsers.gsimcli.GsimcliParam.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par_path</span><span class="p">):</span>
+        <span class="n">ParametersFile</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par_path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_header</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;variables&#39;</span><span class="p">)</span> <span class="ow">or</span>
+                                     <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Missing header in the data file or </span><span class="se">\&#39;</span><span class="s">variables</span><span class="se">\&#39;</span><span class="s">&#39;</span>
+                             <span class="s">&#39;parameter&#39;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="GsimcliParam.update_dsspar"><a class="viewcode-back" href="../../parsers.html#parsers.gsimcli.GsimcliParam.update_dsspar">[docs]</a>    <span class="k">def</span> <span class="nf">update_dsspar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">dsspar_path</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update the DSS parameters file according to the set of parameters</span>
+<span class="sd">        given in the GSIMCLI parameters file.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;dss_par&#39;</span><span class="p">):</span>
+            <span class="n">dsspar</span> <span class="o">=</span> <span class="n">pdss</span><span class="o">.</span><span class="n">DssParam</span><span class="o">.</span><span class="n">load_old</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dss_par</span><span class="p">)</span>  <span class="c"># TODO: old arg</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dsspar</span> <span class="o">=</span> <span class="n">pdss</span><span class="o">.</span><span class="n">DssParam</span><span class="p">()</span>
+
+        <span class="n">dsspar</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">),</span> <span class="s">&#39;DSSim.par&#39;</span><span class="p">)</span>
+        <span class="n">pset</span> <span class="o">=</span> <span class="n">gr</span><span class="o">.</span><span class="n">PointSet</span><span class="p">(</span><span class="n">psetpath</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data_header</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">):</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">pset</span><span class="o">.</span><span class="n">name</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">pset</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;variables&#39;</span><span class="p">):</span>
+            <span class="n">varnames</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span>  <span class="c"># map(str.strip, self.variables.split(&#39;,&#39;))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">variables</span> <span class="o">=</span> <span class="n">pset</span><span class="o">.</span><span class="n">varnames</span>
+            <span class="n">varnames</span> <span class="o">=</span> <span class="n">pset</span><span class="o">.</span><span class="n">varnames</span>
+
+        <span class="n">columns_set</span> <span class="o">=</span> <span class="p">[</span><span class="n">varnames</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">varnames</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s">&#39;y&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                      <span class="n">varnames</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s">&#39;time&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">varnames</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s">&#39;clim&#39;</span><span class="p">)</span> <span class="o">+</span>
+                      <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">gsc_grid</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;XX_nodes_number&#39;</span><span class="p">,</span> <span class="s">&#39;XX_minimum&#39;</span><span class="p">,</span> <span class="s">&#39;XX_spacing&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;YY_nodes_number&#39;</span><span class="p">,</span> <span class="s">&#39;YY_minimum&#39;</span><span class="p">,</span> <span class="s">&#39;YY_spacing&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;ZZ_nodes_number&#39;</span><span class="p">,</span> <span class="s">&#39;ZZ_minimum&#39;</span><span class="p">,</span> <span class="s">&#39;ZZ_spacing&#39;</span><span class="p">]</span>
+        <span class="n">dss_grid</span> <span class="o">=</span> <span class="p">[</span><span class="n">dsspar</span><span class="o">.</span><span class="n">xx</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dsspar</span><span class="o">.</span><span class="n">xx</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dsspar</span><span class="o">.</span><span class="n">xx</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                    <span class="n">dsspar</span><span class="o">.</span><span class="n">yy</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dsspar</span><span class="o">.</span><span class="n">yy</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dsspar</span><span class="o">.</span><span class="n">yy</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                    <span class="n">dsspar</span><span class="o">.</span><span class="n">zz</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dsspar</span><span class="o">.</span><span class="n">zz</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dsspar</span><span class="o">.</span><span class="n">zz</span><span class="p">[</span><span class="mi">2</span><span class="p">]]</span>
+        <span class="n">grid_specs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dss_grid</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gsc_grid</span><span class="p">[</span><span class="n">i</span><span class="p">]):</span>
+                <span class="n">grid_specs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gsc_grid</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">grid_specs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dss_grid</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="n">radius</span> <span class="o">=</span> <span class="p">[</span><span class="n">grid_specs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">grid_specs</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">grid_specs</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">*</span> <span class="n">grid_specs</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span>
+                  <span class="n">grid_specs</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">*</span> <span class="n">grid_specs</span><span class="p">[</span><span class="mi">8</span><span class="p">]]</span>
+
+        <span class="n">keywords</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;datapath&#39;</span><span class="p">,</span> <span class="s">&#39;columns_set&#39;</span><span class="p">,</span> <span class="s">&#39;nd&#39;</span><span class="p">,</span> <span class="s">&#39;output&#39;</span><span class="p">,</span> <span class="s">&#39;srchradius&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;xx&#39;</span><span class="p">,</span> <span class="s">&#39;yy&#39;</span><span class="p">,</span> <span class="s">&#39;zz&#39;</span><span class="p">]</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="n">ntpath</span><span class="o">.</span><span class="n">normcase</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="n">columns_set</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">no_data</span><span class="p">,</span>
+                  <span class="p">(</span><span class="n">name</span> <span class="o">+</span> <span class="s">&#39;.prn&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">,</span> <span class="s">&#39;_&#39;</span><span class="p">),</span> <span class="n">radius</span><span class="p">,</span>
+                  <span class="p">[</span><span class="n">grid_specs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">grid_specs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">grid_specs</span><span class="p">[</span><span class="mi">2</span><span class="p">]],</span>
+                  <span class="p">[</span><span class="n">grid_specs</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">grid_specs</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="n">grid_specs</span><span class="p">[</span><span class="mi">5</span><span class="p">]],</span>
+                  <span class="p">[</span><span class="n">grid_specs</span><span class="p">[</span><span class="mi">6</span><span class="p">],</span> <span class="n">grid_specs</span><span class="p">[</span><span class="mi">7</span><span class="p">],</span> <span class="n">grid_specs</span><span class="p">[</span><span class="mi">8</span><span class="p">]]]</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;krig_type&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">krig_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s">&#39;ok&#39;</span><span class="p">:</span>
+                <span class="n">krig</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">krig_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s">&#39;sk&#39;</span><span class="p">:</span>
+                <span class="n">krig</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c"># TODO: faltam outros tipos</span>
+            <span class="n">keywords</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;krig&#39;</span><span class="p">)</span>
+            <span class="n">values</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">krig</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;max_search_nodes&#39;</span><span class="p">):</span>
+            <span class="n">keywords</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;nsamples&#39;</span><span class="p">)</span>
+            <span class="n">values</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_search_nodes</span><span class="p">])</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;nugget&#39;</span><span class="p">):</span>
+            <span class="n">keywords</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;nstruct&#39;</span><span class="p">)</span>
+            <span class="n">values</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">dsspar</span><span class="o">.</span><span class="n">nstruct</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">nugget</span><span class="p">])</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;ranges&#39;</span><span class="p">):</span>
+            <span class="n">keywords</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;ranges&#39;</span><span class="p">)</span>
+            <span class="n">values</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">ranges</span><span class="p">])</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;model&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s">&#39;s&#39;</span><span class="p">:</span>
+                <span class="n">model</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s">&#39;e&#39;</span><span class="p">:</span>
+                <span class="n">model</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s">&#39;g&#39;</span><span class="p">:</span>
+                <span class="n">model</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">dsspar</span><span class="o">.</span><span class="n">struct</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;sill&#39;</span><span class="p">):</span>
+            <span class="n">sill</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sill</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sill</span> <span class="o">=</span> <span class="n">dsspar</span><span class="o">.</span><span class="n">struct</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;angles&#39;</span><span class="p">):</span>
+            <span class="n">angles</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">angles</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">angles</span> <span class="o">=</span> <span class="n">dsspar</span><span class="o">.</span><span class="n">struct</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span>
+
+        <span class="n">keywords</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;struct&#39;</span><span class="p">)</span>
+        <span class="n">values</span><span class="o">.</span><span class="n">append</span><span class="p">([[</span><span class="n">model</span><span class="p">,</span> <span class="n">sill</span><span class="p">]</span> <span class="o">+</span> <span class="n">angles</span><span class="p">])</span>
+
+        <span class="n">other_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;nsim&#39;</span><span class="p">,</span> <span class="s">&#39;srchangles&#39;</span><span class="p">,</span> <span class="s">&#39;maxsim&#39;</span><span class="p">]</span>
+        <span class="n">other_values</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;number_simulations&#39;</span><span class="p">,</span> <span class="s">&#39;angles&#39;</span><span class="p">,</span> <span class="s">&#39;max_search_nodes&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">other_keys</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other_values</span><span class="p">[</span><span class="n">i</span><span class="p">]):</span>
+                <span class="n">keywords</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">other_keys</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                <span class="n">values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other_values</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+
+        <span class="n">dsspar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">keywords</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>
+        <span class="n">dsspar</span><span class="o">.</span><span class="n">data2update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">no_data</span><span class="p">,</span> <span class="n">varnames</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s">&#39;clim&#39;</span><span class="p">),</span>
+                           <span class="bp">self</span><span class="o">.</span><span class="n">data_header</span><span class="p">,</span> <span class="n">save</span><span class="p">,</span> <span class="n">dsspar_path</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dsspar</span>
+
+</div></div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="c"># ta = &#39;/home/julio/Testes/gsimcli.par&#39;</span>
+    <span class="n">ta2</span> <span class="o">=</span> <span class="s">&#39;/home/julio/Testes/gsimcli2.par&#39;</span>
+    <span class="c"># tb = &#39;/Users/julio/Desktop/testes/gsimcli.par&#39;</span>
+    <span class="c"># tb2 = &#39;/Users/julio/Desktop/testes/gsimcli2.par&#39;</span>
+    <span class="n">bla</span> <span class="o">=</span> <span class="n">GsimcliParam</span><span class="p">()</span>
+    <span class="n">bla</span><span class="o">.</span><span class="n">template</span><span class="p">(</span><span class="n">ta2</span><span class="p">)</span>
+    <span class="c"># bla.load(ta2)</span>
+    <span class="c"># bla.update([&#39;skewness&#39;], [&#39;kuku&#39;], save=True, par_path=tb2)</span>
+    <span class="c"># bla.save(tb)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">gsimcli 0.0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, gsimcli development team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

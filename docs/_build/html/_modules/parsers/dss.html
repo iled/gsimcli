@@ -1,0 +1,687 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>parsers.dss &mdash; gsimcli 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="gsimcli 0.0.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">gsimcli 0.0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for parsers.dss</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Created on 07/10/2013</span>
+
+<span class="sd">@author: jcaineta</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">import</span> <span class="nn">ntpath</span>
+<span class="c"># import os</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">tools.grid</span> <span class="kn">as</span> <span class="nn">gr</span>
+
+
+<div class="viewcode-block" id="DssParam"><a class="viewcode-back" href="../../parsers.html#parsers.dss.DssParam">[docs]</a><span class="k">class</span> <span class="nc">DssParam</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;DSS parameters</span>
+
+<span class="sd">        datapath: path and data filename</span>
+<span class="sd">        columns: number of columns</span>
+<span class="sd">        columns_set: columns for X, Y, Z, Var, Weight, Sec. var</span>
+<span class="sd">        trimming: trimming limits, min and max</span>
+<span class="sd">        transflag: transformation file (1/0 - yes/no)</span>
+<span class="sd">        transfile: transformation path and filename</span>
+<span class="sd">        tails: data limits (distribution tails)</span>
+<span class="sd">        lowert: lower tail (interpolation type, min)</span>
+<span class="sd">        uppert: upper tail (interpolation type, min)</span>
+<span class="sd">        debuglvl: debugging level (1/2/3)</span>
+<span class="sd">        debugfile: debugging path and filename</span>
+<span class="sd">        output: output path and filename</span>
+<span class="sd">        nsim: number of realizations</span>
+<span class="sd">        bias: local bias simulation correction, mean (0/1), variance (0/1)</span>
+<span class="sd">        xx: XX: number of nodes, min., spacing</span>
+<span class="sd">        yy: YY: number of nodes, min., spacing</span>
+<span class="sd">        zz: ZZ: number of nodes, min., spacing</span>
+<span class="sd">        nd: value for unsimulated nodes</span>
+<span class="sd">        seed: seed</span>
+<span class="sd">        nsamples: number of search samples (min, max)</span>
+<span class="sd">        maxsim: max. number of previously simulated nodes</span>
+<span class="sd">        strategy: search strategy (0 = two-part search, 1 = data nodes)</span>
+<span class="sd">        simset: grid search method (0 = spiral search, 1 = multiple search),</span>
+<span class="sd">                number of multiple grids</span>
+<span class="sd">        octant: samples number per octant (0 = no octant)</span>
+<span class="sd">        srchradius: search radius (dir. 1, dir. 2., dir. 3), in the data scale</span>
+<span class="sd">        srchangles: search anisotropy angles</span>
+<span class="sd">        krig: kriging type, global correlation index if = 4</span>
+<span class="sd">        corrpath: path and filename of local correlation indexes</span>
+<span class="sd">        secpath: path and filename of secondary information</span>
+<span class="sd">        seccol: number of columns and column of secondary variable</span>
+<span class="sd">        nstruct: number of structures, nugget effect (C0) (normalised variance)</span>
+<span class="sd">        struct: model type (1 = spherical, 2 = exponential, 3 = gaussian),</span>
+<span class="sd">                sill (normalised variance), direction angles</span>
+<span class="sd">        ranges: ranges (dir. 1, dir. 2, dir. 3), in the data scale</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parpath</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise with the default parameters for GSIMCLI.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="nb">str</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">datapath</span> <span class="o">=</span> <span class="nb">str</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">columns_set</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trimming</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transflag</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transfile</span> <span class="o">=</span> <span class="s">&#39;cluster.trn&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tails</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lowert</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">uppert</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">debuglvl</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">debugfile</span> <span class="o">=</span> <span class="s">&#39;dss.dbg&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output</span> <span class="o">=</span> <span class="s">&#39;dss.out&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nsim</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bias</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xx</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">yy</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zz</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nd</span> <span class="o">=</span> <span class="o">-</span><span class="mf">999.9</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="mi">69069</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">16</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maxsim</span> <span class="o">=</span> <span class="mi">16</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">simset</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">octant</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">srchradius</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">srchangles</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">krig</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">corrpath</span> <span class="o">=</span> <span class="s">&#39;no file&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">secpath</span> <span class="o">=</span> <span class="s">&#39;no file&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seccol</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nstruct</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">struct</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ranges</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="c"># for old version</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smoothflag</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smoothfile</span> <span class="o">=</span> <span class="s">&#39;no file&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smoothcols</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">imask</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">parpath</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">load_old</span><span class="p">(</span><span class="n">parpath</span><span class="p">)</span>
+
+<div class="viewcode-block" id="DssParam.load"><a class="viewcode-back" href="../../parsers.html#parsers.dss.DssParam.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par_path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reads the parameters file of DSS parallel version (Nunes, R.)&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">par_path</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">par_path</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">par</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">datapath</span> <span class="o">=</span> <span class="n">par</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">columns_set</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">par</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trimming</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">par</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transflag</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="mi">8</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transfile</span> <span class="o">=</span> <span class="n">par</span><span class="p">[</span><span class="mi">9</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tails</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">par</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lowert</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">par</span><span class="p">[</span><span class="mi">11</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">uppert</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">par</span><span class="p">[</span><span class="mi">12</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">debuglvl</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="mi">13</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">debugfile</span> <span class="o">=</span> <span class="n">par</span><span class="p">[</span><span class="mi">14</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output</span> <span class="o">=</span> <span class="n">par</span><span class="p">[</span><span class="mi">15</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nsim</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="mi">16</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bias</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">par</span><span class="p">[</span><span class="mi">17</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>  <span class="c"># TODO: check bias[0]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xx</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">par</span><span class="p">[</span><span class="mi">18</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">yy</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">par</span><span class="p">[</span><span class="mi">19</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zz</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">par</span><span class="p">[</span><span class="mi">20</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nd</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="mi">21</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="mi">22</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">par</span><span class="p">[</span><span class="mi">23</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maxsim</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="mi">24</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="mi">25</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">simset</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">par</span><span class="p">[</span><span class="mi">26</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">octant</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="mi">27</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">srchradius</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">par</span><span class="p">[</span><span class="mi">28</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">srchangles</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">par</span><span class="p">[</span><span class="mi">29</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">krig</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">par</span><span class="p">[</span><span class="mi">30</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>  <span class="c"># TODO: check krig</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">corrpath</span> <span class="o">=</span> <span class="n">par</span><span class="p">[</span><span class="mi">31</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">secpath</span> <span class="o">=</span> <span class="n">par</span><span class="p">[</span><span class="mi">32</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seccol</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">par</span><span class="p">[</span><span class="mi">33</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nstruct</span> <span class="o">=</span> <span class="n">par</span><span class="p">[</span><span class="mi">34</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>  <span class="c"># (int, float)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">struct</span> <span class="o">=</span> <span class="p">[</span><span class="n">par</span><span class="p">[</span><span class="mi">35</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ranges</span> <span class="o">=</span> <span class="p">[</span><span class="n">par</span><span class="p">[</span><span class="mi">36</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nstruct</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">struct</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="mi">35</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ranges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="mi">36</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+</div>
+<div class="viewcode-block" id="DssParam.save"><a class="viewcode-back" href="../../parsers.html#parsers.dss.DssParam.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par_path</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Writes the parameters file of DSS parallel version (Nunes, R.)&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">par_path</span><span class="p">:</span>
+            <span class="n">par_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">par_path</span>
+        <span class="n">par</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">par_path</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
+        <span class="n">par_header</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Direct Sequential Simulation&#39;</span><span class="p">,</span>
+                      <span class="s">&#39;****************************&#39;</span><span class="p">,</span>
+                      <span class="s">&#39;for Parallel version (Nunes, R., 2010)&#39;</span><span class="p">,</span>
+                      <span class="s">&#39;START OF PARAMETERS:&#39;</span><span class="p">]</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">writelines</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">par_header</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">datapath</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns_set</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">trimming</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transflag</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transfile</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tails</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lowert</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">uppert</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">debuglvl</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">debugfile</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nsim</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bias</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">xx</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">yy</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">zz</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nd</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">maxsim</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">simset</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">octant</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">srchradius</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">srchangles</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">krig</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">corrpath</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">secpath</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">seccol</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nstruct</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nstruct</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
+            <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">struct</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+            <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ranges</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="DssParam.load_old"><a class="viewcode-back" href="../../parsers.html#parsers.dss.DssParam.load_old">[docs]</a>    <span class="k">def</span> <span class="nf">load_old</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par_path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reads the parameters file of DSS old version&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">par_path</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">par_path</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">par</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">datapath</span> <span class="o">=</span> <span class="n">par</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">columns_set</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">par</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trimming</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">par</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transflag</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="mi">8</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transfile</span> <span class="o">=</span> <span class="n">par</span><span class="p">[</span><span class="mi">9</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smoothflag</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="mi">10</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smoothfile</span> <span class="o">=</span> <span class="n">par</span><span class="p">[</span><span class="mi">11</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smoothcols</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">par</span><span class="p">[</span><span class="mi">12</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tails</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">par</span><span class="p">[</span><span class="mi">13</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lowert</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="mi">14</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="mi">14</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">])]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">uppert</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="mi">15</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="mi">15</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">])]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">debuglvl</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="mi">16</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">debugfile</span> <span class="o">=</span> <span class="n">par</span><span class="p">[</span><span class="mi">17</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output</span> <span class="o">=</span> <span class="n">par</span><span class="p">[</span><span class="mi">18</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nsim</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="mi">19</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bias</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">par</span><span class="p">[</span><span class="mi">20</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>  <span class="c"># TODO: check bias[0]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xx</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">par</span><span class="p">[</span><span class="mi">21</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">yy</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">par</span><span class="p">[</span><span class="mi">22</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zz</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">par</span><span class="p">[</span><span class="mi">23</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nd</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="mi">24</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">imask</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="mi">25</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="mi">26</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">par</span><span class="p">[</span><span class="mi">27</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maxsim</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="mi">28</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="mi">29</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">simset</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">par</span><span class="p">[</span><span class="mi">30</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">octant</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="mi">31</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">srchradius</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">par</span><span class="p">[</span><span class="mi">32</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">srchangles</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">par</span><span class="p">[</span><span class="mi">33</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="c"># TODO: check krig; + 7.42</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">krig</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="mi">34</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="mi">34</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">]),</span>
+                     <span class="nb">float</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="mi">34</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">2</span><span class="p">])]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">corrpath</span> <span class="o">=</span> <span class="n">par</span><span class="p">[</span><span class="mi">35</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">secpath</span> <span class="o">=</span> <span class="n">par</span><span class="p">[</span><span class="mi">36</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seccol</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">par</span><span class="p">[</span><span class="mi">37</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nstruct</span> <span class="o">=</span> <span class="n">par</span><span class="p">[</span><span class="mi">38</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>  <span class="c"># (int, float)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">struct</span> <span class="o">=</span> <span class="p">[</span><span class="n">par</span><span class="p">[</span><span class="mi">39</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ranges</span> <span class="o">=</span> <span class="p">[</span><span class="n">par</span><span class="p">[</span><span class="mi">40</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nstruct</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">struct</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="mi">39</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ranges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">par</span><span class="p">[</span><span class="mi">40</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+</div>
+<div class="viewcode-block" id="DssParam.save_old"><a class="viewcode-back" href="../../parsers.html#parsers.dss.DssParam.save_old">[docs]</a>    <span class="k">def</span> <span class="nf">save_old</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par_path</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Writes the parameters file of DSS old version&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">par_path</span><span class="p">:</span>
+            <span class="n">par_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">par_path</span>
+        <span class="n">par</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">par_path</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
+        <span class="n">par_header</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Direct Sequential Simulation&#39;</span><span class="p">,</span>
+                      <span class="s">&#39;****************************&#39;</span><span class="p">,</span>
+                      <span class="s">&#39;for old version (~2001)&#39;</span><span class="p">,</span>
+                      <span class="s">&#39;START OF PARAMETERS:&#39;</span><span class="p">]</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">writelines</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">par_header</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">datapath</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns_set</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">trimming</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transflag</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transfile</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">smoothflag</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">smoothfile</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">smoothcols</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tails</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lowert</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">uppert</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">debuglvl</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">debugfile</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nsim</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bias</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">xx</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">yy</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">zz</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nd</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">imask</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">maxsim</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">simset</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">octant</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">srchradius</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">srchangles</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">krig</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">krig</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">7.42</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">krig</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">corrpath</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">secpath</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">seccol</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nstruct</span><span class="p">))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nstruct</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
+            <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">struct</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+            <span class="n">par</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ranges</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">par</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="DssParam.update"><a class="viewcode-back" href="../../parsers.html#parsers.dss.DssParam.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keywords</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">par_path</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates a list of keywords with the corresponding values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">par_path</span><span class="p">:</span>
+            <span class="n">par_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">keywords</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keyword</span><span class="p">):</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keyword</span><span class="p">,</span> <span class="n">values</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">save</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">save_old</span><span class="p">(</span><span class="n">par_path</span><span class="p">)</span>  <span class="c"># TODO: old manager</span>
+</div>
+<div class="viewcode-block" id="DssParam.data2update"><a class="viewcode-back" href="../../parsers.html#parsers.dss.DssParam.data2update">[docs]</a>    <span class="k">def</span> <span class="nf">data2update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">no_data</span><span class="o">=-</span><span class="mf">999.9</span><span class="p">,</span> <span class="n">varcol</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                    <span class="n">save</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">par_path</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Try to update the parameters according to a data set in the PointSet</span>
+<span class="sd">        format.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">gr</span><span class="o">.</span><span class="n">PointSet</span><span class="p">):</span>
+            <span class="n">pset</span> <span class="o">=</span> <span class="n">dataset</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pset</span> <span class="o">=</span> <span class="n">gr</span><span class="o">.</span><span class="n">PointSet</span><span class="p">()</span>
+            <span class="n">pset</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">no_data</span><span class="p">,</span> <span class="n">header</span><span class="p">)</span>
+
+        <span class="n">keywords</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;datapath&#39;</span><span class="p">,</span> <span class="s">&#39;columns&#39;</span><span class="p">,</span> <span class="s">&#39;trimming&#39;</span><span class="p">,</span> <span class="s">&#39;tails&#39;</span><span class="p">,</span> <span class="s">&#39;lowert&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;uppert&#39;</span><span class="p">,</span> <span class="s">&#39;nd&#39;</span><span class="p">]</span>
+
+        <span class="n">hdpath</span> <span class="o">=</span> <span class="n">ntpath</span><span class="o">.</span><span class="n">normcase</span><span class="p">(</span><span class="n">pset</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">ncols</span> <span class="o">=</span> <span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">psetvalues</span> <span class="o">=</span> <span class="n">pset</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="n">varcol</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">no_data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+        <span class="n">datamin</span> <span class="o">=</span> <span class="n">psetvalues</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+        <span class="n">datamax</span> <span class="o">=</span> <span class="n">psetvalues</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="n">hdpath</span><span class="p">,</span> <span class="n">ncols</span><span class="p">,</span> <span class="p">[</span><span class="n">datamin</span><span class="p">,</span> <span class="n">datamax</span><span class="p">],</span> <span class="p">[</span><span class="n">datamin</span><span class="p">,</span> <span class="n">datamax</span><span class="p">],</span>
+                  <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">datamin</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">datamax</span><span class="p">],</span> <span class="n">pset</span><span class="o">.</span><span class="n">nodata</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">keywords</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">save</span><span class="p">,</span> <span class="n">par_path</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="DssParam.ask_update_default"><a class="viewcode-back" href="../../parsers.html#parsers.dss.DssParam.ask_update_default">[docs]</a>    <span class="k">def</span> <span class="nf">ask_update_default</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Asks to update or keep existing values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Hard-data path/file [{}]: &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">datapath</span><span class="o">.</span>
+                                                           <span class="n">strip</span><span class="p">()))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">datapath</span> <span class="o">=</span> <span class="n">arg</span>
+
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Number of columns [{}]: &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">arg</span>
+
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Columns for X, Y, Z, Var, Weight, Sec. var [{}]: &#39;</span>
+                        <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">columns_set</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">columns_set</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Trimming limits, min and max [{}]: &#39;</span><span class="o">.</span>
+                        <span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">trimming</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trimming</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Transformation file (1/0 - yes/no) [{}]: &#39;</span><span class="o">.</span>
+                        <span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transflag</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">transflag</span> <span class="o">=</span> <span class="n">arg</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transflag</span><span class="p">:</span>
+            <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Transformation path/filename [{}]: &#39;</span>
+                            <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transfile</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">transfile</span> <span class="o">=</span> <span class="n">arg</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">transfile</span> <span class="o">=</span> <span class="s">&#39;no file&#39;</span>
+
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Data limits (distribution tails) [{}]: &#39;</span>
+                        <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tails</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tails</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Lower tail (interpolation type, min.) [{}]: &#39;</span>
+                        <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lowert</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lowert</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Upper tail (interpolation type, min.) [{}]: &#39;</span>
+                        <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">uppert</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">uppert</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Debugging level (1/2/3) [{}]: &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">debuglvl</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dbglvl</span> <span class="o">=</span> <span class="n">arg</span>
+
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Debugging path/filename [{}]: &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">debugfile</span><span class="o">.</span>
+                                                               <span class="n">strip</span><span class="p">()))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">debugfile</span> <span class="o">=</span> <span class="n">arg</span>
+
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Output path/filename [{}]: &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="o">.</span>
+                                                            <span class="n">strip</span><span class="p">()))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output</span> <span class="o">=</span> <span class="n">arg</span>
+
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Number of realizations [{}]: &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nsim</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nsim</span> <span class="o">=</span> <span class="n">arg</span>
+
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Local bias simulation correction, for mean (0/1), for&#39;</span>
+                        <span class="s">&#39;variance (0/1) [{}]: &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bias</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bias</span> <span class="o">=</span> <span class="n">arg</span>
+
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;XX: number of nodes, min., spacing [{}]: &#39;</span>
+                        <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xx</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">xx</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;YY: number of nodes, min., spacing [{}]: &#39;</span>
+                        <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">yy</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">yy</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;ZZ: number of nodes, min., spacing [{}]: &#39;</span>
+                        <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">zz</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">zz</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Value for unsimulated nodes [{}]: &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nd</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nd</span> <span class="o">=</span> <span class="n">arg</span>
+
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Seed for pseudo-random numbers [{}]: &#39;</span>
+                        <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="n">arg</span>
+
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Number of search samples (min, max) [{}]: &#39;</span>
+                        <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Max. number of previously simulated nodes [{}]: &#39;</span>
+                        <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">maxsim</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">maxsim</span> <span class="o">=</span> <span class="n">arg</span>
+
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Search strategy (0 = two-part search, 1 = data nodes)&#39;</span>
+                        <span class="s">&#39; [{}]: &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span> <span class="o">=</span> <span class="n">arg</span>
+
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Two-step simulation (0/1), number of multiple grids&#39;</span>
+                        <span class="s">&#39; [{}]: &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">simset</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">simset</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Samples number per octant (0 = no octant) [{}]: &#39;</span>
+                        <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">octant</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">octant</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Search radius (dir. 1, dir. 2, dir. 3), in the data &#39;</span>
+                        <span class="s">&#39;scale [{}]: &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">srchradius</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">srchradius</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Search anisotropy angles, in the data scale [{}]: &#39;</span>
+                        <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">srchangles</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">srchangles</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Kriging type, global correlation index if = 4 [{}]: &#39;</span>
+                        <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">krig</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">krig</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+
+        <span class="c"># TODO: detectar kriging type</span>
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Local correlation indexes path/filename [{}]: &#39;</span>
+                        <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">corrpath</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">corrpath</span> <span class="o">=</span> <span class="n">arg</span>
+
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Secondary information path/filename [{}]: &#39;</span>
+                        <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">secpath</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">secpath</span> <span class="o">=</span> <span class="n">arg</span>
+
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Number of columns in secondary file, column of second&#39;</span>
+                        <span class="s">&#39;ary variable [{}]: &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seccol</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">seccol</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Number of variogram structures, nugget effect (C0) &#39;</span>
+                        <span class="s">&#39;(normalised variance) [{}]: &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nstruct</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nstruct</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">struct</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">struct</span><span class="p">[:</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nstruct</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ranges</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ranges</span><span class="p">[:</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nstruct</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span>
+
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Structure 1: Model type, sill (normalised variance), &#39;</span>
+                        <span class="s">&#39;direction angles [{}]: &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">struct</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">struct</span> <span class="o">=</span> <span class="p">[</span><span class="n">arg</span><span class="o">.</span><span class="n">split</span><span class="p">()]</span>
+
+        <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Structure 1: Ranges (dir.1, dir. 2, dir. 3), in the &#39;</span>
+                        <span class="s">&#39;data scale [{}]: &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ranges</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ranges</span> <span class="o">=</span> <span class="p">[</span><span class="n">arg</span><span class="o">.</span><span class="n">split</span><span class="p">()]</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nstruct</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
+            <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Structure {}: Model type, sill (normalised &#39;</span>
+                            <span class="s">&#39;variance), direction angles [{}]: &#39;</span>
+                            <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">struct</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">struct</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+
+            <span class="n">arg</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Structure {}: Ranges (dir.1, dir. 2, dir. 3), in &#39;</span>
+                            <span class="s">&#39;the data scale [{}]: &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ranges</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">arg</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ranges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+</div>
+<div class="viewcode-block" id="DssParam.ask_new"><a class="viewcode-back" href="../../parsers.html#parsers.dss.DssParam.ask_new">[docs]</a>    <span class="k">def</span> <span class="nf">ask_new</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Asks to insert new values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">datapath</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Hard-data path/file: &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">column</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Number of columns: &#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">columns_set</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Columns for X, Y, Z, Var, &#39;</span>
+                                                <span class="s">&#39;Weight, Sec. var: &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trimming</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Trimming limits, min and max: &#39;</span><span class="p">)</span>
+                            <span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transflag</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Transformation file (1/0 - yes/no): &#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transflag</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">transfile</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Transformation path/filename:&#39;</span>
+                                       <span class="s">&#39; &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">transfile</span> <span class="o">=</span> <span class="s">&#39;no file&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tails</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Data limits (distribution tails): &#39;</span><span class="p">)</span>
+                         <span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lowert</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Lower tail (interpolation type, &#39;</span>
+                                           <span class="s">&#39;min.): &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">uppert</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Upper tail (interpolation type, &#39;</span>
+                                           <span class="s">&#39;min.): &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dbglvl</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Debugging level (1/2/3): &#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">debugfile</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Debugging path/filename: &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Output path/filename: &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nsim</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Number of realizations: &#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bias</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Local bias simulation correction, for &#39;</span>
+                                       <span class="s">&#39;mean (0/1), for variance (0/1): &#39;</span><span class="p">)</span>
+                        <span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xx</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;XX: number of nodes, min., spacing: &#39;</span><span class="p">)</span>
+                      <span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">yy</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;YY: number of nodes, min., spacing: &#39;</span><span class="p">)</span>
+                      <span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zz</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;ZZ: number of nodes, min., spacing: &#39;</span><span class="p">)</span>
+                      <span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nd</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Value for unsimulated nodes: &#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Seed for pseudo-random numbers: &#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Number of search samples &#39;</span>
+                                           <span class="s">&#39;(min, max): &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maxsim</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Max. number of previously simulated &#39;</span>
+                                    <span class="s">&#39;nodes: &#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Search strategy (0 = two-part search, &#39;</span>
+                                      <span class="s">&#39;1 = data nodes): &#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">simset</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Two-step simulation (0/1), number of&#39;</span>
+                                         <span class="s">&#39; multiple grids: &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">octant</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Samples number per octant &#39;</span>
+                                    <span class="s">&#39;(0 = no octant): &#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">srchradius</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Search radius (dir. 1, dir. 2, &#39;</span>
+                                             <span class="s">&#39;dir. 3) in the data scale: &#39;</span><span class="p">)</span>
+                              <span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">srchangles</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Search anisotropy angles: &#39;</span><span class="p">)</span>
+                              <span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">krig</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Kriging type, global correlation index&#39;</span>
+                                      <span class="s">&#39; if = 4: &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">corrpath</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Local correlation indexes path/filename&#39;</span>
+                                  <span class="s">&#39;: &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">secpath</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Secondary information path/filename:&#39;</span>
+                                 <span class="s">&#39; &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seccol</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Number of columns in secondary file,&#39;</span>
+                                         <span class="s">&#39; column of secondary variable: &#39;</span><span class="p">)</span>
+                          <span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nstruct</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Number of variogram structures, nugget &#39;</span>
+                                 <span class="s">&#39;effect (C0) (normalised variance): &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">struct</span> <span class="o">=</span> <span class="p">[</span><span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Structure 1: Model type, sill (normalised &#39;</span>
+                                 <span class="s">&#39;variance), direction angles: &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ranges</span> <span class="o">=</span> <span class="p">[</span><span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Structure 1: Ranges (dir.1, dir. 2, dir. 3),&#39;</span>
+                                 <span class="s">&#39; in the data scale: &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nstruct</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">struct</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Structure {}: Model type, sill &#39;</span>
+                                         <span class="s">&#39;(normalised variance), direction &#39;</span>
+                                         <span class="s">&#39;angles: &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">))</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ranges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;Structure {}: Ranges (dir.1, dir. 2,&#39;</span>
+                                          <span class="s">&#39; dir. 3), in the data scale: &#39;</span>
+                                          <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">))</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+
+</div></div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">parfile</span> <span class="o">=</span> <span class="s">&#39;/home/julio/Testes/DSSim.par&#39;</span>
+    <span class="n">newpar</span> <span class="o">=</span> <span class="s">&#39;/home/julio/Testes/teste_update.par&#39;</span>
+    <span class="n">dataset</span> <span class="o">=</span> <span class="s">&#39;/home/julio/Testes/snirh.prn&#39;</span>
+    <span class="n">pars</span> <span class="o">=</span> <span class="n">DssParam</span><span class="p">()</span>
+    <span class="n">pars</span><span class="o">.</span><span class="n">load_old</span><span class="p">(</span><span class="n">parfile</span><span class="p">)</span>
+    <span class="c"># pars.update([&#39;output&#39;], [&#39;yeah.out&#39;])</span>
+    <span class="c"># pars.ask_new()</span>
+    <span class="n">pars</span><span class="o">.</span><span class="n">data2update</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="o">-</span><span class="mf">999.9</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+    <span class="n">pars</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">newpar</span><span class="p">)</span>
+    <span class="k">print</span> <span class="s">&#39;done&#39;</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">gsimcli 0.0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, gsimcli development team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,802 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>parsers package &mdash; gsimcli 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="gsimcli 0.0.1 documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">gsimcli 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="parsers-package">
+<h1>parsers package<a class="headerlink" href="#parsers-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-parsers.cost">
+<span id="parsers-cost-module"></span><h2>parsers.cost module<a class="headerlink" href="#module-parsers.cost" title="Permalink to this headline">¶</a></h2>
+<p>Created on 19/09/2013</p>
+<p>&#64;author: jcaineta</p>
+<dl class="function">
+<dt id="parsers.cost.agg_network">
+<tt class="descclassname">parsers.cost.</tt><tt class="descname">agg_network</tt><big>(</big><em>stations_parsed</em><big>)</big><a class="reference internal" href="_modules/parsers/cost.html#agg_network"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.cost.agg_network" title="Permalink to this definition">¶</a></dt>
+<dd><p>Aggreggate stations by network.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="parsers.cost.breakpointsfile">
+<tt class="descclassname">parsers.cost.</tt><tt class="descname">breakpointsfile</tt><big>(</big><em>filepath</em><big>)</big><a class="reference internal" href="_modules/parsers/cost.html#breakpointsfile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.cost.breakpointsfile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads COST-formatted break-points files.</p>
+<p>&#64;filepath: path to break-points file.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="parsers.cost.convert_gslib">
+<tt class="descclassname">parsers.cost.</tt><tt class="descname">convert_gslib</tt><big>(</big><em>files</em>, <em>merge=False</em>, <em>md=-999.9</em>, <em>to_year=None</em>, <em>coordinates_file=None</em><big>)</big><a class="reference internal" href="_modules/parsers/cost.html#convert_gslib"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.cost.convert_gslib" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load selected files type, previously parsed. Then converts them
+to GSLIB format. By default it generates one file per network.</p>
+<p>&#64;files: list containing files path and type, selected before hand.
+&#64;merge: flag to generate one file per group of networks.
+&#64;md: place holder for missing data.</p>
+<p>TODO:
+.considerar a hipótese de carregar mais do que um tipo simultaneamente
+.permitir fazer diferentes variáveis (ou inserir isso no interface)
+.deal with leap years.
+.now its dropping the column with the year; put back again for res != &#8216;y&#8217;</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="parsers.cost.correctionsfile">
+<tt class="descclassname">parsers.cost.</tt><tt class="descname">correctionsfile</tt><big>(</big><em>filepath</em>, <em>res</em>, <em>md=-999.9</em><big>)</big><a class="reference internal" href="_modules/parsers/cost.html#correctionsfile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.cost.correctionsfile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads COST-formatted files with applied correction.</p>
+<p>The correction file has the same format as the data file format.
+It is the result of the comparison between homogenized series and
+raw or qc series if exists. In the case of reconstitution of
+missing values, the reconstituted value is given.</p>
+<p>&#64;filepath: path to data corrections file.
+&#64;res: resolution</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="parsers.cost.cost2gslib">
+<tt class="descclassname">parsers.cost.</tt><tt class="descname">cost2gslib</tt><big>(</big><em>x</em>, <em>y</em>, <em>data</em>, <em>nd=-999.9</em>, <em>to_year=None</em><big>)</big><a class="reference internal" href="_modules/parsers/cost.html#cost2gslib"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.cost.cost2gslib" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts data from one station to the GSLIB standard (point-set).</p>
+<p>&#64;x, y: station coordinates
+&#64;data: data contents as pd.DataFrame</p>
+<p>TODO: deal with leap years.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="parsers.cost.datafile">
+<tt class="descclassname">parsers.cost.</tt><tt class="descname">datafile</tt><big>(</big><em>filepath</em>, <em>res</em>, <em>md=-999.9</em><big>)</big><a class="reference internal" href="_modules/parsers/cost.html#datafile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.cost.datafile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads COST-formatted data files.
+&#64;filepath: path to data file.
+&#64;res: resolution
+&#64;md: missing data value</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="parsers.cost.directory_convert">
+<tt class="descclassname">parsers.cost.</tt><tt class="descname">directory_convert</tt><big>(</big><em>fpath</em>, <em>ftype=None</em>, <em>variable=None</em>, <em>content=None</em>, <em>network=None</em>, <em>merge=False</em>, <em>to_year=None</em>, <em>coords=None</em>, <em>md=-999.9</em><big>)</big><a class="reference internal" href="_modules/parsers/cost.html#directory_convert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.cost.directory_convert" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="parsers.cost.directory_walk_v1">
+<tt class="descclassname">parsers.cost.</tt><tt class="descname">directory_walk_v1</tt><big>(</big><em>base</em><big>)</big><a class="reference internal" href="_modules/parsers/cost.html#directory_walk_v1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.cost.directory_walk_v1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Walk through a directory tree, according to version 13.11.2009</p>
+<p>Format: iiii / dddd / nnnnnn</p>
+<p>&#64;base: path for iiii / dddd /</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="parsers.cost.directory_walk_v2">
+<tt class="descclassname">parsers.cost.</tt><tt class="descname">directory_walk_v2</tt><big>(</big><em>root</em><big>)</big><a class="reference internal" href="_modules/parsers/cost.html#directory_walk_v2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.cost.directory_walk_v2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Walk through a directory tree, according to version 30.09.2010</p>
+<p>Format: network / type</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="parsers.cost.filename_parse">
+<tt class="descclassname">parsers.cost.</tt><tt class="descname">filename_parse</tt><big>(</big><em>filepath</em>, <em>station_n=8</em>, <em>network_n=3</em><big>)</big><a class="reference internal" href="_modules/parsers/cost.html#filename_parse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.cost.filename_parse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recognizes file type and properties.</p>
+<p>&#64;filepath: path to file (xxvvrssssssssc.txt)
+&#64;station_n: number of digits for the stations code (default in</p>
+<blockquote>
+<div>version 13.11.2009 is 8)</div></blockquote>
+<dl class="docutils">
+<dt>&#64;network_n: number of digits for the network (default in version</dt>
+<dd>30.09.2010 is 3; default in version 13.11.2009 is 6)</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="parsers.cost.files_select">
+<tt class="descclassname">parsers.cost.</tt><tt class="descname">files_select</tt><big>(</big><em>parsed</em>, <em>network=None</em>, <em>ftype=None</em>, <em>status=None</em>, <em>variable=None</em>, <em>resolution=None</em>, <em>content=None</em><big>)</big><a class="reference internal" href="_modules/parsers/cost.html#files_select"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.cost.files_select" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sort and filter parsed files according to user criteria.</p>
+<p>&#64;parsed: dict containing files path and type.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="parsers.cost.find_netwfile">
+<tt class="descclassname">parsers.cost.</tt><tt class="descname">find_netwfile</tt><big>(</big><em>filepath</em><big>)</big><a class="reference internal" href="_modules/parsers/cost.html#find_netwfile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.cost.find_netwfile" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Tries to find the path for the corresponding network file of a</dt>
+<dd>data file.</dd>
+</dl>
+<p>&#64;filepath: path to data file.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="parsers.cost.match_sets">
+<tt class="descclassname">parsers.cost.</tt><tt class="descname">match_sets</tt><big>(</big><em>subset_path</em>, <em>mainset_path</em><big>)</big><a class="reference internal" href="_modules/parsers/cost.html#match_sets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.cost.match_sets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Select a stations subset from a mainset, given both paths.
+Only appliable to data files.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="parsers.cost.networkfile">
+<tt class="descclassname">parsers.cost.</tt><tt class="descname">networkfile</tt><big>(</big><em>filepath</em><big>)</big><a class="reference internal" href="_modules/parsers/cost.html#networkfile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.cost.networkfile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads COST-formatted network (list of stations) files.</p>
+<p>&#64;filepath: path to network file.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="parsers.cost.qualityfile">
+<tt class="descclassname">parsers.cost.</tt><tt class="descname">qualityfile</tt><big>(</big><em>filepath</em>, <em>res</em><big>)</big><a class="reference internal" href="_modules/parsers/cost.html#qualityfile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.cost.qualityfile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads COST-formatted files with quality flags.</p>
+<p>Same file format as data files, but the last column is replaced by
+an integer:</p>
+<ol class="arabic">
+<li><p class="first">Raw (not passed QC)</p>
+</li>
+<li><p class="first">Controlled (not homogenized; has passed some QC)</p>
+</li>
+<li><p class="first">Homogenized</p>
+</li>
+<li><p class="first">Reconstitution (if the original data was missing or did not pass the QC)</p>
+</li>
+<li><dl class="first docutils">
+<dt>Exceptional (in some cases, the original data is not an error,</dt>
+<dd><p class="first last">but has weird values, that should not be taken into account
+during correction estimations. This may occur for violent but
+local thunderstorms for example.</p>
+</dd>
+</dl>
+</li>
+</ol>
+<ol class="arabic simple" start="9">
+<li>Missing</li>
+</ol>
+<p>&#64;filepath: path to quality flags file.
+&#64;res: resolution</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="parsers.cost.station_coord">
+<tt class="descclassname">parsers.cost.</tt><tt class="descname">station_coord</tt><big>(</big><em>network</em>, <em>station_path</em>, <em>coordinates_file=None</em><big>)</big><a class="reference internal" href="_modules/parsers/cost.html#station_coord"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.cost.station_coord" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extracts station coordinates (lat, long) from network file.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-parsers.costhome">
+<span id="parsers-costhome-module"></span><h2>parsers.costhome module<a class="headerlink" href="#module-parsers.costhome" title="Permalink to this headline">¶</a></h2>
+<p>Created on 28/01/2014</p>
+<p>&#64;author: julio</p>
+<dl class="class">
+<dt id="parsers.costhome.Network">
+<em class="property">class </em><tt class="descclassname">parsers.costhome.</tt><tt class="descname">Network</tt><big>(</big><em>path=None</em>, <em>md=-999.9</em>, <em>network_id=None</em><big>)</big><a class="reference internal" href="_modules/parsers/costhome.html#Network"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.costhome.Network" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>Network container.</p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#parsers.costhome.Network.add" title="parsers.costhome.Network.add"><tt class="xref py py-obj docutils literal"><span class="pre">add</span></tt></a>(station)</td>
+<td>Add a Station to the network.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#parsers.costhome.Network.average" title="parsers.costhome.Network.average"><tt class="xref py py-obj docutils literal"><span class="pre">average</span></tt></a>([orig])</td>
+<td>Calculate the average per year of all stations in the network.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#parsers.costhome.Network.load_pointset" title="parsers.costhome.Network.load_pointset"><tt class="xref py py-obj docutils literal"><span class="pre">load_pointset</span></tt></a>(path[,&nbsp;header,&nbsp;ftype,&nbsp;status,&nbsp;...])</td>
+<td>Load data from a file in the GSLIB format.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#parsers.costhome.Network.load_stations" title="parsers.costhome.Network.load_stations"><tt class="xref py py-obj docutils literal"><span class="pre">load_stations</span></tt></a>()</td>
+<td>Load all the stations in the network.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#parsers.costhome.Network.save" title="parsers.costhome.Network.save"><tt class="xref py py-obj docutils literal"><span class="pre">save</span></tt></a>(path)</td>
+<td>Save all the stations in the network according to the COST-HOME format.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#parsers.costhome.Network.setup" title="parsers.costhome.Network.setup"><tt class="xref py py-obj docutils literal"><span class="pre">setup</span></tt></a>()</td>
+<td>Load stations.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#parsers.costhome.Network.skip_years" title="parsers.costhome.Network.skip_years"><tt class="xref py py-obj docutils literal"><span class="pre">skip_years</span></tt></a>([missing,&nbsp;outlier])</td>
+<td>List of the years where any station in the network has missing data and/or has an outlier.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#parsers.costhome.Network.update_ids" title="parsers.costhome.Network.update_ids"><tt class="xref py py-obj docutils literal"><span class="pre">update_ids</span></tt></a>(keys)</td>
+<td>Update Station IDs according to the given keys.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="parsers.costhome.Network.add">
+<tt class="descname">add</tt><big>(</big><em>station</em><big>)</big><a class="reference internal" href="_modules/parsers/costhome.html#Network.add"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.costhome.Network.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a Station to the network.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="parsers.costhome.Network.average">
+<tt class="descname">average</tt><big>(</big><em>orig=False</em><big>)</big><a class="reference internal" href="_modules/parsers/costhome.html#Network.average"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.costhome.Network.average" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the average per year of all stations in the network.
+Option to calculate the same average for the corresponding ORIG data.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="parsers.costhome.Network.load_pointset">
+<tt class="descname">load_pointset</tt><big>(</big><em>path</em>, <em>header=True</em>, <em>ftype='data'</em>, <em>status='xx'</em>, <em>variable='vv'</em>, <em>resolution='r'</em>, <em>content='c'</em>, <em>year_col='year'</em>, <em>station_col='est_id'</em>, <em>var_col='value'</em><big>)</big><a class="reference internal" href="_modules/parsers/costhome.html#Network.load_pointset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.costhome.Network.load_pointset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load data from a file in the GSLIB format.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="parsers.costhome.Network.load_stations">
+<tt class="descname">load_stations</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/parsers/costhome.html#Network.load_stations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.costhome.Network.load_stations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load all the stations in the network.
+Note that the data has to be explicitily loaded.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="parsers.costhome.Network.save">
+<tt class="descname">save</tt><big>(</big><em>path</em><big>)</big><a class="reference internal" href="_modules/parsers/costhome.html#Network.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.costhome.Network.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save all the stations in the network according to the COST-HOME
+format.</p>
+<p>TODO: stations, detected</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="parsers.costhome.Network.setup">
+<tt class="descname">setup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/parsers/costhome.html#Network.setup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.costhome.Network.setup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load stations.
+No option to load from a non default path.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="parsers.costhome.Network.skip_years">
+<tt class="descname">skip_years</tt><big>(</big><em>missing=False</em>, <em>outlier=True</em><big>)</big><a class="reference internal" href="_modules/parsers/costhome.html#Network.skip_years"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.costhome.Network.skip_years" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of the years where any station in the network has missing data
+and/or has an outlier.
+Missing data and outliers are both retrieved from the station&#8217;s ORIG.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="parsers.costhome.Network.update_ids">
+<tt class="descname">update_ids</tt><big>(</big><em>keys</em><big>)</big><a class="reference internal" href="_modules/parsers/costhome.html#Network.update_ids"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.costhome.Network.update_ids" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update Station IDs according to the given keys.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="parsers.costhome.Station">
+<em class="property">class </em><tt class="descclassname">parsers.costhome.</tt><tt class="descname">Station</tt><big>(</big><em>path=None</em>, <em>spec=None</em>, <em>md=-999.9</em><big>)</big><a class="reference internal" href="_modules/parsers/costhome.html#Station"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.costhome.Station" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>Station container.</p>
+<p>TODO: separate quality flag from data</p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#parsers.costhome.Station.load" title="parsers.costhome.Station.load"><tt class="xref py py-obj docutils literal"><span class="pre">load</span></tt></a>([path,&nbsp;content])</td>
+<td>Load station data file.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#parsers.costhome.Station.load_outliers" title="parsers.costhome.Station.load_outliers"><tt class="xref py py-obj docutils literal"><span class="pre">load_outliers</span></tt></a>([path])</td>
+<td>List of the dates with detected outliers.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#parsers.costhome.Station.match_inho" title="parsers.costhome.Station.match_inho"><tt class="xref py py-obj docutils literal"><span class="pre">match_inho</span></tt></a>([path])</td>
+<td>Try to fetch the matching INHO station.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#parsers.costhome.Station.match_orig" title="parsers.costhome.Station.match_orig"><tt class="xref py py-obj docutils literal"><span class="pre">match_orig</span></tt></a>([path])</td>
+<td>Try to fetch the matching ORIG station.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#parsers.costhome.Station.save" title="parsers.costhome.Station.save"><tt class="xref py py-obj docutils literal"><span class="pre">save</span></tt></a>(path)</td>
+<td>Save data in the COST-HOME format.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#parsers.costhome.Station.setup" title="parsers.costhome.Station.setup"><tt class="xref py py-obj docutils literal"><span class="pre">setup</span></tt></a>([outliers,&nbsp;inho])</td>
+<td>Load data, orig and outliers.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#parsers.costhome.Station.yearly" title="parsers.costhome.Station.yearly"><tt class="xref py py-obj docutils literal"><span class="pre">yearly</span></tt></a>([func])</td>
+<td>Upscale data resolution to yearly.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="parsers.costhome.Station.load">
+<tt class="descname">load</tt><big>(</big><em>path=None</em>, <em>content=None</em><big>)</big><a class="reference internal" href="_modules/parsers/costhome.html#Station.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.costhome.Station.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load station data file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="parsers.costhome.Station.load_outliers">
+<tt class="descname">load_outliers</tt><big>(</big><em>path=None</em><big>)</big><a class="reference internal" href="_modules/parsers/costhome.html#Station.load_outliers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.costhome.Station.load_outliers" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of the dates with detected outliers.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="parsers.costhome.Station.match_inho">
+<tt class="descname">match_inho</tt><big>(</big><em>path=None</em><big>)</big><a class="reference internal" href="_modules/parsers/costhome.html#Station.match_inho"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.costhome.Station.match_inho" title="Permalink to this definition">¶</a></dt>
+<dd><p>Try to fetch the matching INHO station.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="parsers.costhome.Station.match_orig">
+<tt class="descname">match_orig</tt><big>(</big><em>path=None</em><big>)</big><a class="reference internal" href="_modules/parsers/costhome.html#Station.match_orig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.costhome.Station.match_orig" title="Permalink to this definition">¶</a></dt>
+<dd><p>Try to fetch the matching ORIG station.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="parsers.costhome.Station.save">
+<tt class="descname">save</tt><big>(</big><em>path</em><big>)</big><a class="reference internal" href="_modules/parsers/costhome.html#Station.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.costhome.Station.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save data in the COST-HOME format.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="parsers.costhome.Station.setup">
+<tt class="descname">setup</tt><big>(</big><em>outliers=False</em>, <em>inho=False</em><big>)</big><a class="reference internal" href="_modules/parsers/costhome.html#Station.setup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.costhome.Station.setup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load data, orig and outliers.
+No option to load from a non default path.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="parsers.costhome.Station.yearly">
+<tt class="descname">yearly</tt><big>(</big><em>func='mean'</em><big>)</big><a class="reference internal" href="_modules/parsers/costhome.html#Station.yearly"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.costhome.Station.yearly" title="Permalink to this definition">¶</a></dt>
+<dd><p>Upscale data resolution to yearly.</p>
+<p>TODO: check when resolution != monthly</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="parsers.costhome.Submission">
+<em class="property">class </em><tt class="descclassname">parsers.costhome.</tt><tt class="descname">Submission</tt><big>(</big><em>path</em>, <em>md</em>, <em>networks=None</em><big>)</big><a class="reference internal" href="_modules/parsers/costhome.html#Submission"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.costhome.Submission" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>Submission/Contribution container, for a unique climate signal
+(temperature or precipitation).</p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#parsers.costhome.Submission.save" title="parsers.costhome.Submission.save"><tt class="xref py py-obj docutils literal"><span class="pre">save</span></tt></a>(path)</td>
+<td>Save all networks included in the submission, according to the COST-HOME format.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="parsers.costhome.Submission.save">
+<tt class="descname">save</tt><big>(</big><em>path</em><big>)</big><a class="reference internal" href="_modules/parsers/costhome.html#Submission.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.costhome.Submission.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save all networks included in the submission, according to the
+COST-HOME format.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="parsers.costhome.match_sub">
+<tt class="descclassname">parsers.costhome.</tt><tt class="descname">match_sub</tt><big>(</big><em>path</em>, <em>sub</em>, <em>level=3</em><big>)</big><a class="reference internal" href="_modules/parsers/costhome.html#match_sub"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.costhome.match_sub" title="Permalink to this definition">¶</a></dt>
+<dd><p>Try to fetch the matching submission sub station.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-parsers.dss">
+<span id="parsers-dss-module"></span><h2>parsers.dss module<a class="headerlink" href="#module-parsers.dss" title="Permalink to this headline">¶</a></h2>
+<p>Created on 07/10/2013</p>
+<p>&#64;author: jcaineta</p>
+<dl class="class">
+<dt id="parsers.dss.DssParam">
+<em class="property">class </em><tt class="descclassname">parsers.dss.</tt><tt class="descname">DssParam</tt><big>(</big><em>parpath=None</em><big>)</big><a class="reference internal" href="_modules/parsers/dss.html#DssParam"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.dss.DssParam" title="Permalink to this definition">¶</a></dt>
+<dd><p>DSS parameters</p>
+<p>datapath: path and data filename
+columns: number of columns
+columns_set: columns for X, Y, Z, Var, Weight, Sec. var
+trimming: trimming limits, min and max
+transflag: transformation file (1/0 - yes/no)
+transfile: transformation path and filename
+tails: data limits (distribution tails)
+lowert: lower tail (interpolation type, min)
+uppert: upper tail (interpolation type, min)
+debuglvl: debugging level (1/2/3)
+debugfile: debugging path and filename
+output: output path and filename
+nsim: number of realizations
+bias: local bias simulation correction, mean (0/1), variance (0/1)
+xx: XX: number of nodes, min., spacing
+yy: YY: number of nodes, min., spacing
+zz: ZZ: number of nodes, min., spacing
+nd: value for unsimulated nodes
+seed: seed
+nsamples: number of search samples (min, max)
+maxsim: max. number of previously simulated nodes
+strategy: search strategy (0 = two-part search, 1 = data nodes)
+simset: grid search method (0 = spiral search, 1 = multiple search),</p>
+<blockquote>
+<div>number of multiple grids</div></blockquote>
+<p>octant: samples number per octant (0 = no octant)
+srchradius: search radius (dir. 1, dir. 2., dir. 3), in the data scale
+srchangles: search anisotropy angles
+krig: kriging type, global correlation index if = 4
+corrpath: path and filename of local correlation indexes
+secpath: path and filename of secondary information
+seccol: number of columns and column of secondary variable
+nstruct: number of structures, nugget effect (C0) (normalised variance)
+struct: model type (1 = spherical, 2 = exponential, 3 = gaussian),</p>
+<blockquote>
+<div>sill (normalised variance), direction angles</div></blockquote>
+<p>ranges: ranges (dir. 1, dir. 2, dir. 3), in the data scale</p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#parsers.dss.DssParam.ask_new" title="parsers.dss.DssParam.ask_new"><tt class="xref py py-obj docutils literal"><span class="pre">ask_new</span></tt></a>()</td>
+<td>Asks to insert new values.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#parsers.dss.DssParam.ask_update_default" title="parsers.dss.DssParam.ask_update_default"><tt class="xref py py-obj docutils literal"><span class="pre">ask_update_default</span></tt></a>()</td>
+<td>Asks to update or keep existing values.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#parsers.dss.DssParam.data2update" title="parsers.dss.DssParam.data2update"><tt class="xref py py-obj docutils literal"><span class="pre">data2update</span></tt></a>(dataset[,&nbsp;no_data,&nbsp;varcol,&nbsp;...])</td>
+<td>Try to update the parameters according to a data set in the PointSet format.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#parsers.dss.DssParam.load" title="parsers.dss.DssParam.load"><tt class="xref py py-obj docutils literal"><span class="pre">load</span></tt></a>(par_path)</td>
+<td>Reads the parameters file of DSS parallel version (Nunes, R.)</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#parsers.dss.DssParam.load_old" title="parsers.dss.DssParam.load_old"><tt class="xref py py-obj docutils literal"><span class="pre">load_old</span></tt></a>(par_path)</td>
+<td>Reads the parameters file of DSS old version</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#parsers.dss.DssParam.save" title="parsers.dss.DssParam.save"><tt class="xref py py-obj docutils literal"><span class="pre">save</span></tt></a>([par_path])</td>
+<td>Writes the parameters file of DSS parallel version (Nunes, R.)</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#parsers.dss.DssParam.save_old" title="parsers.dss.DssParam.save_old"><tt class="xref py py-obj docutils literal"><span class="pre">save_old</span></tt></a>([par_path])</td>
+<td>Writes the parameters file of DSS old version</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#parsers.dss.DssParam.update" title="parsers.dss.DssParam.update"><tt class="xref py py-obj docutils literal"><span class="pre">update</span></tt></a>(keywords,&nbsp;values[,&nbsp;save,&nbsp;par_path])</td>
+<td>Updates a list of keywords with the corresponding values.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="parsers.dss.DssParam.ask_new">
+<tt class="descname">ask_new</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/parsers/dss.html#DssParam.ask_new"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.dss.DssParam.ask_new" title="Permalink to this definition">¶</a></dt>
+<dd><p>Asks to insert new values.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="parsers.dss.DssParam.ask_update_default">
+<tt class="descname">ask_update_default</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/parsers/dss.html#DssParam.ask_update_default"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.dss.DssParam.ask_update_default" title="Permalink to this definition">¶</a></dt>
+<dd><p>Asks to update or keep existing values.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="parsers.dss.DssParam.data2update">
+<tt class="descname">data2update</tt><big>(</big><em>dataset</em>, <em>no_data=-999.9</em>, <em>varcol=-1</em>, <em>header=True</em>, <em>save=True</em>, <em>par_path=None</em><big>)</big><a class="reference internal" href="_modules/parsers/dss.html#DssParam.data2update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.dss.DssParam.data2update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Try to update the parameters according to a data set in the PointSet
+format.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="parsers.dss.DssParam.load">
+<tt class="descname">load</tt><big>(</big><em>par_path</em><big>)</big><a class="reference internal" href="_modules/parsers/dss.html#DssParam.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.dss.DssParam.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads the parameters file of DSS parallel version (Nunes, R.)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="parsers.dss.DssParam.load_old">
+<tt class="descname">load_old</tt><big>(</big><em>par_path</em><big>)</big><a class="reference internal" href="_modules/parsers/dss.html#DssParam.load_old"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.dss.DssParam.load_old" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads the parameters file of DSS old version</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="parsers.dss.DssParam.save">
+<tt class="descname">save</tt><big>(</big><em>par_path=None</em><big>)</big><a class="reference internal" href="_modules/parsers/dss.html#DssParam.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.dss.DssParam.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes the parameters file of DSS parallel version (Nunes, R.)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="parsers.dss.DssParam.save_old">
+<tt class="descname">save_old</tt><big>(</big><em>par_path=None</em><big>)</big><a class="reference internal" href="_modules/parsers/dss.html#DssParam.save_old"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.dss.DssParam.save_old" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes the parameters file of DSS old version</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="parsers.dss.DssParam.update">
+<tt class="descname">update</tt><big>(</big><em>keywords</em>, <em>values</em>, <em>save=False</em>, <em>par_path=None</em><big>)</big><a class="reference internal" href="_modules/parsers/dss.html#DssParam.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.dss.DssParam.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates a list of keywords with the corresponding values.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-parsers.gsimcli">
+<span id="parsers-gsimcli-module"></span><h2>parsers.gsimcli module<a class="headerlink" href="#module-parsers.gsimcli" title="Permalink to this headline">¶</a></h2>
+<p>Created on 5 de Dez de 2013</p>
+<p>&#64;author: julio</p>
+<dl class="class">
+<dt id="parsers.gsimcli.GsimcliParam">
+<em class="property">class </em><tt class="descclassname">parsers.gsimcli.</tt><tt class="descname">GsimcliParam</tt><big>(</big><em>par_path=None</em><big>)</big><a class="reference internal" href="_modules/parsers/gsimcli.html#GsimcliParam"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.gsimcli.GsimcliParam" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="tools.html#tools.parameters.ParametersFile" title="tools.parameters.ParametersFile"><tt class="xref py py-class docutils literal"><span class="pre">tools.parameters.ParametersFile</span></tt></a></p>
+<p>GSIMCLI parameters</p>
+<p>&#8212; DATA &#8212;
+data: path to the file containing the stations data
+no_data: number representing missing data (e.g., -999.9)
+data_header: header lines on the data file (&#8216;y&#8217;/&#8217;n&#8217;)
+if not, specify
+name: data set name
+variables: variables name (e.g, &#8216;x, y, time, station, var1, var2&#8217;)
+The following variables are mandatory, here or in the header lines of
+the data file:
+- &#8216;x&#8217; coordinate X
+- &#8216;y&#8217; coordinate Y
+- &#8216;time&#8217; unit of time
+- &#8216;station&#8217; stations IDs
+- &#8216;clim&#8217; climatic variable to homogenize</p>
+<p>&#8212; DETECTION &#8212;
+st_order: method for setting candidates order:</p>
+<blockquote>
+<div><ul class="simple">
+<li>&#8216;random&#8217; all stations are randomly sorted;</li>
+<li>&#8216;sorted&#8217; sorts all stations in ascending or descending order;</li>
+<li>&#8216;variance&#8217; sorts all stations by greater or lower variance;</li>
+<li>&#8216;network deviation&#8217; sorts all stations in ascending  or</li>
+</ul>
+<p>descending order according to the difference between the
+station average and the network average;
+- &#8216;user&#8217; the user specifies which stations and their order.</p>
+</div></blockquote>
+<p>ascending: sort in ascending order (&#8216;y&#8217;/&#8217;n&#8217;)
+md_last: put missing data at the end of sorted stations (&#8216;y&#8217;/&#8217;n&#8217;)
+st_user: stations IDs in order if st_order == &#8216;user&#8217; (e.g., &#8216;3, 10, 2&#8217;)
+detect_method: detection method (comparison between upper and lower</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>percentiles and the simulated values):</dt>
+<dd><ul class="first last">
+<li><p class="first">&#8216;mean&#8217; compares with the mean</p>
+</li>
+<li><p class="first">&#8216;median&#8217; compares with the median</p>
+</li>
+<li><dl class="first docutils">
+<dt>&#8216;skewness&#8217; use the sample skewness to decide whether</dt>
+<dd><p class="first last">it compares with the mean or the median</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<p>skewness: samples skewness threshold, used if detecm == &#8216;skewness&#8217;
+detect_prob: probability to build an interval centred in the local pdf</p>
+<p>&#8212; RESULTS &#8212;
+detect_save: save intermediary files (&#8216;y&#8217;/&#8217;n&#8217;), which are:</p>
+<blockquote>
+<div><ul class="simple">
+<li>candidates point-set</li>
+<li>references point-set</li>
+<li>local simulated values</li>
+<li>homogenized candidates</li>
+<li>dss parameters</li>
+<li>dss debug</li>
+</ul>
+</div></blockquote>
+<p>sim_purge: delete simulated maps (&#8216;y&#8217;/&#8217;n&#8217;)
+results: path to the folder where results will be saved</p>
+<p>&#8212; DSS &#8212;
+dss_par: path to the DSS parameters file (optional; if none, default</p>
+<blockquote>
+<div>values will be used)</div></blockquote>
+<p>dss_exe: path to the DSS executable
+number_simulations: number of simulations
+krig_type: krigging type (OK, SK)</p>
+<p>&#8212; DSS: variogram &#8212;
+model: model type (S = spherical, E = exponential, G = gaussian)
+nugget: nugget effect (C0) in normalised variance
+sill: sill in normalised variance
+ranges: ranges (dir. 1, dir. 2, dir. 3), in the data scale
+angles: direction angles</p>
+<p>&#8212; DSS: grid &#8212;
+max_search_nodes: maximum number of nodes to be found
+XX_nodes_number: number of nodes in x-axis
+XX_minimum: minimum coordinate in x-axis
+XX_spacing: distance between nodes (or node size) in x-axis
+YY_nodes_number: number of nodes in y-axis
+YY_minimum: minimum coordinate in y-axis
+YY_spacing: distance between nodes (or node size) in y-axis
+ZZ_nodes_number: number of nodes in z-axis
+ZZ_minimum: minimum coordinate in z-axis
+ZZ_spacing: distance between nodes (or node size) in z-axis</p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#parsers.gsimcli.GsimcliParam.load" title="parsers.gsimcli.GsimcliParam.load"><tt class="xref py py-obj docutils literal"><span class="pre">load</span></tt></a>(par_path)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">save</span></tt>([par_path])</td>
+<td>Write the parameters file.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">set_field</span></tt>(field,&nbsp;value)</td>
+<td>Create or update the value of an attr called field, given the desired object type.</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">template</span></tt>(par_path)</td>
+<td>Write a parameter file with the template to follow, which must have been defined in the docstring.</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">update</span></tt>(fields,&nbsp;values[,&nbsp;save,&nbsp;par_path])</td>
+<td>Updates a list of existing fields with the corresponding values.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#parsers.gsimcli.GsimcliParam.update_dsspar" title="parsers.gsimcli.GsimcliParam.update_dsspar"><tt class="xref py py-obj docutils literal"><span class="pre">update_dsspar</span></tt></a>([save,&nbsp;dsspar_path])</td>
+<td>Update the DSS parameters file according to the set of parameters given in the GSIMCLI parameters file.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="parsers.gsimcli.GsimcliParam.load">
+<tt class="descname">load</tt><big>(</big><em>par_path</em><big>)</big><a class="reference internal" href="_modules/parsers/gsimcli.html#GsimcliParam.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.gsimcli.GsimcliParam.load" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="parsers.gsimcli.GsimcliParam.update_dsspar">
+<tt class="descname">update_dsspar</tt><big>(</big><em>save=False</em>, <em>dsspar_path=None</em><big>)</big><a class="reference internal" href="_modules/parsers/gsimcli.html#GsimcliParam.update_dsspar"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.gsimcli.GsimcliParam.update_dsspar" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the DSS parameters file according to the set of parameters
+given in the GSIMCLI parameters file.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-parsers.spreadsheet">
+<span id="parsers-spreadsheet-module"></span><h2>parsers.spreadsheet module<a class="headerlink" href="#module-parsers.spreadsheet" title="Permalink to this headline">¶</a></h2>
+<p>Created on 5 de Nov de 2013</p>
+<p>&#64;author: julio</p>
+<dl class="function">
+<dt id="parsers.spreadsheet.dtype_filter">
+<tt class="descclassname">parsers.spreadsheet.</tt><tt class="descname">dtype_filter</tt><big>(</big><em>dataf</em>, <em>nodata=-999.9</em><big>)</big><a class="reference internal" href="_modules/parsers/spreadsheet.html#dtype_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.spreadsheet.dtype_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filter dtypes from a pandas DataFrame, converting non-numbers into a
+keyed index.
+Return the DataFrame with the new values and a DataFrame with its keys.
+Missing or no-data values also count as a unique key.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="parsers.spreadsheet.read_keys">
+<tt class="descclassname">parsers.spreadsheet.</tt><tt class="descname">read_keys</tt><big>(</big><em>path</em><big>)</big><a class="reference internal" href="_modules/parsers/spreadsheet.html#read_keys"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.spreadsheet.read_keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads a TSV file with the keys to the converted station IDs.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="parsers.spreadsheet.xls2costhome">
+<tt class="descclassname">parsers.spreadsheet.</tt><tt class="descname">xls2costhome</tt><big>(</big><em>xlspath</em>, <em>outpath=None</em>, <em>nd=-999.9</em>, <em>sheet=None</em>, <em>header=False</em>, <em>skip_rows=None</em>, <em>cols=None</em>, <em>network_id='ssssssss'</em>, <em>status='xx'</em>, <em>variable='vv'</em>, <em>resolution='r'</em>, <em>content='c'</em>, <em>ftype='data'</em>, <em>yearly_sum=False</em>, <em>keys_path=None</em><big>)</big><a class="reference internal" href="_modules/parsers/spreadsheet.html#xls2costhome"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.spreadsheet.xls2costhome" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a file in GSIMCLI XLS format to a file in the COST-HOME format.
+Does not work with CSV files.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="parsers.spreadsheet.xls2gslib">
+<tt class="descclassname">parsers.spreadsheet.</tt><tt class="descname">xls2gslib</tt><big>(</big><em>xlspath</em>, <em>nd=-999.9</em>, <em>cols=None</em>, <em>sheet=0</em>, <em>header=0</em>, <em>skip_rows=None</em>, <em>filter_dtype=True</em><big>)</big><a class="reference internal" href="_modules/parsers/spreadsheet.html#xls2gslib"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parsers.spreadsheet.xls2gslib" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a file in XLS format to a point-set file in GSLIB format (.prn)
+Does not work with CSV files.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-parsers">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-parsers" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">parsers package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-parsers.cost">parsers.cost module</a></li>
+<li><a class="reference internal" href="#module-parsers.costhome">parsers.costhome module</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-parsers.dss">parsers.dss module</a></li>
+<li><a class="reference internal" href="#module-parsers.gsimcli">parsers.gsimcli module</a></li>
+<li><a class="reference internal" href="#module-parsers.spreadsheet">parsers.spreadsheet module</a></li>
+<li><a class="reference internal" href="#module-parsers">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/parsers.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">gsimcli 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, gsimcli development team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>
