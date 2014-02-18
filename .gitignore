@@ -4,4 +4,4 @@
 *.settings
 *.pyc
 *.DS_Store
-
+.*.md.html
