@@ -8,15 +8,14 @@ Welcome to gsimcli's documentation!
 
 Contents:
 
-.. autosummary::
-   :toctree: _autosummary
-   
 .. toctree::
    :maxdepth: 4
    
    launchers
    parsers
    tools
+   
+   code at github <https://github.com/iled/gsimcli>
    
 
    

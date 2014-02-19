@@ -36,6 +36,14 @@ parsers.gsimcli module
     :undoc-members:
     :show-inheritance:
 
+parsers.shapefile module
+------------------------
+
+.. automodule:: parsers.shapefile
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 parsers.spreadsheet module
 --------------------------
 

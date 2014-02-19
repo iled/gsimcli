@@ -1,7 +1,9 @@
-tools
-=====
+GSIMCLI
+=======
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 10
 
+   launchers
+   parsers
    tools
