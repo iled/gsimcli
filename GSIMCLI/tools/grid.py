@@ -1,24 +1,88 @@
 # -*- coding: utf-8 -*-
 '''
+Class definitions to support grid and point-set objects, as defined in GSLIB_.
+
+.. _GSLIB: www.gslib.com
+
 Created on 12 de Out de 2013
 
 @author: julio
 '''
 
 import os
-from scipy.stats import skew  # , skewtest
+from scipy.stats import skew
 
 import numpy as np
 import pandas as pd
-# import parsers.costhome as ch
 from tools.utils import skip_lines
 
 
 class PointSet(object):
-    """Class for storing point-set data.
+    """Class for storing point-set data (irregular mesh).
+
+    Attributes
+    ----------
+    path : string
+        File path.
+    name: string
+        Descriptive name.
+    nvars: int
+        Number of variables.
+    nodata: number
+        Missing data value.
+    varnames: list of string
+        Variables names.
+    values: DataFrame
+        Variables values.
+
+    Notes
+    -----
+    According to GSLIB standard, a point-set file has the following format
+        - descriptive name
+        - number of variables
+        - variables names, one per line (must have two LOCATION variables)
+        - variables values, one per column, numeric values, space separated
+
+    Example
+    -------
+    snirh_data_set
+    5
+    x
+    y
+    year
+    station
+    wetdayscount
+    271329 260536 1981 1   54
+    271329 260536 1982 1   52
+    271329 260536 1983 1   53
+    271329 260536 1984 1   65
+    271329 260536 1985 1   63
+
+    References
+    ----------
+    GSLIB Help Page: File Formats : http://www.gslib.com/gslib_help/format.html
+
     """
     def __init__(self, name='', nodata=-999.9, nvars=0, varnames=list(),
                  values=np.zeros((0, 0)), psetpath=str(), header=True):
+        """Constructor to initialise a PointSet instance.
+
+        Parameters
+        __________
+        name : string
+            Descriptive name.
+        nvars : int
+            Number of variables.
+        varnames : list of string
+            Variables names.
+        values : DataFrame
+            Variables values.
+        psetpath : string
+            File path.
+        header : boolean, default True
+            PointSet file have the GSLIB standard header lines.
+
+        """
         self.path = psetpath
         if os.path.isfile(self.path):
             self.load(self.path, nodata, header)
@@ -32,7 +96,21 @@ class PointSet(object):
                 self.values.columns = self.varnames
 
     def load(self, psetfile, nd=-999.9, header=True):
-        """Loads a point-set from a file in GSLIB format.
+        """Load a point-set from a file in GSLIB format.
+
+        Parameters
+        ----------
+        psetfile : string
+            File path.
+        nd : number
+            Missing data value.
+        header : boolean, default True
+            PointSet file have the GSLIB standard header lines.
+
+        Notes
+        -----
+        If `header` is False, all variables will have name 'varNUMBER'.
+
         """
         self.path = psetfile
         self.nodata = nd
@@ -53,7 +131,14 @@ class PointSet(object):
         fid.close()
 
     def save(self, psetfile, header=True):
-        """Writes a point-set to a file in GSLIB format.
+        """Write a point-set to a file in GSLIB format.
+
+        Parameters
+        ----------
+        psetfile : string
+            File path.
+        header : boolean, default True
+            PointSet file have the GSLIB standard header lines.
 
         """
         if not psetfile:
@@ -64,12 +149,17 @@ class PointSet(object):
         if header:
             fid.write(self.name + '\n' + str(self.nvars) + '\n' +
                       '\n'.join(self.varnames) + '\n')
-        # self.values.to_csv(fid, header=False, index=False, sep=' ')
         np.savetxt(fid, self.values, fmt='%-10.6f')
         fid.close()
 
     def flush_varnames(self, varnames=None):
-        """Update the DataFrame column labels with the current varnames list.
+        """Update the DataFrame column labels with the current varnames list or
+        with a given list of names.
+
+        Parameters
+        ----------
+        varnames: list of string, optional
+            Variables names.
 
         """
         if varnames:
@@ -90,12 +180,69 @@ class PointSet(object):
 
 
 class GridArr(object):
-    """Class for storing a single grid in memory.
+    """Class for storing a grid (regular mesh).
 
-    To do: make it possible to interact with multiple variables in same grid.
+    Attributes
+    ----------
+    name : string
+        Descriptive name.
+    dx : int
+        Number of nodes in X-axis.
+    dy : int
+        Number of nodes in Y-axis.
+    dz : int
+        Number of nodes in Z-axis.
+    xi : number
+        Initial value in X coordinate.
+    yi : number
+        Initial value in Y coordinate.
+    zi : number
+        Initial value in Z coordinate.
+    cellx : number
+        Node size in X-axis.
+    celly : number
+        Node size in Y-axis.
+    cellz : number
+        Node size in Z-axis.
+    nodata : number
+        Missing data value.
+    val : ndarray
+        One dimension array containing the grid values.
+
+    Notes
+    -----
+    According to GSLIB standard, a grid file has the following format
+        - descriptive name
+        - number of variables
+        - variables names, one per line
+        - variables values, one per column, numeric values, space separated,
+          does not need coordinates, location is deduced by a special ordering,
+          point by point to the east, then row by row to the north, and finally
+          level by level upward, i.e., x cycles fastest, then y, and finally z
+          (FORTRAN-like order).
+
+    Example
+    -------
+    snirh_simulated
+    1
+    wetdayscount
+    85.3
+    93.1
+    65.2
+    72.4
+
+    References
+    ----------
+    GSLIB Help Page: File Formats : http://www.gslib.com/gslib_help/format.html
+
+    TODO: support multiple variables in the same grid.
     """
     def __init__(self, name='', dx=0, dy=0, dz=0, xi=0, yi=0, zi=0, cellx=1,
                  celly=1, cellz=1, nodata=-999.9, val=np.zeros(1)):
+        """
+        Constructor to initialise a GridArr instance.
+
+        """
         self.name = name
         self.dx = dx
         self.dy = dy
@@ -110,7 +257,23 @@ class GridArr(object):
         self.val = val
 
     def load(self, gridfile, dims, first, cells_size, nd=-999.9, skipheader=3):
-        """Loads a grid from a file in GSLIB format.
+        """Load a grid from a file in GSLIB format.
+
+        Parameters
+        ----------
+        gridfile : string
+            File path.
+        dims : array_like of int
+            Same as (dx, dy, dz).
+        first : array_like of number
+            Same as (xi, yi, zi).
+        cells_size : array_like of number
+            Same as (cellx, celly, cellz)
+        nd : number, default -999.9
+            Missing data value.
+        skipheader : int, default 3
+            Number of lines in the header.
+
         """
         self.dx = dims[0]
         self.dy = dims[1]
@@ -125,7 +288,17 @@ class GridArr(object):
         self.val = np.loadtxt(gridfile, skiprows=skipheader)
 
     def save(self, outfile, varname='var', header=True):
-        """Writes a grid to an output file in GSLIB format.
+        """Write a grid to a file in GSLIB format.
+        
+        Parameters
+        ----------
+        outfile : string
+            File path.
+        varname : string, default 'var'
+            Variable name.
+        header : boolean, default True
+            PointSet file have the GSLIB standard header lines.
+
         """
         fid = open(outfile, 'w')
         if header:
@@ -136,16 +309,28 @@ class GridArr(object):
         fid.close()
 
     def drill(self, wellxy, save=False, outfile=None, header=True):
-        """Extracts a vertical line from a grid.
+        """Extract a vertical line from a grid.
+        
+        Parameters
+        ----------
+        wellxy : array_like
+            Coordinates (x, y) of the drilling location.
+        save : boolean, default False
+            Write the result into a file.
+        outfile : string, optional
+            File path.
+        header : boolean, default True
+            PointSet file have the GSLIB standard header lines.
 
-        TODO: checkar se fura no sítio certo -- NÃO ESTÁ
+
+        TODO: needs fix, it is not drilling in the right place
         """
         well = PointSet()
         well.name = self.name + ' drilled at ' + str(wellxy)
         well.nodata = self.nodata
         well.nvars = 4
         well.varnames = ['x', 'y', 'z', 'var']
-        well.values = pd.DataFrame(np.zeros((self.dz, 4)))  # TODO: testar
+        well.values = pd.DataFrame(np.zeros((self.dz, 4)))
         well.values.iloc[:, :3] = (np.column_stack
                                    (((np.repeat(np.array(wellxy)
                                                 [np.newaxis, :], self.dz,
@@ -165,7 +350,7 @@ class GridArr(object):
 class GridFiles(object):
     """This class keeps track of all the files containing simulation results,
     i.e., DSS realizations.
-    
+
     TODO: make child of GridArr
     """
     def __init__(self):
