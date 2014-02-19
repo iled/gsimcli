@@ -252,6 +252,7 @@ def ask_stations_method(pset, header=True):
         . investigar outros métodos
         . precisa do no data para o station_order
         . ascrescentar as outras opções desenvolvidas
+        . interface para o station_order outdated
     """
     print '·' * 21
     print 'Stations are homogenized one by one. Each homogenized station will'
@@ -443,7 +444,7 @@ def run_par(par_path):
         stations_set = None
     stations_order = (hmg.station_order
                       (method=gscpar.st_order, nd=gscpar.no_data,
-                       pset_path=stations_pset, header=gscpar.data_header,
+                       pset_file=stations_pset, header=gscpar.data_header,
                        userset=stations_set, ascending=gscpar.ascending,
                        md_last=gscpar.md_last))
 
