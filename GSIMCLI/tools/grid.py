@@ -2,7 +2,7 @@
 '''
 Class definitions to support grid and point-set objects, as defined in GSLIB_.
 
-.. _GSLIB: www.gslib.com
+.. _GSLIB: http://www.gslib.com
 
 Created on 12 de Out de 2013
 
@@ -24,15 +24,15 @@ class PointSet(object):
     ----------
     path : string
         File path.
-    name: string
+    name : string
         Descriptive name.
-    nvars: int
+    nvars : int
         Number of variables.
-    nodata: number
+    nodata : number
         Missing data value.
-    varnames: list of string
+    varnames : list of string
         Variables names.
-    values: DataFrame
+    values : DataFrame
         Variables values.
 
     Notes
@@ -158,7 +158,7 @@ class PointSet(object):
 
         Parameters
         ----------
-        varnames: list of string, optional
+        varnames : list of string, optional
             Variables names.
 
         """
@@ -221,8 +221,8 @@ class GridArr(object):
           level by level upward, i.e., x cycles fastest, then y, and finally z
           (FORTRAN-like order).
 
-    Example
-    -------
+    Examples
+    --------
     snirh_simulated
     1
     wetdayscount
@@ -235,7 +235,9 @@ class GridArr(object):
     ----------
     GSLIB Help Page: File Formats : http://www.gslib.com/gslib_help/format.html
 
+
     TODO: support multiple variables in the same grid.
+
     """
     def __init__(self, name='', dx=0, dy=0, dz=0, xi=0, yi=0, zi=0, cellx=1,
                  celly=1, cellz=1, nodata=-999.9, val=np.zeros(1)):
@@ -322,7 +324,7 @@ class GridArr(object):
         header : boolean, default True
             PointSet file have the GSLIB standard header lines.
 
-
+        ----
         TODO: needs fix, it is not drilling in the right place
         """
         well = PointSet()
@@ -384,7 +386,7 @@ class GridFiles(object):
     nodata : number
         Missing data value.
 
-
+    -----
     TODO: make class child of GridArr?
 
     """
@@ -431,11 +433,12 @@ class GridFiles(object):
         Raises
         ------
         IOError
-            Could not find a file with a expected file name.
+            Could not find a file with an expected file name.
 
         Notes
         -----
         It is assumed the files are numbered in the following manner:
+        
         1. file_with_this_name.extension
         2. file_with_this_name2.extension
         3. file_with_this_name3.extension
@@ -514,6 +517,7 @@ class GridFiles(object):
         --------
         stats_vline : same but only along a specified vertical line.
 
+        -----
         TODO: - devolver em GridArr
               - handle no data
         """
@@ -605,7 +609,7 @@ class GridFiles(object):
             Probability value.
         save : boolean, default False
             Write the calculated statistics in PointSet format to a file named
-            'sim values at (x, y, z)'.
+            'sim values at (x, y, z).prn'.
 
         Return
         ------
