@@ -35,17 +35,17 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
     considered homogeneous. If irregularities are detected in a candidate
     series, the time series can be adjusted by replacing the inhomogeneous
     records with the mean, or median, of the PDF(s) calculated at the candidate
-    station’s location for the inhomogeneous period(s). [1]
+    station’s location for the inhomogeneous period(s). [1]_
 
     Parameters
     ----------
-    grids: GridFiles object
+    grids : GridFiles object
         Instance of GridFiles type containing the geostatistical simulation
         results.
-    obs_file: PointSet object or string
+    obs_file : PointSet object or string
         Instance of PointSet type containing the observed values at the
         candidate station, or string with the full path to the PointSet file.
-    method: {'mean', 'median', 'skewness'} string, default 'mean'
+    method : {'mean', 'median', 'skewness'} string, default 'mean'
         Method for the inhomogeneities detection:
             - mean: compare observed values with the mean of simulated values;
             - median: compare observed values with the median of simulated
@@ -53,30 +53,30 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
             - skewness: use the sample skewness to decide whether it compare
                 observed values with the mean or the median of simulated
                 values.
-    prob: float, default 0.95
+    prob : float, default 0.95
         Probability value to build the detection interval centred in the local
         PDF.
-    skewness: float, optional
+    skewness : float, optional
         Samples skewness threshold, used if `method == 'skewness'`.
-    save: boolean, default False
+    save : boolean, default False
         Save intermediary PointSet files, one containing the homogenised values
         and the other containing simulated values at the candidate station
         location.
-    outfile: string, optional
+    outfile : string, optional
         Full path where the homogenised values will be saved if `save` is True.
         Simulated values at the candidates stations are saved in the directory
         used to store the simulated maps.
-    header: boolean, default True
+    header : boolean, default True
         True if `obs_file` have the GSLIB standard header lines. The resulting
         `homogenised` PointSet will follow.
 
     Returns
     -------
-    homogenised: PointSet object
+    homogenised : PointSet object
         Instance of PointSet type containing the homogenised values.
-    detected_number: int
+    detected_number : int
         Number of detected breakpoints.
-    missing_data: int
+    missing_data : int
         Number of missing data that was interpolated.
 
     Notes
@@ -89,8 +89,8 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
     distribution, thus being caught in the percentile' inequation.
 
     By default it creates a new column named 'Flag' with the following values:
-        . if no homogenisation took place in that cell, Flag = no_data_value
-        . otherwise, Flag = observed_value
+        - if no homogenisation took place in that cell, Flag = no_data_value
+        - otherwise, Flag = observed_value
 
     References
     ----------
@@ -185,27 +185,27 @@ def fill_station(pset_file, values, time_min, time_max, time_step=1,
 
     Parameters
     ----------
-    pset_file: PointSet object or string
+    pset_file : PointSet object or string
         Instance of PointSet containing the target station, or string with the
         full path to the PointSet file.
-    values: array_like
+    values : array_like
         Set of values which will be used to fill the target time series. Must
         have length equal to the number of items in the time series.
-    time_min: number
+    time_min : number
         First value in the desired time series.
-    time_max: number
+    time_max : number
         Last value in the desired time series.
-    time_step: number, default 1
+    time_step : number, default 1
         Space between the time series values
-    header: boolean, default True
+    header : boolean, default True
         True if `pset_file` have the GSLIB standard header lines.
 
     Returns
     -------
-    pset: PointSet object
+    pset : PointSet object
         Instance of PointSet containing the filled station, with no missing
         values in its time series.
-    filled_count: int
+    filled_count : int
         Number of detected missing values.
 
     """
@@ -245,14 +245,14 @@ def list_stations(pset_file, header=True):
 
     Parameters
     ----------
-    pset_file: PointSet object or string
+    pset_file : PointSet object or string
         Instance of PointSet or string with the full path to the PointSet file.
-    header: boolean, default True
+    header : boolean, default True
         True if `pset_file` have the GSLIB standard header lines.
 
     Returns
     -------
-    stations_list: list of int
+    stations_list : list of int
         List with the ID numbers of the stations contained in `pset_file`.
 
     """
@@ -277,23 +277,23 @@ def take_candidate(pset_file, station, header=True, save=False, path=None):
 
     Parameters
     ----------
-    pset_file: PointSet object or string
+    pset_file : PointSet object or string
         Instance of PointSet or string with the full path to the PointSet file.
-    station: number
+    station : number
         ID number of the station to be removed.
-    header: boolean, default True
+    header : boolean, default True
         True if `pset_file` have the GSLIB standard header lines.
-    save: boolean, default True
+    save : boolean, default True
         If True it will save both generated PointSet files in location `path`.
-    path: string, optional
+    path : string, optional
         Path to the directory where both PointSet files are to saved.
 
     Returns
     -------
-    candidate_pset: PointSet object
+    candidate_pset : PointSet object
         Instance of PointSet containing only the points that belong to the
         given `station`.
-    neighbours_pset: PointSet object
+    neighbours_pset : PointSet object
         Instance of PointSet containing the remaining points.
 
     Notes
@@ -327,8 +327,8 @@ def take_candidate(pset_file, station, header=True, save=False, path=None):
 
     if save and path:
         base, ext = os.path.splitext(path)
-        candidate_pset.save(base + '_candidate' + ext, h)
-        neighbours_pset.save(base + '_neighbours' + ext, h)
+        candidate_pset.save(base + '_candidate' + ext, header)
+        neighbours_pset.save(base + '_neighbours' + ext, header)
 
     return candidate_pset, neighbours_pset
 
@@ -341,17 +341,17 @@ def append_homog_station(pset_file, station, header=True):
 
     Parameters
     ----------
-    pset_file: PointSet object or string
+    pset_file : PointSet object or string
         Instance of PointSet or string with the full path to the PointSet file
         one which the `station` PointSet will be appended to.
-    station: PointSet object
+    station : PointSet object
         Instance of PointSet that will be appended to the `pset_file` PointSet.
-    header: boolean, default True
+    header : boolean, default True
         True if `pset_file` have the GSLIB standard header lines.
 
     Returns
     -------
-    pset: PointSet object
+    pset : PointSet object
         Instance of PointSet containing the concatenated stations.
 
     """
@@ -382,31 +382,31 @@ def station_order(method, pset_file=None, nd=-999.9, header=True,
 
     Parameters
     ----------
-    method: {'random', 'sorted', 'variance', 'network deviation', 'user'}
-        - random: all stations randomly sorted;
-        - sorted: sorts all stations in ascending or descending order;
-        - variance: sorts all stations by greater or lower variance;
-        - network deviation: sorts all stations in ascending  or descending
+    method : {'random', 'sorted', 'variance', 'network deviation', 'user'}
+        - random : all stations randomly sorted;
+        - sorted : sorts all stations in ascending or descending order;
+        - variance : sorts all stations by greater or lower variance;
+        - network deviation : sorts all stations in ascending  or descending
         order according to the difference between the station average and the
         network average;
-        - user: the user specifies which stations and their order.
-    pset_file: PointSet object or string, optional
+        - user : the user specifies which stations and their order.
+    pset_file : PointSet object or string, optional
         Instance of PointSet or string with the full path to the PointSet file.
         Required if `method` is not 'user'.
-    nd: number, default -999.9
+    nd : number, default -999.9
         Value representing missing data.
-    header: boolean, default True
+    header : boolean, default True
         True if `pset_file` have the GSLIB standard header lines.
-    userset: list, optional
+    userset : list, optional
         List with the stations ID numbers in the desired order.
-    ascending: boolean, default True
+    ascending : boolean, default True
         Sort in ascending or descending order.
-    md_last: boolean, default True
+    md_last : boolean, default True
         Put missing data at the beginning or the end.
 
     Returns
     -------
-    stations_list: list
+    stations_list : list
         Stations ID numbers sorted according to the selected `method`.
 
     """
@@ -452,46 +452,47 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
                 network_split=True, save_stations=False, keys=None,
                 append_year=False):
     """Write homogenisation results to given format.
-    
+
     Parameters
     ----------
-    pset_file: PointSet object or string
+    pset_file : PointSet object or string
         Instance of PointSet or string with the full path to the PointSet file
         containing the homogenised data.
-    outfile: string
+    outfile : string
         File path
-    fformat: {'gsimcli', 'normal', 'gslib', 'cost-home'} 
+    fformat : {'gsimcli', 'normal', 'gslib', 'cost-home'}
         File type and contents format:
-        - gsimcli: CSV file with columns YEAR | MONTH | ID_DATA | ID_FLAG
-        - normal: CSV file, all the variables in the file are written in their
+        - gsimcli : CSV file with columns YEAR | MONTH | ID_DATA | ID_FLAG
+        - normal : CSV file, all the variables in the file are written in their
             existing order
-        - gslib: GSLIB standard with header, useful for visualisation
+        - gslib : GSLIB standard with header, useful for visualisation
         PLANNED:
-        - cost-home: COST-HOME format, prepare results to the benchmark process
-    lvars: array_like of int, optional
+        - cost-home : COST-HOME format, prepare results to the benchmark
+        process
+    lvars : array_like of int, optional
         Only save certain columns.
-    header: boolean, default True
+    header : boolean, default True
         True if `pset_file` have the GSLIB standard header lines.
-    network_split: boolean, default True
+    network_split : boolean, default True
         Save different networks in different files.
-    save_stations: boolean, default False
+    save_stations : boolean, default False
         Write a CSV file with the stations ID numbers and its coordinates.
-    keys: string, optional
+    keys : string, optional
         Path to a TSV file containing the keys to the corresponding station
         ID numbers.
-    append_year: boolean, default False
+    append_year : boolean, default False
         Add an extra column containing the year. Might be useful for non annual
         time series.
-        
+
     See Also
     --------
-    merge_output: merge several files generated by `save_output` with `fformat`
-                  'gsimcli'.
+    merge_output : merge several files generated by `save_output` with
+                   `fformat == 'gsimcli'`.
 
-    TODO:
+    .. TODO:
         .checkar
         .cost-home format
-        
+
     """
     if isinstance(pset_file, gr.PointSet):
         pset = pset_file
@@ -574,28 +575,28 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
 
 def merge_output(results, path, homog_order=False):
     """Merge the GSIMCLI output into one single spreadsheet file.
-    
+
     Each result file goes to one different sheet.
     Two more sheets are added: one with the complete data set, another with
     a summary of the process.
-    
+
     Parameters
     ----------
-    results: list or tuple of lists
+    results : list or tuple of lists
         Each one must have {string, list, list, list}:
             - path to the result file generated by `save_output`
             - stations homogenisation order
             - number of detections per candidate station
             - number of filled missing data per candidate station
-    path: string
+    path : string
         Path to the merged output file.
-    homog_order: boolean, default False
+    homog_order : boolean, default False
         Sort columns according to the stations homogenisation order.
 
     TODO:
         . check what if labels_i are not previously sorted
         . needs refactoring (summary out, results in)
-        
+
     """
     merged = pd.ExcelWriter(path)
     groups = list()
@@ -641,15 +642,15 @@ def merge_output(results, path, homog_order=False):
 
 def ask_add_header(pset):
     """Ask for the header when a PointSet does not have one.
-    
+
     Parameters
     ----------
-    pset: PointSet object
-    
+    pset : PointSet object
+
     Returns
     -------
-    pset: PointSet object
-    
+    pset : PointSet object
+
     TODO: . refactor to another module or deprecate
     """
     print 'Insert the point-set header metadata'
@@ -664,26 +665,26 @@ def clean_leftovers(tree, maps=True, pars=True, trn=True, dbg=True, cands=True,
                     refs=True, homogenised=True):
     """Permanently remove from the filesystem all secondary files generated in
     the GSIMCLI process in a given directory tree.
-        
+
     Parameters
     ----------
-    tree: string
+    tree : string
         Path containing the target files.
-    maps: boolean, default True
+    maps : boolean, default True
         Remove simulated maps (*.out).
-    pars: boolean, default True
+    pars : boolean, default True
         Remove simulation parameters (*.par)
-    trn: boolean, default True
+    trn : boolean, default True
         Remove simulation cluster transform (*.trn)
-    dbg: boolean, default True
+    dbg : boolean, default True
         Remove simulation debug (*.dbg)
-    cands: boolean, default True
+    cands : boolean, default True
         Remove candidate stations (*candidate*.prn)
-    refs: boolean, default True
+    refs : boolean, default True
         Remove reference stations (*references*.prn)
-    homogenised: boolean, default True
+    homogenised : boolean, default True
         Remove homogenised stations (*homogenised*.prn)
-        
+
     Notes
     -----
     Also remove the file 'dsscmd.txt' if it exists.
