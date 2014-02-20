@@ -235,8 +235,7 @@ class GridArr(object):
     ----------
     GSLIB Help Page: File Formats : http://www.gslib.com/gslib_help/format.html
 
-
-    TODO: support multiple variables in the same grid.
+    .. TODO: support multiple variables in the same grid.
 
     """
     def __init__(self, name='', dx=0, dy=0, dz=0, xi=0, yi=0, zi=0, cellx=1,
@@ -324,8 +323,8 @@ class GridArr(object):
         header : boolean, default True
             PointSet file have the GSLIB standard header lines.
 
-        ----
-        TODO: needs fix, it is not drilling in the right place
+        .. TODO: needs fix, it is not drilling in the right place
+        
         """
         well = PointSet()
         well.name = self.name + ' drilled at ' + str(wellxy)
@@ -386,8 +385,7 @@ class GridFiles(object):
     nodata : number
         Missing data value.
 
-    -----
-    TODO: make class child of GridArr?
+    .. TODO: make class child of GridArr?
 
     """
     def __init__(self):
@@ -517,9 +515,9 @@ class GridFiles(object):
         --------
         stats_vline : same but only along a specified vertical line.
 
-        -----
-        TODO: - devolver em GridArr
-              - handle no data
+        .. TODO: - devolver em GridArr
+                 - handle no data
+        
         """
         if lmean:
             meanmap = np.zeros(self.cells)
@@ -616,7 +614,7 @@ class GridFiles(object):
         statspset : list of PointSet
             List of PointSet instances containing the calculated statistics.
             
-        TODO: checkar stats variance com geoms
+        .. TODO: checkar stats variance com geoms
 
         """
         if lmean:
