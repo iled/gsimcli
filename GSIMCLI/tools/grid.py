@@ -493,7 +493,7 @@ class GridFiles(object):
         ----------
         lmean : boolean, default False
             Calculate the mean.
-        lmed  : boolean, default False
+        lmed : boolean, default False
             Calculate the median.
         lvar : boolean, default False
             Calculate the variance.
@@ -506,8 +506,8 @@ class GridFiles(object):
         p : number, default 0.95
             Probability value.
 
-        Return
-        ------
+        Returns
+        -------
         retlist : list of ndarray
             List containing one ndarray for each calculated statistic.
 
@@ -591,7 +591,7 @@ class GridFiles(object):
             Location of the vertical line [x, y].
         lmean : boolean, default False
             Calculate the mean.
-        lmed  : boolean, default False
+        lmed : boolean, default False
             Calculate the median.
         lskew : boolean, default False
             Calculate skewness.

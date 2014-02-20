@@ -28,23 +28,23 @@ class Shapefile(object):
         Feature Attribute' function:
         - text file (ASCII) with 6 header lines; keyword and value are space
         separated
-        - ncols: number of columns (Y-axis)
-        - nrows: number of rows (X-axis)
-        - xllcorner: initial X coordinate
-        - yllcorner: initial Y coordinate
-        - cellsize: size of each cell, in every axis
-        - NODATA_value: missing data value
+        - ncols : number of columns (Y-axis)
+        - nrows : number of rows (X-axis)
+        - xllcorner : initial X coordinate
+        - yllcorner : initial Y coordinate
+        - cellsize : size of each cell, in every axis
+        - NODATA_value : missing data value
         - Matrix with dimensions nrows * ncols
 
         Parameters
         ----------
-        path: string
+        path : string
             File path
-        dz: int
+        dz : int
             Number of nodes in the Z-axis.
-        zi: number
+        zi : number
             Initial value for the Z coordinate.
-        cellz: number
+        cellz : number
             Node size in the Z-axis.
 
         """
@@ -67,7 +67,7 @@ class Shapefile(object):
         
         Returns
         -------
-        grid: GridArr object 
+        grid : GridArr object 
         
         """
         shpgrid = np.rot90(self.data, -1)
