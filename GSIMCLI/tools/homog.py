@@ -327,8 +327,8 @@ def take_candidate(pset_file, station, header=True, save=False, path=None):
 
     if save and path:
         base, ext = os.path.splitext(path)
-        candidate_pset.save(base + '_candidate' + ext, h)
-        neighbours_pset.save(base + '_neighbours' + ext, h)
+        candidate_pset.save(base + '_candidate' + ext, header)
+        neighbours_pset.save(base + '_neighbours' + ext, header)
 
     return candidate_pset, neighbours_pset
 
@@ -460,7 +460,7 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
         containing the homogenised data.
     outfile: string
         File path
-    fformat: {'gsimcli', 'normal', 'gslib', 'cost-home'} 
+    fformat: {'gsimcli', 'normal', 'gslib', 'cost-home'}
         File type and contents format:
         - gsimcli: CSV file with columns YEAR | MONTH | ID_DATA | ID_FLAG
         - normal: CSV file, all the variables in the file are written in their
