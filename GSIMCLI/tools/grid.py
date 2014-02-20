@@ -349,11 +349,49 @@ class GridArr(object):
 
 class GridFiles(object):
     """This class keeps track of all the files containing simulation results,
-    i.e., DSS realizations.
+    i.e., Direct Sequential Simulation (DSS) realizations.
 
-    TODO: make child of GridArr
+    All PointSet files must have the same properties.
+
+    Attributes
+    ----------
+    files : list of file
+        List containing the files handler (type 'file').
+    nfiles : int
+        Number of files.
+    dx : int
+        Number of nodes in X-axis.
+    dy : int
+        Number of nodes in Y-axis.
+    dz : int
+        Number of nodes in Z-axis.
+    xi : number
+        Initial value in X coordinate.
+    yi : number
+        Initial value in Y coordinate.
+    zi : number
+        Initial value in Z coordinate.
+    cellx : number
+        Node size in X-axis.
+    celly : number
+        Node size in Y-axis.
+    cellz : number
+        Node size in Z-axis.
+    cells : int
+        Total number of nodes in each grid.
+    header : boolean, default True
+        PointSet file have the GSLIB standard header lines.
+    nodata : number
+        Missing data value.
+
+
+    TODO: make class child of GridArr?
+
     """
     def __init__(self):
+        """Constructor to initialise a GridFiles instance.
+
+        """
         self.files = list()
         self.nfiles = 0
         self.dx = 0
@@ -371,7 +409,38 @@ class GridFiles(object):
 
     def load(self, first_file, n, dims, first_coord, cells_size, no_data,
              headerin=3):
-        """Opens n files and provides a list containing each file handler.
+        """Open several grid files and provide a list containing each file
+        handler (delivered in `files` attribute).
+
+        Parameters
+        ----------
+        first_file : string
+            File path to the first file to be opened. See notes for file names
+            format.
+        n : int
+            Number of files.
+        first_coord : array_like
+            First coordinate in each direction, [xi, yi, zi].
+        cells_size : array_like
+            Nodes size in each direction, [cellx, celly, cellz].
+        no_data : number
+            Missing data value.
+        headerin : int, default 3
+            Number of lines in the header.
+
+        Raises
+        ------
+        IOError
+            Could not find a file with a expected file name.
+
+        Notes
+        -----
+        It is assumed the files are numbered in the following manner:
+        1. file_with_this_name.extension
+        2. file_with_this_name2.extension
+        3. file_with_this_name3.extension
+        n. file_with_this_namen.extension
+
         """
         self.nfiles = n
         self.dx = dims[0]
@@ -398,21 +467,52 @@ class GridFiles(object):
 
     def dump(self):
         """Close all files.
+
         """
         for grid in self.files:
             grid.close()
         self.nfiles = 0
 
     def purge(self):
-        """Delete permanently all files from the filesystem.
+        """Permanently remove all files from the filesystem.
+
         """
         self.dump()
         for grid in self.files:
             os.remove(grid.name)
 
     def stats(self, lmean=False, lmed=False, lvar=False, lstd=False,
-              lcoefvar=False, lperc=False, p=0):
-        """Calculate some statistics amongst every realization.
+              lcoefvar=False, lperc=False, p=0.95):
+        """Calculate some statistics among every realization.
+
+        Each statistic is calculated node-wise along the complete number of
+        realizations.
+
+        Parameters
+        ----------
+        lmean : boolean, default False
+            Calculate the mean.
+        lmed  : boolean, default False
+            Calculate the median.
+        lvar : boolean, default False
+            Calculate the variance.
+        lstd : boolean, default False
+            Calculate the standard deviation.
+        lcoefvar : boolean, default False
+            Calculate the coefficient of variation.
+        lperc : boolean, default False
+            Calculate the percentile `100 * (1 - p)`.
+        p : number, default 0.95
+            Probability value.
+
+        Return
+        ------
+        retlist : list of ndarray
+            List containing one ndarray for each calculated statistic.
+
+        See Also
+        --------
+        stats_vline : same but only along a specified vertical line.
 
         TODO: - devolver em GridArr
               - handle no data
@@ -475,11 +575,43 @@ class GridFiles(object):
         return retlist
 
     def stats_vline(self, loc, lmean=False, lmed=False, lskew=False,
-                    lvar=False, lstd=False, lcoefvar=False, lperc=False, p=0,
-                    save=False):
-        """Calculate some statistics amongst every realization, but only for
-        the given location (vertical line).
+                    lvar=False, lstd=False, lcoefvar=False, lperc=False,
+                    p=0.95, save=False):
+        """Calculate some statistics among every realization, but only along
+        the given vertical line.
+        
+        Each statistic is calculated node-wise along the complete number of
+        realizations.
+        
+        Parameters
+        ----------
+        loc : array_like
+            Location of the vertical line [x, y].
+        lmean : boolean, default False
+            Calculate the mean.
+        lmed  : boolean, default False
+            Calculate the median.
+        lskew : boolean, default False
+            Calculate skewness.
+        lvar : boolean, default False
+            Calculate the variance.
+        lstd : boolean, default False
+            Calculate the standard deviation.
+        lcoefvar : boolean, default False
+            Calculate the coefficient of variation.
+        lperc : boolean, default False
+            Calculate the percentile `100 * (1 - p)`.
+        p : number, default 0.95
+            Probability value.
+        save : boolean, default False
+            Write the calculated statistics in PointSet format to a file named
+            'sim values at (x, y, z)'.
 
+        Return
+        ------
+        statspset : list of PointSet
+            List of PointSet instances containing the calculated statistics.
+            
         TODO: checkar stats variance com geoms
 
         """
@@ -600,8 +732,28 @@ class GridFiles(object):
 
 
 def coord_to_grid(coord, cells_size, first):
-    """ Converte coordenadas cartesianas para coordenadas da grid (em número
-    de nós).
+    """Upscale the given coordinates to the grid coordinate system (in number
+    of nodes).
+    
+    It accepts coordinates in 2D (x, y) or 3D (x, y, z).
+    
+    Parameters
+    ----------
+    coord : array_like
+        Coordinates to convert.
+    cells_size : array_like
+        Nodes dimension in each direction.
+    first : array_like
+        Initial coordinate value in each direction.
+        
+    Return
+    ------
+    grid_coord : ndarray
+        Upscaled coordinates.
+        
+    Notes
+    -----
+    The result is always in 3D (x, y, z).
 
     """
     if len(coord) < len(first):
@@ -615,7 +767,7 @@ def coord_to_grid(coord, cells_size, first):
     return grid_coord
 
 
-def wrap1():
+def _wrap1():
     # print 'loading grids'
     grids = GridFiles()
     grids.load(fstpar, 10, [50, 50, 10], [0, 0, 0], [1, 1, 1], -999.9, 0)
@@ -633,7 +785,7 @@ def wrap1():
     return vline
 
 
-def wrap2():
+def _wrap2():
     # print 'loading grids'
     grids = GridFiles()
     grids.load(fstpar, 10, [50, 50, 10], [0, 0, 0], [1, 1, 1], -999.9, 0)
@@ -651,10 +803,10 @@ if __name__ == '__main__':
 
     """ timer
     print 'calculating grid stats + drill'
-    print(timeit.timeit("wrap1()", setup="from __main__ import wrap1",
+    print(timeit.timeit("_wrap1()", setup="from __main__ import _wrap1",
                         number=100))
     print 'calculating vline stats'
-    print(timeit.timeit("wrap2()", setup="from __main__ import wrap2",
+    print(timeit.timeit("_wrap2()", setup="from __main__ import _wrap2",
                         number=100))
     # """
 
