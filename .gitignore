@@ -1,10 +1,15 @@
 # Custom stuff
-#*.project
-#*.pydevproject
+*.project
+*.pydevproject
 *.settings
+# others
 *.pyc
 *.DS_Store
 .*.md.html
 _build
 _static
 _templates
+# pages
+.*.md.html
+_build
+_static
