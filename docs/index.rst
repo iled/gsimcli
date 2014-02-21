@@ -9,12 +9,11 @@ Welcome to gsimcli's documentation!
 Contents:
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 2
    
    launchers
    parsers
    tools
-   
    code at github <https://github.com/iled/gsimcli>
    
 

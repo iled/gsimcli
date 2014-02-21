@@ -5,9 +5,8 @@ benchmarking of homogenisation algorithms. [1]_
 
 References
 ----------
-
 .. [1] Venema, V., et al. (2012). Benchmarking homogenization algorithms for
-monthly data. Climate of the Past, 8(1), 89–115. doi:10.5194/cp-8-89-2012
+    monthly data. Climate of the Past, 8(1), 89–115. doi:10.5194/cp-8-89-2012
 
 Created on 21/01/2014
 
@@ -75,10 +74,12 @@ def crmse_cl(homog, orig, skip_years=None, centered=True):
     RMSE is commonly used in meteorology, to see how effectively a mathematical
     model predicts the behaviour of the atmosphere.
     
-    The RMSD of an estimator \hat{\theta} with respect to an estimated
-    parameter \theta is defined as the square root of the mean square error:
+    The RMSD of an estimator :math:`{\hat{\\theta}}` with respect to an
+    estimated parameter :math:`{\\theta}` is defined as the square root of the
+    mean square error:
     
-    .. math:: \operatorname{RMSD}(\hat{\theta}) = \sqrt{\operatorname{MSE}(\hat{\theta})} = \sqrt{\operatorname{E}((\hat{\theta}-\theta)^2)}.
+    .. math:: \operatorname{RMSE}(\hat{\\theta}) = \sqrt{\operatorname{MSE}
+        (\hat{\\theta})} = \sqrt{\operatorname{E}((\hat{\\theta}-\\theta)^2)}.
     
 
     """
@@ -114,7 +115,7 @@ def crmse_station_cl(station, skip_outliers=True, yearly=True):
     
     See Also
     --------
-    `crmse_cl` : Calculate CRMSE between any pair of homogenised and original
+    crmse_cl : Calculate CRMSE between any pair of homogenised and original
                  data sets. 
 
     """
@@ -197,14 +198,14 @@ def crmse_network_cl(network, skip_missing=False, skip_outlier=True):
         Do not consider the years where any station in the network has outlier
         values.
     
-    Return
-    ------
+    Returns
+    -------
     netw_crmse : ndarray
         Network CRMSE.
     
     See Also
     --------
-    `crmse_cl` : Calculate CRMSE between any pair of homogenised and original
+    crmse_cl : Calculate CRMSE between any pair of homogenised and original
                  data sets. 
     
     """

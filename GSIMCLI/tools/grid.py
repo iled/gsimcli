@@ -32,7 +32,7 @@ class PointSet(object):
         Missing data value.
     varnames : list of string
         Variables names.
-    values : DataFrame
+    values : pandas.DataFrame
         Variables values.
 
     Notes
@@ -43,8 +43,8 @@ class PointSet(object):
         - variables names, one per line (must have two LOCATION variables)
         - variables values, one per column, numeric values, space separated
 
-    Example
-    -------
+    Examples
+    --------
     snirh_data_set
     5
     x
@@ -75,7 +75,7 @@ class PointSet(object):
             Number of variables.
         varnames : list of string
             Variables names.
-        values : DataFrame
+        values : pandas.DataFrame
             Variables values.
         psetpath : string
             File path.
@@ -437,10 +437,10 @@ class GridFiles(object):
         -----
         It is assumed the files are numbered in the following manner:
         
-        1. file_with_this_name.extension
-        2. file_with_this_name2.extension
-        3. file_with_this_name3.extension
-        n. file_with_this_namen.extension
+        - 1. file_with_this_name.extension
+        - 2. file_with_this_name2.extension
+        - 3. file_with_this_name3.extension
+        - n. file_with_this_namen.extension
 
         """
         self.nfiles = n
@@ -609,8 +609,8 @@ class GridFiles(object):
             Write the calculated statistics in PointSet format to a file named
             'sim values at (x, y, z).prn'.
 
-        Return
-        ------
+        Returns
+        -------
         statspset : list of PointSet
             List of PointSet instances containing the calculated statistics.
             
@@ -748,8 +748,8 @@ def coord_to_grid(coord, cells_size, first):
     first : array_like
         Initial coordinate value in each direction.
         
-    Return
-    ------
+    Returns
+    -------
     grid_coord : ndarray
         Upscaled coordinates.
         

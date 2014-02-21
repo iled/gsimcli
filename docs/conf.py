@@ -33,11 +33,14 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.extlinks',
     'sphinx.ext.todo',
+    'sphinx.ext.autosummary',
+    'sphinx.ext.pngmath',
     'numpydoc',  # used to parse numpy-style docstrings for autodoc,
     # 'sphinx.ext.autosummary'
 ]
 
 autosummary_generate = True
+numpydoc_show_class_members = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
