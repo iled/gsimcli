@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-'''
-This module try to reproduce the score functions used in the COST-HOME
+"""
+This module tries to reproduce the score functions used in the COST-HOME
 benchmarking of homogenisation algorithms. [1]_
 
 References
@@ -11,7 +11,7 @@ References
 Created on 21/01/2014
 
 @author: julio
-'''
+"""
 
 import glob
 import itertools
@@ -24,7 +24,7 @@ import parsers.costhome as ch
 
 
 def crmse(station_path, orig_path, res, md, skip_years=None):
-    """Centered Root-Mean-Square Error
+    """Centred Root-Mean-Square Error
 
     1. load st and orig
     2. yearly averages
@@ -60,7 +60,7 @@ def crmse_cl(homog, orig, skip_years=None, centered=True):
     orig : array_like
         Original station data.
     skip_years : array_like, optional
-        Years to not consider.
+        Years not to consider.
     centered : boolean, default True
         Return RMSE or the centred RMSE.
         
@@ -80,7 +80,6 @@ def crmse_cl(homog, orig, skip_years=None, centered=True):
     
     .. math:: \operatorname{RMSE}(\hat{\\theta}) = \sqrt{\operatorname{MSE}
         (\hat{\\theta})} = \sqrt{\operatorname{E}((\hat{\\theta}-\\theta)^2)}.
-    
 
     """
     if skip_years:
@@ -192,11 +191,11 @@ def crmse_network_cl(network, skip_missing=False, skip_outlier=True):
     network : Network object
         Instance of Network containing the network of homogenised stations.
     skip_missing : boolean, default False
-        Do not consider the years where any station in the network has missing
-        values.
+        Do not consider the years in which any station in the network has
+        missing values.
     skip_outlier : boolean, default True
-        Do not consider the years where any station in the network has outlier
-        values.
+        Do not consider the years in which any station in the network has
+        outlier values.
     
     Returns
     -------
@@ -266,10 +265,10 @@ def crmse_submission_cl(submission, over_station=True, over_network=True,
     over_network : boolean, default True
         Calculate the submission's mean network CRMSE.
     skip_missing : boolean, default False
-        Do not consider the years where any station in the network has missing
+        Do not consider the years in which any station in the network has missing
         values. Only used if `over_network` is True.
     skip_outlier : boolean, default True
-        Do not consider the years where any station in the network has outlier
+        Do not consider the years in which any station in the network has outlier
         values.
         
     Returns
@@ -367,11 +366,11 @@ def improvement_cl(submission, over_station, over_network, skip_missing,
     over_network : boolean, default True
         Calculate the submission's mean network CRMSE.
     skip_missing : boolean, default False
-        Do not consider the years where any station in the network has missing
-        values. Only used if `over_network` is True.
+        Do not consider the years in which any station in the network has
+        missing values. Only used if `over_network` is True.
     skip_outlier : boolean, default True
-        Do not consider the years where any station in the network has outlier
-        values.
+        Do not consider the years in which any station in the network has
+        outlier values.
     
     Returns
     -------

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 This module contains the functions that implement climate data detection and
-homogenisation, as well other directly related functions.
+homogenisation, as well as other directly related functions.
 
 Created on 14 de Out de 2013
 
@@ -23,7 +23,7 @@ import tools.grid as gr
 
 def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
            flag=True, save=False, outfile=None, header=True):
-    """Tries to detect and homogenise irregularities in data series, following
+    """Try to detect and homogenise irregularities in data series, following
     the geostatistical simulation approach:
 
     A breakpoint is identified whenever the interval of a specified probability
@@ -67,7 +67,7 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
         Simulated values at the candidates stations are saved in the directory
         used to store the simulated maps.
     header : boolean, default True
-        True if `obs_file` have the GSLIB standard header lines. The resulting
+        True if `obs_file` has the GSLIB standard header lines. The resulting
         `homogenised` PointSet will follow.
 
     Returns
@@ -85,8 +85,8 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
     monthly data). There is no down or upscale considered.
 
     Missing data will automatically be replaced according to the selected
-    method, considering its flag number (e.g., -999.9) is out of the variable
-    distribution, thus being caught in the percentile' inequation.
+    method, considering that its flag number (e.g., -999.9) is out of the
+    variable distribution, thus being caught in the percentile' inequation.
 
     By default it creates a new column named 'Flag' with the following values:
         - if no homogenisation took place in that cell, Flag = no_data_value
@@ -190,7 +190,7 @@ def fill_station(pset_file, values, time_min, time_max, time_step=1,
         full path to the PointSet file.
     values : array_like
         Set of values which will be used to fill the target time series. Must
-        have length equal to the number of items in the time series.
+        have a length equal to the number of items in the time series.
     time_min : number
         First value in the desired time series.
     time_max : number
@@ -198,7 +198,7 @@ def fill_station(pset_file, values, time_min, time_max, time_step=1,
     time_step : number, default 1
         Space between the time series values
     header : boolean, default True
-        True if `pset_file` have the GSLIB standard header lines.
+        True if `pset_file` has the GSLIB standard header lines.
 
     Returns
     -------
@@ -248,7 +248,7 @@ def list_stations(pset_file, header=True):
     pset_file:  PointSet object or string
         Instance of PointSet or string with the full path to the PointSet file.
     header : boolean, default True
-        True if `pset_file` have the GSLIB standard header lines.
+        True if `pset_file` has the GSLIB standard header lines.
 
     Returns
     -------
@@ -282,11 +282,11 @@ def take_candidate(pset_file, station, header=True, save=False, path=None):
     station : number
         ID number of the station to be removed.
     header : boolean, default True
-        True if `pset_file` have the GSLIB standard header lines.
+        True if `pset_file` has the GSLIB standard header lines.
     save : boolean, default True
         If True it will save both generated PointSet files in location `path`.
     path : string, optional
-        Path to the directory where both PointSet files are to saved.
+        Path to the directory where both PointSet files are to be saved.
 
     Returns
     -------
@@ -343,11 +343,11 @@ def append_homog_station(pset_file, station, header=True):
     ----------
     pset_file : PointSet object or string
         Instance of PointSet or string with the full path to the PointSet file
-        one which the `station` PointSet will be appended to.
+        on which the `station` PointSet will be appended to.
     station : PointSet object
         Instance of PointSet that will be appended to the `pset_file` PointSet.
     header : boolean, default True
-        True if `pset_file` have the GSLIB standard header lines.
+        True if `pset_file` has the GSLIB standard header lines.
 
     Returns
     -------
@@ -396,7 +396,7 @@ def station_order(method, pset_file=None, nd=-999.9, header=True,
     nd : number, default -999.9
         Value representing missing data.
     header : boolean, default True
-        True if `pset_file` have the GSLIB standard header lines.
+        True if `pset_file` has the GSLIB standard header lines.
     userset : list, optional
         List with the stations ID numbers in the desired order.
     ascending : boolean, default True
@@ -414,7 +414,7 @@ def station_order(method, pset_file=None, nd=-999.9, header=True,
     nd : number, default -999.9
         Value representing missing data.
     header : boolean, default True
-        True if `pset_file` have the GSLIB standard header lines.
+        True if `pset_file` has the GSLIB standard header lines.
     userset : list, optional
         List with the stations ID numbers in the desired order.
     ascending : boolean, default True
@@ -489,7 +489,7 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
     lvars : array_like of int, optional
         Only save certain columns.
     header : boolean, default True
-        True if `pset_file` have the GSLIB standard header lines.
+        True if `pset_file` has the GSLIB standard header lines.
     network_split : boolean, default True
         Save different networks in different files.
     save_stations : boolean, default False

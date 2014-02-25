@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Parsers for shapefile (GIS).
 
 Created on 17/02/2014
 
 @author: julio
-'''
+"""
 
 # import pandas as pd
 import os
@@ -63,7 +63,7 @@ class Shapefile(object):
         self.data = np.loadtxt(fid)
         
     def ascii2grid(self):
-        """Convert a shapefile in ASCII format to the GridArr format.
+        """Convert a shapefile in ASCII format to GridArr format.
         
         Returns
         -------

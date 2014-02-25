@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
-'''
+"""
+This module handles different spreadsheet-like files (e.g., CSV, TSV, XLS) and
+parses them into other needed formats (e.g., GSLIB, COST-HOME).
+
 Created on 5 de Nov de 2013
 
 @author: julio
-'''
+"""
 
 import os
 
@@ -15,9 +18,25 @@ import tools.utils as ut
 
 def dtype_filter(dataf, nodata=-999.9):
     """Filter dtypes from a pandas DataFrame, converting non-numbers into a
-    keyed index.
-    Return the DataFrame with the new values and a DataFrame with its keys.
+    keyed index. Columns with non-numeric values are selected through their
+    first row value.
+
     Missing or no-data values also count as a unique key.
+    Return the DataFrame with the new values and a DataFrame with its keys.
+
+    Parameters
+    ----------
+    dataf : pandas.DataFrame
+        Input DataFrame with some column with non-numeric values.
+    nodata : number, default -999.9
+        Missing data value.
+
+    Returns
+    -------
+    dataf : pandas.DataFrame
+        Output DataFrame with no non-numeric values.
+    keys : dict
+        Dictionary with the matching key for each converted value.
 
     """
     dataf = dataf.fillna(nodata)
@@ -42,6 +61,41 @@ def dtype_filter(dataf, nodata=-999.9):
 def xls2gslib(xlspath, nd=-999.9, cols=None, sheet=0, header=0,
               skip_rows=None, filter_dtype=True):
     """Convert a file in XLS format to a point-set file in GSLIB format (.prn)
+
+    Parameters
+    ----------
+    xlspath : string
+        File path.
+    nd : number, default -999.9
+        Missing data value.
+    cols : array_like, optional
+        Which columns to select, with 0 being the first. The given order is
+        preserved, for example, `cols = (1, 4, 2)` will select the 2nd column,
+        then the 5th, and lastly the 3rd. The default, None, results in all
+        columns being selected.
+    sheet : string or int, default 0
+        Name of Excel sheet or the page number of the sheet.
+    header : int, default 0
+        Row to use for the column labels of the parsed DataFrame.
+    skip_rows : array_like, optional
+        Rows to skip at the file beginning (0-indexed).
+    filter_dtype : boolean, default True
+        Convert columns with non-numeric values to numeric.
+
+    Returns
+    -------
+    pset : PointSet object
+        Instance of PointSet with the parsed XLS file.
+    keys : dict
+        Dictionary with the matching key for each converted value. If
+        `filter_dtype` is False, returns None.
+
+    See Also
+    --------
+    dtype_filter : filter non-numeric data types.
+
+    Notes
+    -----
     Does not work with CSV files.
 
     """
@@ -72,15 +126,61 @@ def xls2gslib(xlspath, nd=-999.9, cols=None, sheet=0, header=0,
     return pset, keys
 
 
-def xls2costhome(xlspath, outpath=None, nd=-999.9, sheet=None, header=False,
+def xls2costhome(xlspath, outpath=None, nd=-999.9, sheet=None, header=None,
                  skip_rows=None, cols=None, network_id='ssssssss', status='xx',
                  variable='vv', resolution='r', content='c', ftype='data',
                  yearly_sum=False, keys_path=None):
-    """Convert a file in GSIMCLI XLS format to a file in the COST-HOME format.
+    """Convert a file in GSIMCLI format (XLS with a particular structure) to a
+    network of the COST-HOME format.
+
+    Parameters
+    ----------
+    xlspath : string
+        File path.
+    outpath : string, optional
+        Folder path to save the converted network.
+    nd : number, default -999.9
+        Missing data value.
+    sheet : string or int, optional
+        Name of Excel sheet or the page number of the sheet.
+    header : int, optional
+        Row to use for the column labels of the parsed DataFrame.
+    skip_rows : array_like, optional
+        Rows to skip at the file beginning (0-indexed).
+    cols : int or list, defaul None
+        - If None then parse all columns
+        - If int then indicates last column to be parsed
+        - If list of ints then indicates list of column numbers to be parsed
+        - If string then indicates comma separated list of column names and
+            column ranges (e.g. “A:E” or “A,C,E:F”)
+    network_id : string, optional
+        Network ID number to write (only for naming purposes).
+    status : string, optional (only for naming purposes).
+        Data status.
+    variable : string, optional (only for naming purposes).
+        Variables names.
+    resolution : string, optional (only for naming purposes).
+        Time series resolution.
+    content : string, optional
+        Data content type.
+    ftype : string, optional
+        File type.
+    yearly_sum : boolean, default False
+        Convert yearly summed data into monthly average.
+    keys_path : string, optional
+        Path to the file containing the keys which converted the stations IDs.
+
+    Returns
+    -------
+    network : Network object
+        Instance of Network which contains all the stations in the given file.
+
+    Notes
+    -----
     Does not work with CSV files.
 
     """
-    import parsers.costhome as ch
+    import parsers.costhome as ch  # import here to avoid recursive dependence
 
     if yearly_sum:
         div = 12.0
@@ -120,7 +220,16 @@ def xls2costhome(xlspath, outpath=None, nd=-999.9, sheet=None, header=False,
 
 
 def read_keys(path):
-    """Reads a TSV file with the keys to the converted station IDs.
+    """Read a TSV file with the keys to the converted station IDs.
+    
+    Parameters
+    ----------
+    path : string
+        File path.
+        
+    Returns
+    -------
+    keys : pandas.DataFrame
 
     """
     keys = pd.read_csv(path, sep='\t', index_col=0)

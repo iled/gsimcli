@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Class definitions to support grid and point-set objects, as defined in GSLIB_.
 
 .. _GSLIB: http://www.gslib.com
@@ -7,7 +7,7 @@ Class definitions to support grid and point-set objects, as defined in GSLIB_.
 Created on 12 de Out de 2013
 
 @author: julio
-'''
+"""
 
 import os
 from scipy.stats import skew
@@ -80,7 +80,7 @@ class PointSet(object):
         psetpath : string
             File path.
         header : boolean, default True
-            PointSet file have the GSLIB standard header lines.
+            PointSet file has the GSLIB standard header lines.
 
         """
         self.path = psetpath
@@ -105,7 +105,7 @@ class PointSet(object):
         nd : number
             Missing data value.
         header : boolean, default True
-            PointSet file have the GSLIB standard header lines.
+            PointSet file has the GSLIB standard header lines.
 
         Notes
         -----
@@ -138,7 +138,7 @@ class PointSet(object):
         psetfile : string
             File path.
         header : boolean, default True
-            PointSet file have the GSLIB standard header lines.
+            PointSet file has the GSLIB standard header lines.
 
         """
         if not psetfile:
@@ -180,7 +180,7 @@ class PointSet(object):
 
 
 class GridArr(object):
-    """Class for storing a grid (regular mesh).
+    """Class to store a grid (regular mesh).
 
     Attributes
     ----------
@@ -217,9 +217,9 @@ class GridArr(object):
         - variables names, one per line
         - variables values, one per column, numeric values, space separated,
           does not need coordinates, location is deduced by a special ordering,
-          point by point to the east, then row by row to the north, and finally
-          level by level upward, i.e., x cycles fastest, then y, and finally z
-          (FORTRAN-like order).
+          point by point towards the east, then row by row to the north, and
+          finally level by level upward, i.e., x cycles fastest, then y, and
+          finally z (FORTRAN-like order).
 
     Examples
     --------
@@ -298,7 +298,7 @@ class GridArr(object):
         varname : string, default 'var'
             Variable name.
         header : boolean, default True
-            PointSet file have the GSLIB standard header lines.
+            PointSet file has the GSLIB standard header lines.
 
         """
         fid = open(outfile, 'w')
@@ -321,7 +321,7 @@ class GridArr(object):
         outfile : string, optional
             File path.
         header : boolean, default True
-            PointSet file have the GSLIB standard header lines.
+            PointSet file has the GSLIB standard header lines.
 
         .. TODO: needs fix, it is not drilling in the right place
         
@@ -381,7 +381,7 @@ class GridFiles(object):
     cells : int
         Total number of nodes in each grid.
     header : boolean, default True
-        PointSet file have the GSLIB standard header lines.
+        PointSet file has the GSLIB standard header lines.
     nodata : number
         Missing data value.
 
@@ -435,12 +435,12 @@ class GridFiles(object):
 
         Notes
         -----
-        It is assumed the files are numbered in the following manner:
+        It is assumed that the files are numbered in the following manner:
         
-        - 1. file_with_this_name.extension
-        - 2. file_with_this_name2.extension
-        - 3. file_with_this_name3.extension
-        - n. file_with_this_namen.extension
+        - 1st file_with_this_name.extension
+        - 2nd file_with_this_name2.extension
+        - 3rd file_with_this_name3.extension
+        - nth file_with_this_namen.extension
 
         """
         self.nfiles = n
@@ -475,7 +475,7 @@ class GridFiles(object):
         self.nfiles = 0
 
     def purge(self):
-        """Permanently remove all files from the filesystem.
+        """Remove all files from the filesystem permanently.
 
         """
         self.dump()

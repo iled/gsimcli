@@ -1,24 +1,58 @@
-'''
+# -*- coding: utf-8 -*-
+"""
+Collection of some useful general purpose functions.
+
 Created on 6 de Nov de 2013
 
 @author: julio
-'''
+"""
 import os
 
 
 def dms2dec(d, m, s):
-    """Converts Degrees, Minutes, Seconds formatted coordinates to decimal.
+    """Convert coordinates in the format (Degrees, Minutes, Seconds) to
+    decimal.
 
-    Formula:
-    DEC = (DEG + (MIN * 1/60) + (SEC * 1/60))
+    Parameters
+    ----------
+    d : number
+        Degrees.
+    m : number
+        Minutes.
+    s : number
+        Seconds.
 
+    Returns
+    -------
+    float
+        Coordinates in decimal format.
+
+    Notes
+    -----
     Assumes that data is signalled.
+    The conversion is done by the formula
+
+    .. math:: \operatorname{DEC} = \operatorname{DEG} + \operatorname{MIN}/60
+        + \operatorname{SEC}/3600.
+
     """
     return int(d) + float(m) / 60 + float(s) / 3600
 
 
 def is_number(s):
-    """Check if s is a number"""
+    """Check if s is a number.
+
+    Parameters
+    ----------
+    s : string or number
+        Input to check if is a number.
+
+    Returns
+    -------
+    boolean
+        True if `s` is a number.
+
+    """
     try:
         float(s)
         return True
@@ -29,13 +63,34 @@ def is_number(s):
 
 
 def skip_lines(file_id, nlines):
-    """Skip the next nlines from the file handled with file_id."""
+    """Skip the next  n lines from a file.
+
+    Parameters
+    ----------
+    file_id : file handle
+        Input file.
+    nlines : int
+        Number of lines to skip.
+
+    """
     for i in xrange(nlines):  # @UnusedVariable
         file_id.readline()
 
 
 def filename_seq(file_id, n):
     """Generator to create a sequence of numbered filenames.
+
+    Parameters
+    ----------
+    file_id : string
+        Inicial file name.
+    n : int
+        Number of names to generate.
+
+    Returns
+    -------
+    fname : string
+        File name.
 
     """
     base, ext = os.path.splitext(file_id)
@@ -48,14 +103,40 @@ def filename_seq(file_id, n):
 def filename_indexing(file_id, n):
     """Insert an index in a filename.
 
+    Parameters
+    ----------
+    file_id : string
+        File name.
+    n : number
+        Index to insert.
+
+    Returns
+    -------
+    fname : string
+        File name.
+
     """
     base, ext = os.path.splitext(file_id)
     fname = base + '_' + str(n) + ext
     return fname
 
 
-def path_up(path, level):
-    """Goes up level levels in the path tree.
+def path_up(path, nlevels):
+    """Go up n levels in the path tree.
+
+    Parameters
+    ----------
+    path : string
+        Folder or file path.
+    nlevels : int
+        Number of levels to go up.
+
+    Returns
+    -------
+    head : string
+        Target directory.
+    tail : string
+        The remaining part of the path tree.
 
     """
     if os.path.isdir(path):
@@ -68,7 +149,7 @@ def path_up(path, level):
     if filename:
         tail.append(filename)
 
-    for i in xrange(level):  # @UnusedVariable
+    for i in xrange(nlevels):  # @UnusedVariable
         head, base = os.path.split(head)
         tail.append(base)
 
@@ -78,7 +159,18 @@ def path_up(path, level):
 
 
 def yes_no(yn):
-    """Convert a string containing 'Y'(es) or 'N'(o) to True or False.
+    """Parse a string containing 'Y'(es) or 'N'(o).
+
+    Parameters
+    ----------
+    yn : string
+        Input string.
+
+    Returns
+    -------
+    boolean
+        Returns True if `yn` is equal to 'y' or to 'yes', otherwise returns
+        False.
 
     """
     if yn.strip().lower() in ['y', 'yes']:

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 This module provides tools to deal with data files in the COST-HOME format [1]_
 
 See Also
 --------
-parsers.cost : initial version of this module, all functions will be refactored
+parsers.cost : initial version of this module. All functions will be refactored
 to make use of these new classes.
 
 References
@@ -15,7 +15,7 @@ References
 Created on 28/01/2014
 
 @author: julio
-'''
+"""
 
 import glob
 import itertools
@@ -340,7 +340,7 @@ class Network(object):
     id : int
         Network ID number.
     stations_id : list of int
-        Stations ID numbers.
+        Stations' ID numbers.
     stations_spec : list of list
         List wrapping a set of Station attributes.
     stations_path : list of string
@@ -394,7 +394,7 @@ class Network(object):
     def load_stations(self):
         """Load all the stations in the network.
         
-        Note that the data has to be explicitly loaded, the stations are just
+        Notice that the data has to be explicitly loaded, the stations are just
         indexed to the network.
 
         """
@@ -460,8 +460,8 @@ class Network(object):
         return result
 
     def skip_years(self, missing=False, outlier=True):
-        """List of the years where any station in the network has missing data
-        and/or has an outlier.
+        """List of the years in which any station in the network has missing
+        data and/or has an outlier.
         
         Missing data and outliers are both retrieved from the station's
         corresponding original data.
@@ -540,7 +540,7 @@ class Network(object):
             Full path to the PointSet file or instance of PointSet type
             containing the observed values at the candidate station.
         header : boolean, default True
-            True if the PointSet file have the GSLIB standard header lines.
+            True if the PointSet file has the GSLIB standard header lines.
         ftype : {'data', 'breakpoint', 'network', 'other'}
             File type.
         status : {'ra', 'qc', 'ho'}
@@ -555,7 +555,7 @@ class Network(object):
         year_col : string, default 'year'
             Label of the column containing the time series yearly index.
         station_col : string, default 'est_id'
-            Label of the column containing the stations ID's.
+            Label of the column containing the stations' ID's.
         var_col : string, default 'value'
             Label of the column containing the climate data values.
             
@@ -595,7 +595,7 @@ class Network(object):
     def update_ids(self, keys):
         """Update every station ID according to the given keys.
         
-        Useful when station ID's were replaced with a different number (for
+        Useful when stations' ID's were replaced with a different number (for
         instance, because they were non numerical).
         
         Parameters
