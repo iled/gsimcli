@@ -365,7 +365,7 @@ def gsimcli(stations_file, stations_h, no_data, stations_order, detect_method,
                 purge_temp = True
             dss.mp_exec(dss_path=exe_path, par_path=oldpar, output=outfile_nt,
                         simnum=sim, dbg=dbgfile, cores=cores, purge=purge_temp,
-                        stop=dsspar.nsim)
+                        totalsim=dsspar.nsim)
             #  oldfilent = (ntpath.splitext(outfile_nt)[0] + str(sim + 1) +
             #               ntpath.splitext(outfile_nt)[1])
             # oldpar.update(['output', 'seed'], [oldfilent, oldpar.seed + 2])

@@ -1,11 +1,18 @@
 # -*- coding: utf-8 -*-
-'''
+"""
+This module provides tools to control the execution of the *Direct Sequencial
+Simulation* (DSS) program.
+
+DSS is not open source software and is not part of GSIMCLI. Although, it is
+freely available at CMRP Software website, within the GeoMS_ package. For
+GSIMCLI, the only requirement from GeoMS is the DSS binary file.
+
+.. _GeoMS: https://sites.google.com/site/cmrpsoftware/geoms
+
 Created on 04/10/2013
 
 @author: jcaineta
-'''
-
-# import sarge
+"""
 
 import copy
 import datetime
@@ -16,17 +23,67 @@ import sys
 
 import multiprocessing as mp
 import parsers.dss as pdss
+# import sarge
 import subprocess as sp
 from tools.utils import path_up
 
 
 class DssEnvironment(object):
-    """Handle the environment to run DSS old version, where the parameters file
-    path is hard coded as DSSim.PAR.
+    """Handle the environment to run the *old version* of DSS, in which the
+    parameters file path is hard coded as *DSSim.PAR*.
+
+    In this version of DSS, both binary and parameters files must be within the
+    same directory. When running multiple threads of DSS, in order to avoid
+    overlapping accesses to the same parameters file (which would probably lead
+    to execution failure), each thread should be run from a different
+    directory.
+
+    This class does that: it creates new directories and copy both binary and
+    parameters files to that new directory. It also updates the parameters
+    which are path related.
+
+    Attributes
+    ----------
+    envs : list
+        Keep track of created directories and files.
+    par : DssParam object
+        Instance of DssParam containing the actual DSS parameters.
+    par_path : string
+        Parameters file path.
+    pardir : string
+        Parameters directory path.
+    parfile : string
+        Parameters file name.
+    dss_path : string
+        Binary file path.
+    exedir : string
+        Binary directory path.
+    exefile : string
+        Binary file name.
+    output : string
+        Simulation output file path.
+    simnum : int
+        Number of the next realization.
+    tempdir : string
+        Temporary directory path.
 
     """
     def __init__(self, dss_path, par_path, output='dssim.out', simnum=0):
-        """Constructor.
+        """Constructor to initialise a DSS environment.
+
+        A new directory named *temp* will be created in the same directory as
+        the parameters file.
+
+        Parameters
+        ----------
+        dss_path : string
+            Binary file path.
+        par_path : string or DssParam object
+            Parameters file path or DssParam instance.
+        output : string, default 'dssim.out'
+            Simulation output file path.
+        simnum : int, default 0
+            Number of the next realization.
 
         """
         if isinstance(par_path, pdss.DssParam):
@@ -50,7 +107,16 @@ class DssEnvironment(object):
         self._update_paths()
 
     def new(self):
-        """Create a new directory and copy EXE and PAR files into it.
+        """Create a new directory, within the environment's temporary
+        directory, and copy both binary and parameters files into it. Update
+        the output and seed parameters.
+
+        Returns
+        -------
+        new_exe : string
+            Binary file path.
+        new_par : string
+            Parameters file path.
 
         """
         os.chdir(self.tempdir)
@@ -86,13 +152,13 @@ class DssEnvironment(object):
 
         """
         shutil.rmtree(self.tempdir)
-        
+
     def reset_par_path(self):
         """Restore the original parameter file path.
-        
+
         """
         self.par.path = os.path.join(self.pardir, self.parfile)
-        
+
     def _update_paths(self):
         """Update the parameters related to file paths. Prepends '..\..\'.
         Necessary to call multiprocessing DSS launcher.
@@ -107,9 +173,13 @@ class DssEnvironment(object):
                 setattr(self.par, param, '..\\..\\..\\' + val)
 
 
-# def normal(exe_path, par):
-"""Launch normal version of DSS"""
-"""    os.chdir(os.path.dirname(exe_path))
+def _normal(exe_path, par):
+    """Launch normal version of DSS.
+    
+    Testing launching method with sarge.
+
+    """
+    os.chdir(os.path.dirname(exe_path))
     if os.name == 'posix':
         cmd = ['wine', os.path.basename(exe_path), par]
     else:
@@ -119,10 +189,12 @@ class DssEnvironment(object):
     progrun = prog.run(input=sp.PIPE, async=True)
 
     return progrun
-"""
 
 
-def execute(command):
+def _execute(command):
+    """Testing a different method.
+
+    """
     process = sp.Popen(command, shell=True, stdout=sp.PIPE, stderr=sp.STDOUT)
 
     # Poll process for new output until finished
@@ -143,6 +215,20 @@ def execute(command):
 
 
 def exec_ssdir(dss_path, par_path, dbg=None, print_status=False):
+    """Launch DSS binary.
+    
+    Parameters
+    ----------
+    dss_path : string
+        Binary file path.
+    par_path : string
+        Parameters file path.
+    dbg : string, optional
+        Debug output file path. Write DSS console output to a file.
+    print_status : boolean, default False
+        Print execution status.
+        
+    """
     # print 'Running {}...'.format(os.path.basename(dss_path))
     print mp.current_process().name
 
@@ -196,10 +282,35 @@ def exec_ssdir(dss_path, par_path, dbg=None, print_status=False):
         raise SystemError(command, exitCode, output)
 
 
-def mp_exec(dss_path, par_path, output, simnum, stop=None, dbg=None,
+def mp_exec(dss_path, par_path, output, simnum, totalsim=None, dbg=None,
             print_dss_status=False, cores=None, print_mp_status=False,
             purge=False):
-    """Launch multiple instances of DSS at the same time, at different cores.
+    """Launch multiple threads of DSS at the same time, running at different
+    cores.
+    
+    Parameters
+    ----------
+    dss_path : string
+        Binary file path.
+    par_path : string or DssParam object
+        Parameters file path or DssParam instance.
+    output : string
+        Simulation output file path.
+    simnum : int
+        Number of the next realization.
+    totalsim : int, optional
+        Total number of realizations.
+    dbg : string, optional
+        Debug output file path. Write DSS console output to a file.
+    print_dss_status : boolean, default False
+        Print DSS execution status.
+    cores : int, optional
+        Maximum number of cores to be used. If None, it will use all available
+        cores.
+    print_mp_status : boolean, default False
+        Print threads execution status.
+    purge : boolean, default False
+        Remove all temporary files and directories created.
 
     """
     if not cores:
@@ -212,7 +323,7 @@ def mp_exec(dss_path, par_path, output, simnum, stop=None, dbg=None,
     dssenv = DssEnvironment(dss_path, par_path, output, simnum)
 
     for run in xrange(cores):
-        if stop and simnum + run > stop:
+        if totalsim and simnum + run > totalsim:
             break
         dss_run, par_run = dssenv.new()
         run_exe = mp.Process(target=exec_ssdir, args=(dss_run, par_run,
@@ -233,10 +344,10 @@ if __name__ == '__main__':
     dsspar = '/Users/julio/Desktop/testes/DSSim.PAR'
     # print 'Running DSS...'
     # dssn = normal(dssexe, dsspar)
-    # execute(dssexe)
+    # _execute(dssexe)
     # exec_ssdir(dssexe, dsspar)
     # raw_input()
     # dssn.terminate()
     mp_exec(dssexe, dsspar, 'testinho.out', 1, print_dss_status=False,
-            print_mp_status=True, stop=1)
+            print_mp_status=True, totalsim=1)
     print 'done'
