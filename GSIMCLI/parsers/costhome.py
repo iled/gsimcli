@@ -32,10 +32,10 @@ import tools.utils as ut
 
 class Station(object):
     """Station container.
-    
+
     A station is basically a time series of a climate variable in a specific
     location.
-    
+
     Attributes
     ----------
     md : number
@@ -45,54 +45,54 @@ class Station(object):
     network_id : int
         Network ID number.
     ftype : {'data', 'breakpoint', 'network', 'other'}
-        File type
-        - data: contains climate data 
-        - breakpoint: contains detected irregularities
-        - network: contains network stations names and coordinates
-        - other: contains other information (e.g., graphics)
+        File type\:
+            - data: contains climate data
+            - breakpoint: contains detected irregularities
+            - network: contains stations' names and coordinates
+            - other: contains other information (e.g., graphics)
     status : {'ra', 'qc', 'ho'}
-        Data file status
-        - ra: raw data
-        - qc: quality controlled (outliers removed)
-        - ho: homogenised data
+        Data file status\:
+            - ra: raw data
+            - qc: quality controlled (outliers removed)
+            - ho: homogenised data
     variable : {'dd', 'ff', 'nn', 'tm', 'tn', 'tx', 'pp', 'rr', 'sd'}
-        Measured climate variable
-        - dd: wind direction
-        - ff: wind speed
-        - nn: cloud cover
-        - tm: mean temperature
-        - tn: minimum temperature
-        - tx: maximum temperature
-        - pp: pressure
-        - rr: precipitation
-        - sd: sunshine duration
+        Measured climate variable\:
+            - dd: wind direction
+            - ff: wind speed
+            - nn: cloud cover
+            - tm: mean temperature
+            - tn: minimum temperature
+            - tx: maximum temperature
+            - pp: pressure
+            - rr: precipitation
+            - sd: sunshine duration
     resolution : {'y', 'm', 'd', 's', 'x'}
-        Time series resolution (data averaging period)
-        - y: yearly
-        - m: monthly
-        - d: daily
-        - s: subdaily
-        - x: other
+        Time series resolution (data averaging period)\:
+            - y: yearly
+            - m: monthly
+            - d: daily
+            - s: subdaily
+            - x: other
     id : int
         Station ID number.
     content : {'d', 'f', 'g', 'c'}
-        File content
-        - d: data, meteorological variables
-        - f: quality flags
-        - g: graphics and pictures
-        - c: corrections
-        
+        File content\:
+            - d: data, meteorological variables
+            - f: quality flags
+            - g: graphics and pictures
+            - c: corrections
+
     Notes
     -----
     Some methods generate other attributes.
-        
+
 
     TODO: separate quality flag from data
-    
+
     """
     def __init__(self, path=None, spec=None, md=-999.9):
         """Initialise a Station instance.
-        
+
         Parameters
         ----------
         path : string
@@ -116,23 +116,23 @@ class Station(object):
 
     def load(self, path, content=None):
         """Load station data file.
-        
+
         Parameters
         ----------
         path : string
             File path.
         content : string
             File content.
-            
+
         Returns
         -------
         Sets attributes `data` or `quality`
-        
+
         data : pandas.DataFrame
             Measured values.
         quality : DataFrame
             Quality flags.
-            
+
         Raises
         ------
         ValueError
@@ -155,19 +155,19 @@ class Station(object):
 
     def load_outliers(self, path=None):
         """List the dates with detected outliers.
-        
+
         Parameters
         ----------
         path : string, optional
             Breakpoints file path.
-            
+
         Returns
         -------
         Sets attribute `outliers`
-        
+
         outliers : pandas.Series
             Dates with detected outliers.
-            
+
         Notes
         -----
         The `breakpoints` file name must end with *detected.txt*.
@@ -190,24 +190,24 @@ class Station(object):
 
     def match_orig(self, path=None):
         """Try to fetch the matching original station data.
-        
+
         Parameters
         ----------
         path : string, optional
             File path. If not present, it will look for a folder named *orig*.
-            
+
         Returns
         -------
         Sets attribute `orig`
-        
+
         orig : Station object
             Instance of Station corresponding to the original station data.
-        
+
         See Also
         --------
         match_inho : equivalent but for inhomogenous data.
         match_sub : fetch a matching station in a given submission.
-        
+
         """
         if path:
             self.orig = Station(path, self.md)
@@ -220,19 +220,19 @@ class Station(object):
 
     def match_inho(self, path=None):
         """Try to fetch the matching inhomogenous station data.
-        
+
         Parameters
         ----------
         path : string, optional
             File path. If not present, it will look for a folder named *inho*.
-            
+
         Returns
         -------
         Sets attribute `inho`
-        
+
         inho : Station object
             Instance of Station corresponding to the inhomogenous station data.
-        
+
         See Also
         --------
         match_orig : equivalent but for original data.
@@ -250,13 +250,13 @@ class Station(object):
 
     def yearly(self, func='mean'):
         """Upscale data resolution to yearly.
-        
+
         Parameters
         ----------
         func : {'mean', 'sum'}
             - mean: mean of the values
             - sum: sum of the values
-            
+
         Returns
         -------
         ndarray
@@ -273,26 +273,26 @@ class Station(object):
 
     def setup(self, outliers=False, inho=False):
         """Load station homogenised data, original and outliers.
-        
+
         No option to load from a non default path.
-        
+
         Parameters
         ----------
         outliers : boolean, default False
             Load corresponding outliers.
         inho : boolean, default False
             Load corresponding inhomogenous data.
-            
+
         Returns
         -------
         Set attributes `outliers`, `orig` and `inho`.
-        
+
         See Also
         --------
         load : load data.
         load_outliers : load outliers.
         match_orig : fetch corresponding original data.
-        match_inho : fetch corresponding inhomogenous. 
+        match_inho : fetch corresponding inhomogenous.
 
         """
         if not hasattr(self, 'data'):
@@ -310,7 +310,7 @@ class Station(object):
     def save(self, path):
         """Write station data in the COST-HOME format (tab separated values,
         float numbers with one decimal value).
-        
+
         Parameters
         ----------
         path : string
@@ -327,10 +327,10 @@ class Station(object):
 
 class Network(object):
     """Network container.
-    
+
     A network is a set of stations. The same station can belong to different
     networks.
-    
+
     Attributes
     ----------
     md : number
@@ -351,7 +351,7 @@ class Network(object):
     """
     def __init__(self, path=None, md=-999.9, network_id=None):
         """Initialise a Network instance.
-        
+
         Parameters
         ----------
         path : string, optional
@@ -360,7 +360,7 @@ class Network(object):
             Missing data value.
         network_id : int, optional
             Network ID number.
-            
+
         Notes
         -----
         The current implementation is filtering files parsed as `data` type and
@@ -393,7 +393,7 @@ class Network(object):
 
     def load_stations(self):
         """Load all the stations in the network.
-        
+
         Notice that the data has to be explicitly loaded, the stations are just
         indexed to the network.
 
@@ -404,7 +404,7 @@ class Network(object):
 
     def add(self, station):
         """Add a station to the network.
-        
+
         Parameters
         ----------
         station : Station object
@@ -424,12 +424,12 @@ class Network(object):
     def average(self, orig=False):
         """Calculate the average climate variable value per year of all
         stations in the network.
-        
+
         Parameters
         ----------
         orig : boolean, default False
             Calculate the same average for the corresponding original data.
-            
+
         Returns
         -------
         ndarray or list of ndarray
@@ -462,17 +462,17 @@ class Network(object):
     def skip_years(self, missing=False, outlier=True):
         """List of the years in which any station in the network has missing
         data and/or has an outlier.
-        
+
         Missing data and outliers are both retrieved from the station's
         corresponding original data.
-        
+
         Parameters
         ----------
         missing : boolean, default False
             List years where any station in the network has missing data.
         outlier : boolean, default True
             List years where any station in the network has an outlier.
-            
+
         Returns
         -------
         list
@@ -504,7 +504,7 @@ class Network(object):
 
     def setup(self):
         """Load all stations in the network.
-        
+
         No option to load from a non default path.
 
         """
@@ -514,7 +514,7 @@ class Network(object):
     def save(self, path):
         """Write every station in the network according to the COST-HOME
         format.
-        
+
         Parameters
         ----------
         path : string
@@ -533,7 +533,7 @@ class Network(object):
                       variable='vv', resolution='r', content='c',
                       year_col='year', station_col='est_id', var_col='value'):
         """Load station data from a file in the GSLIB format.
-        
+
         Parameters
         ----------
         path : string or PointSet object
@@ -558,11 +558,11 @@ class Network(object):
             Label of the column containing the stations' ID's.
         var_col : string, default 'value'
             Label of the column containing the climate data values.
-            
+
         See Also
         --------
         Station : Station class.
-            
+
         """
         if isinstance(path, gr.PointSet):
             pset = path
@@ -594,14 +594,14 @@ class Network(object):
 
     def update_ids(self, keys):
         """Update every station ID according to the given keys.
-        
+
         Useful when stations' ID's were replaced with a different number (for
         instance, because they were non numerical).
-        
+
         Parameters
         ----------
         keys : string or pandas.Series
-            File path or Series containing ID's and the corresponding keys. 
+            File path or Series containing ID's and the corresponding keys.
 
         """
         if type(keys) == str and os.path.isfile(keys):
@@ -613,10 +613,10 @@ class Network(object):
 
 class Submission(object):
     """Submission/Contribution to the COST-HOME benchark.
-    
+
     Each instance of Submission should refer to a unique climate signal
     (temperature or precipitation).
-    
+
     Attributes
     ----------
     path : string
@@ -637,7 +637,7 @@ class Submission(object):
     """
     def __init__(self, path, md, networks_id=None):
         """Initialise a Submission instance.
-        
+
         Parameters
         ----------
         path : string
@@ -646,12 +646,12 @@ class Submission(object):
             Missing data value.
         networks_id : list of int, optional
             Network ID numbers contained in the submission.
-            
+
         Notes
         -----
         The current implementation is filtering files parsed as `data` type and
         with content `d`.
-        
+
         """
         self.path = path
         self.md = md
@@ -673,7 +673,7 @@ class Submission(object):
     def save(self, path):
         """Write all networks included in the submission, according to the
         COST-HOME format.
-        
+
         Parameters
         ----------
         path : string
@@ -686,7 +686,7 @@ class Submission(object):
 
 def match_sub(path, sub, level=3):
     """Try to fetch the matching `sub` station in a given submission.
-    
+
     Parameters
     ----------
     path : string
@@ -694,8 +694,8 @@ def match_sub(path, sub, level=3):
     sub : string
         Intended corresponding station.
     level : int, default 3
-        How many levels in the directory tree 
-        
+        Number of levels in the directory tree to go up.
+
     Returns
     -------
     match : string

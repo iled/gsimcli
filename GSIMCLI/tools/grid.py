@@ -193,11 +193,11 @@ class GridArr(object):
     dz : int
         Number of nodes in Z-axis.
     xi : number
-        Initial value in X coordinate.
+        Initial value in X-axis.
     yi : number
-        Initial value in Y coordinate.
+        Initial value in Y-axis.
     zi : number
-        Initial value in Z coordinate.
+        Initial value in Z-axis.
     cellx : number
         Node size in X-axis.
     celly : number
@@ -290,7 +290,7 @@ class GridArr(object):
 
     def save(self, outfile, varname='var', header=True):
         """Write a grid to a file in GSLIB format.
-        
+
         Parameters
         ----------
         outfile : string
@@ -311,7 +311,7 @@ class GridArr(object):
 
     def drill(self, wellxy, save=False, outfile=None, header=True):
         """Extract a vertical line from a grid.
-        
+
         Parameters
         ----------
         wellxy : array_like
@@ -324,7 +324,7 @@ class GridArr(object):
             PointSet file has the GSLIB standard header lines.
 
         .. TODO: needs fix, it is not drilling in the right place
-        
+
         """
         well = PointSet()
         well.name = self.name + ' drilled at ' + str(wellxy)
@@ -367,11 +367,11 @@ class GridFiles(object):
     dz : int
         Number of nodes in Z-axis.
     xi : number
-        Initial value in X coordinate.
+        Initial value in X-axis.
     yi : number
-        Initial value in Y coordinate.
+        Initial value in Y-axis.
     zi : number
-        Initial value in Z coordinate.
+        Initial value in Z-axis.
     cellx : number
         Node size in X-axis.
     celly : number
@@ -436,7 +436,7 @@ class GridFiles(object):
         Notes
         -----
         It is assumed that the files are numbered in the following manner:
-        
+
         - 1st file_with_this_name.extension
         - 2nd file_with_this_name2.extension
         - 3rd file_with_this_name3.extension
@@ -517,7 +517,7 @@ class GridFiles(object):
 
         .. TODO: - devolver em GridArr
                  - handle no data
-        
+
         """
         if lmean:
             meanmap = np.zeros(self.cells)
@@ -581,10 +581,10 @@ class GridFiles(object):
                     p=0.95, save=False):
         """Calculate some statistics among every realization, but only along
         the given vertical line.
-        
+
         Each statistic is calculated node-wise along the complete number of
         realizations.
-        
+
         Parameters
         ----------
         loc : array_like
@@ -613,7 +613,7 @@ class GridFiles(object):
         -------
         statspset : list of PointSet
             List of PointSet instances containing the calculated statistics.
-            
+
         .. TODO: checkar stats variance com geoms
 
         """
@@ -736,9 +736,9 @@ class GridFiles(object):
 def coord_to_grid(coord, cells_size, first):
     """Upscale the given coordinates to the grid coordinate system (in number
     of nodes).
-    
+
     It accepts coordinates in 2D (x, y) or 3D (x, y, z).
-    
+
     Parameters
     ----------
     coord : array_like
@@ -747,12 +747,12 @@ def coord_to_grid(coord, cells_size, first):
         Nodes dimension in each direction.
     first : array_like
         Initial coordinate value in each direction.
-        
+
     Returns
     -------
     grid_coord : ndarray
         Upscaled coordinates.
-        
+
     Notes
     -----
     The result is always in 3D (x, y, z).

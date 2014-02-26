@@ -8,7 +8,6 @@ Created on 14 de Out de 2013
 @author: julio
 """
 
-# import pandas as pd
 import csv
 import fnmatch
 import itertools
@@ -18,7 +17,6 @@ from random import shuffle
 import numpy as np
 import pandas as pd
 import tools.grid as gr
-# import parsers.cost as cost
 
 
 def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
@@ -58,6 +56,8 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
         PDF.
     skewness: float, optional
         Samples skewness threshold, used if `method == 'skewness'`.
+    flag : boolean, default True
+        DEPRECATED
     save : boolean, default False
         Save intermediary PointSet files, one containing the homogenised values
         and the other containing simulated values at the candidate station
@@ -77,7 +77,7 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
     detected_number : int
         Number of detected breakpoints.
     missing_data : int
-        Number of missing data that was interpolated.
+        Number of missing data that were interpolated.
 
     Notes
     -----
@@ -95,8 +95,8 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
     References
     ----------
     .. [1] Costa, A., & Soares, A. (2009). Homogenization of climate data
-        review and new perspectives using geostatistics. Mathematical Geosciences,
-        41(3), 291–305. doi:10.1007/s11004-008-9203-3
+        review and new perspectives using geostatistics. Mathematical
+        Geosciences, 41(3), 291–305. doi:10.1007/s11004-008-9203-3
 
     """
     if method == 'mean':
@@ -387,8 +387,8 @@ def station_order(method, pset_file=None, nd=-999.9, header=True,
         - sorted: sorts all stations in ascending or descending order;
         - variance: sorts all stations by greater or lower variance;
         - network deviation: sorts all stations in ascending  or descending
-            order according to the difference between the station average and the
-            network average;
+            order according to the difference between the station average and
+            the network average;
         - user: the user specifies which stations and their order.
     pset_file : PointSet object or string, optional
         Instance of PointSet or string with the full path to the PointSet file.

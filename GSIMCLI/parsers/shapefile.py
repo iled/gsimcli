@@ -61,14 +61,14 @@ class Shapefile(object):
         self.cellz = cellz
         self.nodata = float(fid.readline().split()[1])
         self.data = np.loadtxt(fid)
-        
+
     def ascii2grid(self):
         """Convert a shapefile in ASCII format to GridArr format.
-        
+
         Returns
         -------
-        grid : GridArr object 
-        
+        grid : GridArr object
+
         """
         shpgrid = np.rot90(self.data, -1)
         shpgrid = shpgrid.flatten(order='F')

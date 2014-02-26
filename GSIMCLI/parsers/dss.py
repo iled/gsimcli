@@ -589,7 +589,6 @@ if __name__ == '__main__':
     pars = DssParam()
     pars.load_old(parfile)
     # pars.update(['output'], ['yeah.out'])
-    # pars.ask_new()
     pars.data2update(dataset, -999.9, False)
     pars.save(newpar)
     print 'done'

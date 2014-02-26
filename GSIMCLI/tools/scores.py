@@ -51,8 +51,8 @@ def crmse(station_path, orig_path, res, md, skip_years=None):
 
 def crmse_cl(homog, orig, skip_years=None, centered=True):
     """Calculate the Centred Root-Mean-Square Error (CRMSE) between any pair of
-    homogenised and original data sets. 
-    
+    homogenised and original data sets.
+
     Parameters
     ----------
     homog : array_like
@@ -63,21 +63,21 @@ def crmse_cl(homog, orig, skip_years=None, centered=True):
         Years not to consider.
     centered : boolean, default True
         Return RMSE or the centred RMSE.
-        
+
     Returns
     -------
     ndarray
         CRMSE.
-        
+
     Notes
     -----
     RMSE is commonly used in meteorology, to see how effectively a mathematical
     model predicts the behaviour of the atmosphere.
-    
+
     The RMSD of an estimator :math:`{\hat{\\theta}}` with respect to an
     estimated parameter :math:`{\\theta}` is defined as the square root of the
     mean square error:
-    
+
     .. math:: \operatorname{RMSE}(\hat{\\theta}) = \sqrt{\operatorname{MSE}
         (\hat{\\theta})} = \sqrt{\operatorname{E}((\hat{\\theta}-\\theta)^2)}.
 
@@ -95,7 +95,7 @@ def crmse_cl(homog, orig, skip_years=None, centered=True):
 
 def crmse_station_cl(station, skip_outliers=True, yearly=True):
     """Calculate the CRMSE of a given station.
-    
+
     Parameters
     ----------
     station : Station object
@@ -104,18 +104,18 @@ def crmse_station_cl(station, skip_outliers=True, yearly=True):
         Skip the years which have outlier values.
     yearly : boolean, default True
         Average monthly data to yearly data.
-        
+
     Returns
     -------
     st_crmse : ndarray
         Station CRMSE.
-        
+
     TODO: handle skip_outliers when resolution != 'y'
-    
+
     See Also
     --------
     crmse_cl : Calculate CRMSE between any pair of homogenised and original
-                 data sets. 
+                 data sets.
 
     """
     station.setup()
@@ -140,7 +140,7 @@ def crmse_station_cl(station, skip_outliers=True, yearly=True):
 def crmse_network(stations_spec, orig_files, md, skip_netwmissing=False,
                   skip_outlier=True):
     """Network CRMSE
-    
+
     TODO: consider skipping when resolution != 'y'
     """
     crmses = np.zeros(len(stations_spec))
@@ -185,7 +185,7 @@ def crmse_network_new(network_homog, network_orig, md, skip_netwmissing=False,
 
 def crmse_network_cl(network, skip_missing=False, skip_outlier=True):
     """Calculate Network CRMSE.
-    
+
     Parameters
     ----------
     network : Network object
@@ -196,17 +196,17 @@ def crmse_network_cl(network, skip_missing=False, skip_outlier=True):
     skip_outlier : boolean, default True
         Do not consider the years in which any station in the network has
         outlier values.
-    
+
     Returns
     -------
     netw_crmse : ndarray
         Network CRMSE.
-    
+
     See Also
     --------
     crmse_cl : Calculate CRMSE between any pair of homogenised and original
-                 data sets. 
-    
+                 data sets.
+
     """
     network.setup()
     homog, orig = network.average(orig=True)
@@ -252,10 +252,10 @@ def crmse_global(homog_path, orig_path, variable, md, skip_netwmissing=False,
 def crmse_submission_cl(submission, over_station=True, over_network=True,
                         skip_missing=False, skip_outlier=True):
     """Calculate the average CRMSE of a benchmark submission.
-    
+
     The average can be calculated over all the stations and/or over the
     networks of a given submission.
-    
+
     Parameters
     ----------
     submission : Submission object
@@ -265,16 +265,16 @@ def crmse_submission_cl(submission, over_station=True, over_network=True,
     over_network : boolean, default True
         Calculate the submission's mean network CRMSE.
     skip_missing : boolean, default False
-        Do not consider the years in which any station in the network has missing
-        values. Only used if `over_network` is True.
+        Do not consider the years in which any station in the network has
+        missing values. Only used if `over_network` is True.
     skip_outlier : boolean, default True
-        Do not consider the years in which any station in the network has outlier
-        values.
-        
+        Do not consider the years in which any station in the network has
+        outlier values.
+
     Returns
     -------
     results : list of ndarray
-        List with mean station CRMSE and/or mean network CRMSE. 
+        List with mean station CRMSE and/or mean network CRMSE.
 
     """
     if over_network:
@@ -352,11 +352,11 @@ def improvement(homog_path, inhomog_path, orig_path, variable, md,
 def improvement_cl(submission, over_station, over_network, skip_missing,
                    skip_outlier):
     """Calculate the improvement of a benchmark submission.
-    
+
     The improvement over the inhomogeneous data is computed as the quotient
     of the mean CRMSE of the homogenized networks and the mean CRMSE of the
     same inhomogeneous networks.
-    
+
     Parameters
     ----------
     submission : Submission object
@@ -371,7 +371,7 @@ def improvement_cl(submission, over_station, over_network, skip_missing,
     skip_outlier : boolean, default True
         Do not consider the years in which any station in the network has
         outlier values.
-    
+
     Returns
     -------
     list of ndarray
@@ -454,7 +454,7 @@ if __name__ == '__main__':
 
     # """ # PRODIGE main precip
     netw_path = basepath + 'benchmark/h002/precip/sur1'
-    
+
     # print crmse_global(netw_path, orig_path, variable, md)
     # print improvement(netw_path, inho_path, orig_path, variable, md,
     #                  False, True)

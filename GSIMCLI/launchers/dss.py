@@ -11,7 +11,7 @@ GSIMCLI, the only requirement from GeoMS is the DSS binary file.
 
 Created on 04/10/2013
 
-@author: jcaineta
+@author: julio
 """
 
 import copy
@@ -23,9 +23,7 @@ import sys
 
 import multiprocessing as mp
 import parsers.dss as pdss
-# import sarge
 import subprocess as sp
-from tools.utils import path_up
 
 
 class DssEnvironment(object):
@@ -175,10 +173,12 @@ class DssEnvironment(object):
 
 def _normal(exe_path, par):
     """Launch normal version of DSS.
-    
+
     Testing launching method with sarge.
 
     """
+    import sarge
+
     os.chdir(os.path.dirname(exe_path))
     if os.name == 'posix':
         cmd = ['wine', os.path.basename(exe_path), par]
@@ -216,7 +216,7 @@ def _execute(command):
 
 def exec_ssdir(dss_path, par_path, dbg=None, print_status=False):
     """Launch DSS binary.
-    
+
     Parameters
     ----------
     dss_path : string
@@ -227,7 +227,7 @@ def exec_ssdir(dss_path, par_path, dbg=None, print_status=False):
         Debug output file path. Write DSS console output to a file.
     print_status : boolean, default False
         Print execution status.
-        
+
     """
     # print 'Running {}...'.format(os.path.basename(dss_path))
     print mp.current_process().name
@@ -287,7 +287,7 @@ def mp_exec(dss_path, par_path, output, simnum, totalsim=None, dbg=None,
             purge=False):
     """Launch multiple threads of DSS at the same time, running at different
     cores.
-    
+
     Parameters
     ----------
     dss_path : string
