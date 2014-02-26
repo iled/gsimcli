@@ -1,13 +1,24 @@
 # -*- coding: utf-8 -*-
-'''
+"""
+This module provides different ways to run GSIMCLI in its initial version,
+which consists in the geostatistical simulation approach [1]_ with the classic
+version of Direct Sequential Simulation [2]_.
+
+References
+----------
+.. [1] Costa, A., & Soares, A. (2009). Homogenization of climate data review
+    and new perspectives using geostatistics. Mathematical Geosciences, 41(3),
+    291–305. doi:10.1007/s11004-008-9203-3
+
+.. [2] Soares, A. (2001). Direct sequential simulation and cosimulation.
+    Mathematical Geology, 33(8), 911–926. doi:10.1023/A:1012246006212
+
 Created on 22 de Out de 2013
 
 @author: julio
 
-Basic command line interface for launching homogenization method as of
-Costa, C. (2008).
-It uses geostatistical simulation approach with classic DSS.
-'''
+"""
+
 import glob
 import ntpath
 import os
@@ -19,7 +30,6 @@ import launchers.dss as dss
 import multiprocessing as mp
 import numpy as np
 import pandas as pd
-import parsers.cost as pcost
 import parsers.dss as pdss
 import parsers.gsimcli as pgc
 import parsers.spreadsheet as ss
@@ -28,289 +38,84 @@ import tools.homog as hmg
 import tools.utils as ut
 
 
-def ask_add_header(pset):
-    """Ask for the header when a point-set does not have any."""
-    print 'Insert the point-set header metadata'
-    pset.name = raw_input('Point-set name: ')
-    for i in xrange(pset.nvars):
-        pset.varnames[i] = (raw_input('Variable {} name: '.format(i + 1)).
-                            strip())
-    return pset
+def gsimcli(stations_file, stations_header, no_data, stations_order,
+            detect_method, detect_prob, detect_flag, detect_save, exe_path,
+            par_file, outfolder, purge_sims, detect_skew=None, cores=None,
+            dbgfile=None, print_status=False, skip_dss=False):
+    """Main routine to run GSIMCLI homogenisation procedure in a set of
+    stations.
 
+    Parameters
+    ----------
+    stations_file : string or PointSet object
+        Stations file path or PointSet instance.
+    stations_header : boolean
+        Stations file has the GSLIB standard header lines.
+    no_data : number
+        Missing data value.
+    stations_order : array_like
+        Stations' ID's in the order that they will be homogenised.
+    detect_method : {'mean', 'median', 'skewness'} string, default 'mean'
+        Method for the inhomogeneities detection:
+            - mean: compare observed values with the mean of simulated values;
+            - median: compare observed values with the median of simulated
+                values;
+            - skewness: use the sample skewness to decide whether it compare
+                observed values with the mean or the median of simulated
+                values.
+    detect_prob : float
+        Probability value to build the detection interval centred in the local
+        PDF.
+    detect_flag : boolean
+        DEPRECATED
+    detect_save : boolean
+        Save generated files in the procedure\: intermediary PointSet files
+        containing candidate and reference stations, homogenised and simulated
+        values, DSS parameters and cluster transformation files.
+    exe_path : string
+        DSS binary file path.
+    par_file : string or DssParam object
+        DSS parameters file path or DssParam instance.
+    outfolder : string
+        Directory to save the results.
+    purge_sims : boolean
+        Remove all simulated maps in the end.
+    detect_skew : float, optional
+        Samples skewness threshold, used if `detect_method == 'skewness'`.
+    cores : int, optional
+        Maximum number of cores to be used. If None, it will use all available
+        cores.
+    dbgfile : string, optional
+        Debug output file path. Write DSS console output to a file.
+    print_status : boolean, default False
+        Print some messages with the procedure status while it is running.
+    skip_dss : boolean, default False
+        Do not run DSS. Choose if the simulated maps are already in place and
+        only the homogenisation process is needed.
 
-def ask_format(way):
-    """Asks for input/output file format.
-    input: 1 or True
-    output: 0 or False
-    """
-    if way:
-        print 'Select input format:\n'
-        print '1. COST-HOME'
-        print '2. GSLIB'
-        print '3. SNIRH'
-        i = raw_input('\nOption number: ')
-        if i == str(1):
-            pass
-        elif i == str(2):
-            print 'Option {} not implemented yet.\n'.format(i)
-            ask_format(1)
-        elif i == str(3):
-            print 'Option {} not implemented yet.\n'.format(i)
-            ask_format(1)
-        else:
-            print 'Option {} not available.\n'.format(i)
-            ask_format(1)
-        return i
-    else:
-        print 'Select output format:\n'
-        print '1. COST-HOME'
-        print '2. GSLIB'
-        print '3. SNIRH'
-        i = raw_input('\nOption number: ')
-        if i == str(1):
-            pass
-        elif i == str(2):
-            print 'Option {} not implemented yet.\n'.format(i)
-            ask_format(1)
-        elif i == str(3):
-            print 'Option {} not implemented yet.\n'.format(i)
-            ask_format(1)
-        else:
-            print 'Option {} not available.\n'.format(i)
-            ask_format(1)
-        return i
-
-
-def convert_files():
-    """Options for converting files format.
-
-    TODO: other formats
-    """
-    print '·' * 21
-    print 'Convert files format\n'
-    print '1. COST-HOME to GSLIB'
-    print '2. COST-HOME to CSV'
-    print '3. GSLIB to COST-HOME'
-    print '4. GSLIB to CSV'
-    print '5. CSV to GSLIB'
-    print '6. XLS to GSLIB'
-    print '7. GSIMCLI to COST-HOME'
-    print '8. Add header to GSLIB'
-    print '9. Remove header from GSLIB '
-    print '\n0. Back'
-    i = raw_input('\nOption number: ')
-
-    if i == 1:
-        print '·' * 21
-        print 'Convert files from COST-HOME format to GSLIB\n'
-        print 'Insert arguments and press [ENTER]\n'
-        folder = raw_input('Full path to the folder containing data: ')
-        var = raw_input('Variable (dd, ff, nn, tm, tn, tx, pp, rr, sd): ')
-        amerge = False
-
-        for root, dirs, files in os.walk(folder):  # @UnusedVariable
-            if (len(dirs) > 0 and
-                all([len(d) == 6 and d.isdigit() for d in dirs])):
-                print 'processing ' + root
-                parsed_files = pcost.directory_walk_v1(root)
-                selected_files = pcost.files_select(parsed_files, ftype='data',
-                                              variable=var, content='d')
-                if selected_files:
-                    pcost.convert_gslib(selected_files, merge=amerge)
-        print 'done'
-        convert_files()
-
-    elif i == str(3):
-        pass
-
-    elif i == str(6):
-        print '·' * 21
-        print 'Convert files from XLS format to GSLIB\n'
-        print 'Insert arguments and press [ENTER]\n'
-        xlspath = raw_input('Full path to the XLS file: ')
-        nd = raw_input('Place holder for missing data (default: -999.9): ')
-        cols = raw_input('Which columns to convert (e.g., 0, 1, 4; '
-                         'default: all): ')
-        sheet = raw_input('Which sheet (number) to convert (e.g., 0; '
-                          'default: first): ')
-        header = raw_input('Which line has the header (e.g., 0; '
-                           'default: none): ')
-        if len(nd) == 0:
-            nd = -999.9
-        if len(cols) == 0:
-            cols = None
-        if len(sheet) == 0:
-            sheet = 0
-        if len(header) == 0:
-            header = None
-        else:
-            header = int(header)
-        pointset, keys = ss.xls2gslib(xlspath, nd, cols, sheet, header)
-        pointset.save(os.path.splitext(xlspath)[0] + '.prn', header=True)
-        if keys:
-            keys.to_excel(os.path.splitext(xlspath)[0] + '_keys.xls',
-                          sheet_name=pointset.name)
-
-    elif i == str(7):
-        print '.' * 21
-        print 'Convert files from GSIMCLI format to COST-HOME\n'
-        print 'Insert arguments and press [ENTER]\n'
-        gsimclipath = raw_input('Full path to the GSIMCLI file: ')
-        outpath = raw_input('')
-        nd = raw_input('Place holder for missing data (default: -999.9): ')
-        sheet = raw_input('Sheet name or number containing the data to convert'
-                          '(default: All stations): ')
-        network_id = os.path.basename(os.path.dirname(gsimclipath))
-        status = raw_input('Data status (default: ho): ')
-        variable = raw_input('Data variable (default: rr): ')
-        resolution = raw_input('Data temporal resolution (default: y): ')
-        content = raw_input('Data content (default: d): ')
-        # TODO: yearly_sum, keys_path
-        ss.xls2costhome(xlspath=gsimclipath, outpath=outpath, nd=nd,
-                        sheet=sheet, header=False, skip_rows=None, cols=None,
-                        network_id=network_id, status=status,
-                        variable=variable, resolution=resolution,
-                        content=content, ftype='data', yearly_sum=False,
-                        keys_path=None)
-
-        if not nd:
-            nd = -999.9
-        if not sheet:
-            sheet = 'All stations'
-        if not status:
-            status = 'ho'
-        if not variable:
-            variable = 'rr'
-        if not resolution:
-            resolution = 'y'
-        if not content:
-            content = 'd'
-
-    elif i == str(0):
-        main()
-    else:
-        print 'Invalid option: "{}". Press [ENTER] to try again.'.format(i)
-        raw_input()
-        convert_files()
-
-
-def dss_par():
-    print '·' * 21
-    print 'DSS Parameters\n'
-    print '1. Use previously defined parameters file'
-    print '2. Load a parameters file as a default and adjust it'
-    print '3. Set up a new file'
-    print '\n0. Main menu'
-    i = raw_input('\nOption number: ')
-
-    par = pdss.DssParam()
-
-    if i == str(1):
-        parfile = raw_input('Full path to the existing parameter file: ')
-        par.load(parfile)
-    elif i == str(2):
-        parfile = raw_input('Full path to the default parameter file: ')
-        print 'Insert new value or press [ENTER] to leave the default value.\n'
-        par.load(parfile)
-        par.ask_update_default()
-        outfile = raw_input('Full path to where to save the new parameter '
-                            'file or press [ENTER] to rewrite the default: ')
-        if outfile:
-            parfile = outfile
-        par.save(parfile)
-    elif i == str(3):
-        parfile = raw_input('Full path to the existing parameter file: ')
-        print 'Insert value for each parameter.\n'
-        par.ask_new()
-        par.save(parfile)
-    elif i == str(0):
-        main()
-    else:
-        print 'Invalid option: "{}". Press [ENTER] to try again.'.format(i)
-        raw_input()
-        par = dss_par()
-
-    return par
-
-
-def ask_save_vars(pset):
-    """Asks which variables should be written in the output file.
-    """
-    print 'Select which variables should be written in the output file.\n'
-    for i, var in enumerate(pset.varnames):
-        print '{}. {}'.format(i, var)
-    lvars = raw_input('\nChoose by writing each variable number in the desired'
-                     ' order (separated with [SPACE]): ')
-    return [int(v) for v in lvars.split()]
-
-
-def ask_stations_method(pset, header=True):
-    """Asks which method will be used to select candidate stations.
-
-    TODO:
-        . escolhe uma e depois faz por proximidade
-        . investigar outros métodos
-        . precisa do no data para o station_order
-        . ascrescentar as outras opções desenvolvidas
-        . interface para o station_order outdated
-    """
-    print '·' * 21
-    print 'Stations are homogenized one by one. Each homogenized station will'
-    print 'be included as a reference station to the others.'
-    print 'Select which stations will be considered as candidates and in'
-    print 'which order.\n'
-    print '1. List stations ID'
-    print '2. Use all stations randomly sorted'
-    print '3. Sort all stations in ascending order'
-    print '4. Specify which stations will be candidates and their order'
-    print '\n0. Main menu'
-    i = raw_input('\nOption number: ')
-
-    stations_list = hmg.list_stations(pset, header)
-    if i == str(1):
-        print stations_list
-        raw_input('Press [ENTER] to continue.')
-        stations = ask_stations_method(pset, header)
-    elif i == str(2):
-        stations = hmg.station_order(stations_list, method='random')
-    elif i == str(3):
-        stations = hmg.station_order(stations_list, method='sorted')
-    elif i == str(4):
-        stations_user = raw_input('Write stations ID in the desired order '
-                                 '(e.g., 72 10 59 56): ')
-        stations_set = [int(i) for i in stations_user.split()]
-        stations = hmg.station_order(stations_list, method='user',
-                                     userset=stations_set)
-    elif i == str(0):
-        main()
-    else:
-        print 'Invalid option: "{}". Press [ENTER] to try again.'.format(i)
-        raw_input()
-        stations = ask_stations_method(pset, header)
-
-    return stations
-
-
-def gsimcli(stations_file, stations_h, no_data, stations_order, detect_method,
-         detect_prob, detect_flag, detect_save, exe_path, par_file, outfolder,
-         purge_sims, detect_skew=None, cores=None):
-    """Main cycle to run GSIMCLI homogenization procedure in a set of stations
+    Returns
+    -------
+    homogenised_file : string
+        Homogenised data file path. The generated file name ends with
+        *_homogenised_data.csv*.
+    dnumber_list : list of int
+        Number of detected breakpoints in each candidate station.
+    fnumber_list : list of int
+        Number of missing data that were interpolated in each candidate
+        station.
 
     """
     if not cores or cores > mp.cpu_count():
         cores = mp.cpu_count()
-    print 'GSIMCLI using {} cores'.format(cores)
+    if print_status:
+        print 'GSIMCLI using {} cores'.format(cores)
 
-    # dbgfile = os.path.join(outfolder, 'dsscmd.txt')  # TODO: opt for dbg
-    dbgfile = None
-    if dbgfile is not None and os.path.isfile(dbgfile):
-        os.remove(dbgfile)
     # load data and prepare the iterative process
     if isinstance(stations_file, gr.PointSet):
         stations_pset = stations_file
     else:
         stations_pset = gr.PointSet()
-        stations_pset.load(stations_file, nd=no_data, header=stations_h)
+        stations_pset.load(stations_file, nd=no_data, header=stations_header)
 
     if isinstance(par_file, pdss.DssParam):
         dsspar = par_file
@@ -323,8 +128,9 @@ def gsimcli(stations_file, stations_h, no_data, stations_order, detect_method,
     commonpath = os.path.commonprefix((outfolder, exe_path))
     # start iterative process
     for i in xrange(len(stations_order)):
-        print ('Processing candidate {} out of {} with ID {}.'.
-               format(i + 1, len(stations_order), stations_order[i]))
+        if print_status:
+            print ('Processing candidate {} out of {} with ID {}.'.
+                   format(i + 1, len(stations_order), stations_order[i]))
         # manage stations
         candidate, references = hmg.take_candidate(stations_pset,
                                                    stations_order[i])
@@ -349,30 +155,25 @@ def gsimcli(stations_file, stations_h, no_data, stations_order, detect_method,
         if detect_save:
             candfile = os.path.join(outfolder, candname)
             candidate.save(psetfile=candfile, header=True)
-        dsspar.update(['datapath', 'output'], [reffile_nt, outfile_nt])
-        dsspar.save_old(parfile)  # TODO: old
-        oldpar = pdss.DssParam()
-        oldpar.load_old(parfile)
-        oldpar.nsim = 1
-        purge_temp = False
-        for sim in xrange(1, dsspar.nsim + 1, cores):
-            print ('[{}/{}] Working on realization {}'.
-                   format(i + 1, len(stations_order), sim))
-            # oldpar.save_old(os.path.join(os.path.dirname(exe_path),
-            #                             'DSSim.par'))
-            # dss.exec_ssdir(exe_path, parfile, dbgfile)
-            if sim >= dsspar.nsim + 1 - cores:
-                purge_temp = True
-            dss.mp_exec(dss_path=exe_path, par_path=oldpar, output=outfile_nt,
-                        simnum=sim, dbg=dbgfile, cores=cores, purge=purge_temp,
-                        totalsim=dsspar.nsim)
-            #  oldfilent = (ntpath.splitext(outfile_nt)[0] + str(sim + 1) +
-            #               ntpath.splitext(outfile_nt)[1])
-            # oldpar.update(['output', 'seed'], [oldfilent, oldpar.seed + 2])
+        if skip_dss:
+            dsspar.update(['datapath', 'output'], [reffile_nt, outfile_nt])
+            dsspar.save_old(parfile)  # TODO: old
+            oldpar = pdss.DssParam()
+            oldpar.load_old(parfile)
+            oldpar.nsim = 1
+            purge_temp = False
+            for sim in xrange(1, dsspar.nsim + 1, cores):
+                if print_status and not skip_dss:
+                    print ('[{}/{}] Working on realization {}'.
+                           format(i + 1, len(stations_order), sim))
+                if sim >= dsspar.nsim + 1 - cores:
+                    purge_temp = True
+                dss.mp_exec(dss_path=exe_path, par_path=oldpar, dbg=dbgfile,
+                            output=outfile_nt, simnum=sim, cores=cores,
+                            purge=purge_temp, totalsim=dsspar.nsim)
 
-        # raw_input('Go and run DSS with these parameters: {}'.format(parfile))
         # prepare detection
-        intermediary_files = os.path.join(outfolder, basename + '_homogenized_'
+        intermediary_files = os.path.join(outfolder, basename + '_homogenised_'
                                           + str(i) + '.prn')
         dims = [dsspar.xx[0], dsspar.yy[0], dsspar.zz[0]]
         first_coord = [dsspar.xx[1], dsspar.yy[1], dsspar.zz[1]]
@@ -380,43 +181,64 @@ def gsimcli(stations_file, stations_h, no_data, stations_order, detect_method,
         sim_maps = gr.GridFiles()
         sim_maps.load(outfile, dsspar.nsim, dims, first_coord, cells_size,
                       no_data, headerin=0)
-        print 'Detecting inhomogeneities...'
+
         # detect and fix inhomogeneities
-        homogenization = hmg.detect(grids=sim_maps, obs_file=candidate,
+        if print_status:
+            print 'Detecting inhomogeneities...'
+        homogenisation = hmg.detect(grids=sim_maps, obs_file=candidate,
                                  method=detect_method, prob=detect_prob,
                                  flag=detect_flag, save=detect_save,
                                  outfile=intermediary_files, header=True,
                                  skewness=detect_skew)
-        homogenized, detected_number, filled_number = homogenization
-        print 'Inhomogeneities detected: {}'.format(detected_number)
+        homogenised, detected_number, filled_number = homogenisation
+        if print_status:
+            print 'Inhomogeneities detected: {}'.format(detected_number)
         dnumber_list.append(detected_number)
         fnumber_list.append(filled_number)
         # prepare next iteration
-        stations_pset = hmg.append_homog_station(references, homogenized)
+        stations_pset = hmg.append_homog_station(references, homogenised)
         if not detect_save:
             [os.remove(fpath) for fpath in
-             [reffile, parfile, dbgfile, dsspar.transfile]]
+             [reffile, parfile, dsspar.transfile]]
         if purge_sims:
             sim_maps.purge()
         else:
             sim_maps.dump()
 
     # save results
-    print 'Process completed.'
-    print 'Detections: ', ', '.join(map(str, dnumber_list))
-    print 'Missing data filled: ', ', '.join(map(str, fnumber_list))
-    print 'Saving results...'
-    homogenized_file = os.path.join(outfolder, basename +
-                                    '_homogenized_data.csv')
-    hmg.save_output(pset_file=stations_pset, outfile=homogenized_file,
+    if print_status:
+        print 'Process completed.'
+        print 'Detections: ', ', '.join(map(str, dnumber_list))
+        print 'Missing data filled: ', ', '.join(map(str, fnumber_list))
+        print 'Saving results...'
+    homogenised_file = os.path.join(outfolder, basename +
+                                    '_homogenised_data.csv')
+    hmg.save_output(pset_file=stations_pset, outfile=homogenised_file,
                     fformat='gsimcli', header=True, station_split=True,
                     save_stations=True)
 
-    return homogenized_file, stations_order, dnumber_list, fnumber_list
+    return homogenised_file, dnumber_list, fnumber_list
 
 
 def run_par(par_path):
     """Run GSIMCLI using the settings included in a parameters file.
+
+    Parameters
+    ----------
+    par_path : string or GsimcliParam object
+        File path or GsimcliParam instance with GSIMCLI parameters.
+
+    Returns
+    -------
+    results : list
+        Homogenised data file path, stations order, number of detected
+        breakpoints in each candidate station, and number of missing data that
+        were interpolated in each candidate station.
+
+    See Also
+    --------
+    batch_decade : Run GSIMCLI with data files divided in decades.
+    batch_networks : Run GSIMCLI along different networks.
 
     """
     if isinstance(par_path, pgc.GsimcliParam):
@@ -435,8 +257,6 @@ def run_par(par_path):
         stations_pset.name = gscpar.name
     if hasattr(gscpar, 'variables'):
         stations_pset.varnames = gscpar.variables
-        # for i in xrange(len(stations_pset.varnames)):
-        #    stations_pset.varnames[i] = gscpar.variables.split(',')[i].strip()
 
     if gscpar.st_order == 'user':
         stations_set = gscpar.st_user
@@ -461,13 +281,43 @@ def run_par(par_path):
                       detect_flag, gscpar.detect_save, gscpar.dss_exe, dsspar,
                       gscpar.results, gscpar.sim_purge, skew)
 
+    results.insert(1, stations_order)  # FIXME: workaround for merge dependence
+
     return results
 
 
 def batch_decade(par_path, variograms_file):
-    """Batch process to run gsimcli with data files divided in decades.
+    """Batch process to run GSIMCLI with data files divided in decades.
 
-          .receber variância já normalizada
+    Parameters
+    ----------
+    par_path : string or GsimcliParam object
+        File path or GsimcliParam instance with GSIMCLI parameters.
+    variograms_file : string
+        Variograms file path.
+
+    See Also
+    --------
+    run_par : Run GSIMCLI using the settings included in a parameters file.
+    batch_networks : Run GSIMCLI along different networks.
+
+    Notes
+    -----
+    The variograms file must follow these specifications\:
+        - comma separated values (CSV)
+        - nine labelled columns (not case sensitive)\:
+            - variance
+            - decade: decade in the format aaXX-aaYY (*aa* is optional)
+            - model: {'S', 'E', 'G'}, (S = spherical, E = exponential,
+                G = gaussian)
+            - nugget: nugget effect
+            - range
+            - partial sill
+            - nugget_norm: variance-normalised nugget effect
+            - psill_norm: variance-normalised partial sill
+            - sill_norm: variance-normalised total sill
+            - other columns will be ignored
+
     """
     if isinstance(par_path, pgc.GsimcliParam):
         gscpar = par_path
@@ -476,11 +326,14 @@ def batch_decade(par_path, variograms_file):
 
     network_parpath = gscpar.path
     variograms = pd.read_csv(variograms_file)
+    # make case insensitive
+    variograms.rename(columns=lambda x: x.lower(), inplace=True)
+
     results = list()
 
     for decade in variograms.iterrows():
         os.chdir(os.path.dirname(variograms_file))
-        first_year = decade[1].ix['Decade'].split('-')[0].strip()
+        first_year = decade[1].ix['decade'].split('-')[0].strip()
         data_folder = os.path.join(os.getcwd(), glob.glob('dec*')[0])
         data_file = os.path.join(data_folder, glob.glob
                                  (data_folder + '/*' + first_year + '*')[0])
@@ -495,22 +348,22 @@ def batch_decade(par_path, variograms_file):
             psetvalues = pset.values.iloc[:, climcol].replace(pset.nodata,
                                                               np.nan)
             variance = psetvalues.var()
-            nugget = decade[1].ix['Nugget'] / variance
-            psill = decade[1].ix['Partial Sill'] / variance
+            nugget = decade[1].ix['nugget'] / variance
+            psill = decade[1].ix['partial sill'] / variance
 
         results_folder = os.path.join(os.path.dirname(variograms_file),
-                                      decade[1].ix['Decade'])
+                                      decade[1].ix['decade'])
         if not os.path.isdir(results_folder):
             os.mkdir(results_folder)
-        fields = ['data', 'model', 'nugget', 'sill', 'ranges', 'ZZ_minimum',
+        fields = ['data', 'model', 'nugget', 'sill', 'ranges', 'zz_minimum',
                   'results']
-        values = [data_file, decade[1].ix['Model'][0],
+        values = [data_file, decade[1].ix['model'][0],
                   str(nugget), str(psill),
-                  ', '.join(map(str, ([decade[1].ix['Range'],
-                                       decade[1].ix['Range'], 1]))),
+                  ', '.join(map(str, ([decade[1].ix['range'],
+                                       decade[1].ix['range'], 1]))),
                   first_year, results_folder]
         gscpar.update(fields, values, True, ut.filename_indexing
-                      (network_parpath, decade[1].ix['Decade']))
+                      (network_parpath, decade[1].ix['decade']))
         results.append(run_par(gscpar))
 
     outpath = os.path.dirname(variograms_file)
@@ -524,7 +377,39 @@ def batch_decade(par_path, variograms_file):
 
 
 def batch_networks(par_path, networks, decades=False):
-    """Batch process to run gscimcli at different networks.
+    """Batch process to run GSIMCLI along different networks.
+
+    Parameters
+    ----------
+    par_path : string or GsimcliParam object
+        File path or GsimcliParam instance with GSIMCLI parameters.
+    networks : list of string
+        List with the networks' directories. Each network directory must have a
+        file with the grid properties, and this file name must be of the type
+        *\*grid\*.csv*.
+    decades : boolean, default False
+        Run GSIMCLI by decades separately. Each network directory must have a
+        variogram file within it, and this file name must be of the type
+        *\*variog\*.csv*.
+
+    See Also
+    --------
+    run_par : Run GSIMCLI using the settings included in a parameters file.
+    batch_decade : Run GSIMCLI with data files divided in decades.
+
+    Notes
+    -----
+    The file with the grid properties must follow these specifications\:
+        - comma separated values (CSV)
+        - seven labelled columns (not case sensitive)\:
+            - xmin: initial value in X-axis
+            - ymin: initial value in Y-axis
+            - xnodes: number of nodes in X-axis
+            - ynodes: number of nodes in Y-axis
+            - znodes: number of nodes in Z-axis
+            - xsize: node size in X-axis
+            - ysize: node size in Y-axis
+            - other columns will be ignored
 
     """
     gscpar = pgc.GsimcliParam(par_path)
@@ -533,6 +418,8 @@ def batch_networks(par_path, networks, decades=False):
         os.chdir(network)
         specfile = os.path.join(network, glob.glob('*grid*.csv')[0])
         grid = pd.read_csv(specfile)
+        # make case insensitive
+        grid.rename(columns=lambda x: x.lower(), inplace=True)
         fields = ['XX_nodes_number', 'XX_minimum', 'XX_spacing',
                  'YY_nodes_number', 'YY_minimum', 'YY_spacing',
                  'ZZ_nodes_number', 'ZZ_spacing', 'results']
@@ -548,80 +435,6 @@ def batch_networks(par_path, networks, decades=False):
             batch_decade(gscpar, variogram_file)
         else:
             run_par(par_path)
-
-
-def main():
-    """Text interface: main menu
-
-    TODO: outdated
-    """
-    print '······ GSIMCLI ······\n'
-    print 'Main menu\n'
-    print '1. Convert files'
-    print '2. Locate DSS binary'
-    print '3. Set up DSS parameters'
-    print '4. Homogenize network'
-    print '5. Homogenize multiple networks'
-    i = raw_input('\nOption number: ')
-
-    if i == str(1):
-        convert_files()
-    elif i == str(2):
-        exe_path = raw_input('Full path to DSS binary file: ')
-    elif i == str(3):
-        parfile = dss_par()
-    elif i == str(4):
-        # check if *.par file exists
-        try:
-            parfile
-        except NameError:
-            print 'DSS parameters are not set up yet. Press [ENTER] to do it.'
-            raw_input()
-            parfile = dss_par()
-
-        # hard-data
-        # TODO: pode ler isso no PAR
-        stations_file = raw_input('Full path to stations point-set file: ')
-        stations_pset = gr.PointSet()
-        no_data = parfile.nd
-        stations_h = raw_input('Does that file have a header? (Y/N) ')
-        stations_h = ut.yes_no(stations_h)
-        stations_pset.load(stations_file, no_data, stations_h)
-        if not stations_h:
-            stations_pset = ask_add_header(stations_pset)
-        # candidate stations order
-        stations_order = ask_stations_method(stations_pset, stations_h)
-        # inhomogeneities detection settings
-        detect_method = raw_input('Detection method (mean/median): ').lower()
-        detect_prob = float(raw_input('Probability for detection interval: '))
-        detect_flag = True
-        # results
-        detect_save = raw_input('Save intermediary homogenized files? (Y/N) ')
-        if detect_save.lower() == 'y':
-            detect_save = True
-        else:
-            detect_save = False
-        outfolder = raw_input('Full path to results folder: ')
-        # simulation binary
-        try:
-            exe_path
-        except NameError:
-            exe_path = raw_input('Full path to DSS binary file: ')
-        # let's go!
-        print 'Set up complete. Running GSIMCLI...'
-        gsimcli(stations_pset, stations_h, no_data, stations_order,
-                detect_method, detect_prob, detect_flag, detect_save, exe_path,
-                parfile, outfolder)
-    elif i == str(5):
-        pass
-    else:
-        print 'Invalid option: "{}". Press [ENTER] to try again.'.format(i)
-        raw_input()
-        main()
-
-    print 'Done.\nPress [ENTER] to continue.'
-    raw_input()
-    main()
 
 
 if __name__ == '__main__':
