@@ -14,7 +14,7 @@ from scipy.stats import skew
 
 import numpy as np
 import pandas as pd
-from tools.utils import skip_lines
+from tools.utils import skip_lines, filename_indexing
 
 
 class PointSet(object):
@@ -130,13 +130,13 @@ class PointSet(object):
         self.values = pd.DataFrame(values, columns=self.varnames)
         fid.close()
 
-    def save(self, psetfile, header=True):
+    def save(self, psetfile=None, header=True):
         """Write a point-set to a file in GSLIB format.
 
         Parameters
         ----------
-        psetfile : string
-            File path.
+        psetfile : string, optional
+            File path. If not specified, will rewrite the original file.
         header : boolean, default True
             PointSet file has the GSLIB standard header lines.
 
@@ -457,13 +457,14 @@ class GridFiles(object):
         self.header = headerin
         self.nodata = no_data
         self.files.append(open(first_file, 'rb'))
-        fpath, ext = os.path.splitext(first_file)
+        # fpath, ext = os.path.splitext(first_file)
         for i in xrange(2, n + 1):
-            another = fpath + str(i) + ext
+            # another = fpath + str(i) + ext
+            another = filename_indexing(first_file, i)
             if os.path.isfile(another):
                 self.files.append(open(another, 'rb'))
             else:
-                raise IOError('File {0} not found.'.
+                raise IOError('File {} not found.'.
                               format(os.path.basename(another)))
 
     def dump(self):
@@ -767,6 +768,157 @@ def coord_to_grid(coord, cells_size, first):
 
     grid_coord = np.around((coord - first) / cells_size + 1).astype('int')
     return grid_coord
+
+
+def loadcheck(s, header):
+    """Check if s is a file path or PointSet instance.
+
+    Parameters
+    ----------
+    s : PointSet object or string
+        Instance of PointSet type or string with the full path to the PointSet
+        file.
+    header : string
+        True if `obs_file` has the GSLIB standard header lines.
+
+    Returns
+    -------
+    PointSet
+
+    Raises
+    ------
+    IOError
+        `s` does not refer to an existing file.
+    TypeError
+        `s` must be a string or PointSet.
+
+    """
+    if isinstance(s, PointSet):
+        return s
+    elif isinstance(s, str):
+        if not os.path.isfile(s):
+            raise IOError("file {} not found".format(s))
+        pset = PointSet()
+        pset.load(s, header)
+        return pset
+    else:
+        raise TypeError("need string or PointSet, {} found".format(type(s)))
+
+
+def add_header(path, name=None, varnames=None, out=None):
+    """Add standard GSLIB header to a file.
+
+    Parameters
+    ----------
+    path : string or PointSet object
+        File path or instance of PointSet type.
+    name : string, optional
+        Data set name. If not specified, it will write the file name.
+    varnames : list of string, optional
+        Variables names. If not specified, it will write *var*.
+    out : string, optional
+        File path. If not specified, it will write to a copy with *_nohead*
+        appended to the file name.
+
+    """
+    with open(path, 'r+') as f:
+        values = np.loadtxt(f)
+
+    if out is None:
+        fname, ext = os.path.splitext(path)
+        out = fname + '_head' + ext
+
+    with open(out, 'w+') as f:
+        if name is None:
+            name = os.path.splitext(os.path.basename(path))[0]
+        f.write(name + '\n')
+        if varnames is None:
+            nvars = values.shape[1]
+            varnames = ['var {}'.format(i) for i in xrange(nvars)]
+        else:
+            nvars = len(varnames)
+        f.write(str(nvars) + '\n')
+        for varname in varnames:
+            f.write(varname + '\n')
+        np.savetxt(f, values, fmt='%-10.6f')
+
+
+def remove_header(path, out=None):
+    """Remove standard GSLIB header from a file.
+
+    Parameters
+    ----------
+    path : string or PointSet object
+        File path or instance of PointSet type.
+    out : string, optional
+        File path. If not specified, it will write to a copy with *_nohead*
+        appended to the file name.
+
+    """
+    if has_header(path):
+        with open(path, 'r+') as f:
+            f.readline()
+            nvars = int(f.readline())
+            skip_lines(f, nvars)
+            values = np.loadtxt(f)
+
+        if out is None:
+            fname, ext = os.path.splitext(path)
+            out = fname + '_nohead' + ext
+
+        np.savetxt(out, values, fmt='%-10.6f')
+
+
+def has_header(path):
+    """Try to detect if standard GSLIB header is present.
+
+    It checks for
+        - second line value is an integer
+        - that integer is equal to the number of columns
+
+    Parameters
+    ----------
+    path : string
+        File path.
+
+    Returns
+    -------
+    boolean
+
+    Notes
+    -----
+    It will return True in a case where there is not a header but is seems so,
+    for instance
+
+    `
+    4
+    1
+    5
+    2
+    2
+    4
+    ...
+    `
+
+    """
+    checklist = list()
+    fh = open(path, 'r+')
+    fh.readline()
+    # check if the value in the 2nd line is integer
+    nvars = fh.readline()
+    try:
+        checklist.append(nvars.strip() == str(int(nvars)))
+    except ValueError:
+        return False
+
+    nvars = int(nvars)
+    skip_lines(fh, nvars)
+
+    # check if the number of variables matches with the number of columns
+    first_values = fh.readline()
+    checklist.append(len(first_values.split()) == nvars)
+
+    return all(checklist)
 
 
 def _wrap1():
