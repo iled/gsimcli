@@ -83,7 +83,7 @@ def filename_seq(file_id, n):
     Parameters
     ----------
     file_id : string
-        Inicial file name.
+        Initial file name.
     n : int
         Number of names to generate.
 

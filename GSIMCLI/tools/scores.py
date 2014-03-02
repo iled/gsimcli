@@ -225,14 +225,14 @@ def crmse_global(homog_path, orig_path, variable, md, skip_netwmissing=False,
     TODO: support list of variables
     FIXME: stick to one averaging method and/or enhance the second
     """
-    if type(homog_path) == str:
+    if isinstance(homog_path, str):
         homog_files = cost.directory_walk_v1(homog_path)
         homog_parsed = cost.files_select(parsed=homog_files, ftype='data',
                                          variable=variable, content='d')
     else:
         homog_parsed = homog_path
 
-    if type(orig_path) == str:
+    if isinstance(orig_path, str):
         orig_files = cost.directory_walk_v1(orig_path)
     else:
         orig_files = orig_path

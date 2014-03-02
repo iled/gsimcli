@@ -9,21 +9,21 @@ from utils import yes_no
 
 class ParametersFile(object):
     """Base class to construct a ParametersClass.
-    
+
     Each parameter is defined by the following pair:
         - field: the name of the parameter which will be used both as an
                  attribute of this class, and;
         - value: which is the value of that same parameter.
-        
+
     Fields are separated into lists of predetermined types: str (text), float
     (real_n), int (int_n) and bool (boolean).
-    
+
     Fields can be mandatory or optional (opt_).
-    
+
     Fields are separated from values with a given separator (field_sep). Values
     can be a single value or a list of values, which are separated with yet
     another given separator (values_sep).
-    
+
     """
 
     def __init__(self, field_sep, value_sep, par_set=str(), par_file=str(),
@@ -152,7 +152,7 @@ def _split(string, to_type, sep):
     a list of converted values.
 
     """
-    if type(string) == str:
+    if isinstance(string, str):
         items = map(to_type, string.split(sep))
     else:
         items = map(to_type, [string])
@@ -167,7 +167,7 @@ def _join(items, sep):
     with the given sep.
 
     """
-    if type(items) == list:
+    if isinstance(items, list):
         return (sep + ' ').join(map(str, items))
     else:
         return str(items)

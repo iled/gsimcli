@@ -105,7 +105,7 @@ class Station(object):
         """
         self.md = md
 
-        if type(path) == str and os.path.isfile(path):
+        if isinstance(path, str) and os.path.isfile(path):
             self.path = path
             self.network_id = os.path.basename(os.path.dirname(path))
             spec = pc.filename_parse(path)
@@ -139,7 +139,7 @@ class Station(object):
             The given file was not parsed as a `data` file.
 
         """
-        if type(path) == str and os.path.isfile(path) and content:
+        if isinstance(path, str) and os.path.isfile(path) and content:
             if content == 'd':
                 self.data = pc.datafile(self.path, self.resolution, self.md)
             elif content == 'f':
@@ -173,7 +173,7 @@ class Station(object):
         The `breakpoints` file name must end with *detected.txt*.
 
         """
-        if type(path) == str and os.path.isfile(path):
+        if isinstance(path, str) and os.path.isfile(path):
             detected_file = path
         else:
             path = os.path.dirname(self.path)
@@ -377,7 +377,7 @@ class Network(object):
         self.stations_number = 0
 
         if path:
-            if type(path) == str and os.path.isdir(path):
+            if isinstance(path, str) and os.path.isdir(path):
                 parsed = pc.directory_walk_v1(path)
                 selected = pc.files_select(parsed, ftype='data', content='d')
             else:
@@ -604,7 +604,7 @@ class Network(object):
             File path or Series containing ID's and the corresponding keys.
 
         """
-        if type(keys) == str and os.path.isfile(keys):
+        if isinstance(keys, str) and os.path.isfile(keys):
             keys = ss.read_keys
         for i, station in enumerate(self.stations):
             station.id = keys.loc[station.id]
