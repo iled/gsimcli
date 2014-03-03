@@ -194,10 +194,10 @@ def xls2costhome(xlspath, outpath=None, nd=-999.9, sheet=None, header=None,
     network = ch.Network(md=nd, network_id=network_id)
     stations = [label for label in xlstable.columns if '_clim' in label]
 
-    if keys_path:
-        network.update_ids(keys_path)
-    else:
-        keys = None
+    if isinstance(keys_path, str) and os.path.isfile(keys_path):
+        keys = read_keys(keys_path)
+        #station.id = keys.loc[station.id]
+        #self.stations_id[i] = station.id
 
     for station in stations:
         st = ch.Station(md=nd)
@@ -207,12 +207,15 @@ def xls2costhome(xlspath, outpath=None, nd=-999.9, sheet=None, header=None,
         st.status = status
         st.variable = variable
         st.resolution = resolution
-        if not keys:
-            st.id = station.split('_')[0]
+        stid = station.split('_')[0]
+        if keys_path:
+            st.id = str(keys.loc[int(stid)].values[0])
+        else:
+            st.id = stid
         st.content = content
         st.data = xlstable[station] / div
         network.add(st)
-
+        
     if outpath:
         network.save(outpath)
 
