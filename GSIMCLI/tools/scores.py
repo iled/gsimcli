@@ -13,14 +13,13 @@ Created on 21/01/2014
 @author: julio
 """
 
-import glob
-import itertools
 import os
+import shutil
 
 import numpy as np
 import pandas as pd
-import parsers.cost as cost
 import parsers.costhome as ch
+from parsers.spreadsheet import xls2costhome
 
 
 def crmse(homog, orig, skip_years=None, centered=True):
@@ -62,9 +61,11 @@ def crmse(homog, orig, skip_years=None, centered=True):
     if centered:  # FIXME: something's wrong here
         homog -= homog.mean()
         orig -= orig.mean()
-    diff = homog - orig
+#    diff = (homog - orig).std()
 
-    return diff.std()
+    diff = np.sqrt(np.power((homog - orig), 2).mean())
+
+    return diff
 
 
 def crmse_station(station, skip_outliers=True, yearly=True):
@@ -180,17 +181,20 @@ def crmse_submission(submission, over_station=True, over_network=True,
                                    name='Network CRMSE')
     if over_station:
         # station_crmses = np.zeros(submission.stations_number)
-        station_crmses = pd.DataFrame(columns=submission.networks_id)
+        station_crmses = pd.DataFrame(index=submission.stations_id,
+                                      columns=submission.networks_id)
 
-    for i, network in enumerate(submission.networks):
+    for network in submission.networks:
         if over_network:
-            network_crmses.loc[i] = crmse_network(network, skip_missing,
-                                                     skip_outlier)
+            network_crmses.loc[network.id] = crmse_network(
+                                        network, skip_missing, skip_outlier)
+
         if over_station:
             network.setup()
-            for j, station in enumerate(network.stations):
-                station_crmses.loc[i, j] = crmse_station(station,
-                                                             skip_outlier)
+            for station in network.stations:
+                station_crmses.loc[station.id, network.id] = crmse_station(
+                                                    station, skip_outlier)
+
     results = list()
     if over_network:
         results.append(network_crmses.mean())
@@ -226,6 +230,10 @@ def improvement(submission, over_station, over_network, skip_missing,
     Returns
     -------
     list of ndarray
+        Returns three lists, each with two elements:
+        - [*network CRMSE*, *station CRMSE*],
+        - [*inhomogenous network CRMSE*, *inhomogeneous stations CRMSE*],
+        - [*network improvement*, station improvement*]
 
     """
     homog_crmse = crmse_submission(submission, over_station, over_network,
@@ -236,8 +244,45 @@ def improvement(submission, over_station, over_network, skip_missing,
     inho_crmse = crmse_submission(inho_sub, over_station, over_network,
                                      skip_missing, skip_outlier)
 
-    return (homog_crmse, inho_crmse,
-            list(np.array(homog_crmse) / np.array(inho_crmse)))
+    return homog_crmse, inho_crmse, list(
+                             np.array(homog_crmse) / np.array(inho_crmse))
+
+
+def gsimcli_improvement(gsimcli_results, nodata=-999.9, network_id=None,
+                        variable='rr', yearly_sum=True, over_station=True,
+                        over_network=True, skip_missing=False,
+                        skip_outlier=True, keys=None, costhome_path=None,
+                        costhome_save=False):
+    """Calculate the improvement of a GSIMCLI process.
+
+    It is just a wrapper around `improvement` and `xls2costhome`.
+
+    TODO: support multiple networks simultaneously
+    """
+    if costhome_path is None:
+        costhome_path = os.path.join(os.path.dirname(gsimcli_results),
+                                     'costhome')
+    if not os.path.exists(costhome_path):
+        os.mkdir(costhome_path)
+
+    if network_id is None:
+        network_id = os.path.basename(os.path.dirname(costhome_path))[4:]
+
+    xls2costhome(xlspath=gsimcli_results, outpath=costhome_path, nd=nodata,
+            sheet='All stations', header=False, skip_rows=[1],
+            network_id=network_id, status='ho', variable=variable,
+            resolution='y', content='d', ftype='data', yearly_sum=yearly_sum,
+            keys_path=keys)
+
+    submission = ch.Submission(costhome_path, nodata)
+    raw_input('break')
+    results = improvement(submission, over_station, over_network, skip_missing,
+                          skip_outlier)
+
+    if not costhome_save:
+        shutil.rmtree(costhome_path)
+
+    return results
 
 
 if __name__ == '__main__':
@@ -245,7 +290,7 @@ if __name__ == '__main__':
 
     macpath = '/Users/julio/Desktop/testes/cost-home/'
     mintpath = '/home/julio/Testes/'
-    basepath = macpath
+    basepath = mintpath
 
     """ # inho syn1
     netw_path = basepath + 'benchmark/inho/precip/syn1'
@@ -286,13 +331,27 @@ if __name__ == '__main__':
     variable = 'rr'
     # """
 
-    # """ # PRODIGE main precip
-    netw_path = basepath + 'benchmark/h002/precip/sur1'
+    """ # PRODIGE main precip
+    # st 4.7 0.63 netw 3.3 1.07
+    netw_path = basepath + 'benchmark/h002/precip/sur14'
+    # """
 
-    sub = ch.Submission(netw_path, md, ['000010'])
+    #""" # GSIMCLI
+    #gsimcli_results = basepath + 'cost-home/rede000010/gsimcli_results.xls'
+    gsimcli_results = basepath + 'cost-home/500_dflt_16_allvar_vmedia/rede000009/gsimcli_results.xls'
+    network_id = '000009'
+    kis = '/home/julio/Testes/cost-home/rede000009/keys.txt'
+    # """
+
+    #netw_path = basepath + 'benchmark/h011/precip/sur1'
+    #network_id = ['000009', '000010']
+    #sub = ch.Submission(netw_path, md, network_id)  # , ['000010'])
     # print crmse_submission_(sub, over_station=True, over_network=True,
     #                          skip_missing=False, skip_outlier=True)
-    print improvement(sub, over_station=True, over_network=True,
-                         skip_missing=False, skip_outlier=True)
+#    print improvement(sub, over_station=True, over_network=True,
+#                         skip_missing=False, skip_outlier=True)
+
+    print gsimcli_improvement(gsimcli_results, md, network_id,
+                              costhome_save=True, keys=kis)
 
     print 'done'

@@ -491,7 +491,8 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
     header : boolean, default True
         True if `pset_file` has the GSLIB standard header lines.
     network_split : boolean, default True
-        Save different networks in different files.
+        Save different networks in different files. Only used if `fformat ==
+        'gslib'`.
     save_stations : boolean, default False
         Write a CSV file with the stations ID numbers and its coordinates.
     keys : string, optional
