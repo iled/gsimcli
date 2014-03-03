@@ -114,7 +114,7 @@ class Station(object):
             (self.ftype, self.status, self.variable, self.resolution,
              self.id, self.content) = spec
 
-    def load(self, path, content=None):
+    def load(self, path=None, content=None):
         """Load station data file.
 
         Parameters
@@ -147,11 +147,11 @@ class Station(object):
         elif self.ftype != 'data':
             raise ValueError('The file {} was not parsed as a data file.'.
                              format(self.path))
-# FIXME: check if this is a problem; path optional?
-#         elif self.content == 'd':
-#             self.data = pc.datafile(self.path, self.resolution, self.md)
-#         elif self.content == 'f':
-#             self.quality = pc.qualityfile(self.path, self.resolution)
+        # FIXME: check if this is a problem; path optional?
+        elif self.content == 'd' and os.path.isfile(self.path):
+            self.data = pc.datafile(self.path, self.resolution, self.md)
+        elif self.content == 'f' and os.path.isfile(self.path):
+            self.quality = pc.qualityfile(self.path, self.resolution)
 
     def load_outliers(self, path=None):
         """List the dates with detected outliers.
@@ -605,7 +605,7 @@ class Network(object):
 
         """
         if isinstance(keys, str) and os.path.isfile(keys):
-            keys = ss.read_keys
+            keys = ss.read_keys(keys)
         for i, station in enumerate(self.stations):
             station.id = keys.loc[station.id]
             self.stations_id[i] = station.id
@@ -633,6 +633,9 @@ class Submission(object):
         Network ID numbers contained in the submission.
     stations_number : int
         Total number of station contained in the submission.
+    stations_id : list of int
+        Unique station ID numbers contained in the submission. ID's relative to
+        stations in different networks but with the same number count as one.
 
     """
     def __init__(self, path, md, networks_id=None):
@@ -664,11 +667,15 @@ class Submission(object):
         self.networks = list()
         self.networks_id = list()
         self.stations_number = 0
+        self.stations_id = list()
 
         for network in grouped:
             self.networks_id.append(network[0][1][0])
             self.networks.append(Network(network, md))
             self.stations_number += self.networks[-1].stations_number
+            self.stations_id.extend(self.networks[-1].stations_id)
+            
+        self.stations_id = list(np.unique(self.stations_id))
 
     def save(self, path):
         """Write all networks included in the submission, according to the

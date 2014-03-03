@@ -133,7 +133,7 @@ def filename_parse(filepath, station_n=8, network_n=3):
                     # specified by the user, default is station_n = 8)
         ssssssss = bn[5:5 + station_n]
         if len(ssssssss) != len(bn) - 6:
-            raise NameError('Invalid station number.')
+            raise NameError('Invalid station number {}.'.format(ssssssss))
 
         # c: Content
         # 'd': #data, meteorological variables
