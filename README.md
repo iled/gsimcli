@@ -20,8 +20,12 @@ It is planned to develop an implementation using Direct Sequential Simulation
 with **local distributions**.
 
 This research project is hosted at [ISEGI-NOVA](http://www.isegi.unl.pt)
-(Lisbon, Portugal) and it is funded by [FCT](http://www.fct.pt). See [approval
-and funding notice](http://www.isegi.unl.pt/documentos/P_GSIMCLI_EN.pdf).
+(Lisbon, Portugal) and it is funded by the "Fundação para a Ciência e
+Tecnologia" ([FCT](http://www.fct.pt)), Portugal, through the research project
+PTDC/GEO-MET/4026/2012. See [approval and funding notice]
+(http://www.isegi.unl.pt/documentos/P_GSIMCLI_EN.pdf).
+
+![ISEGI-NOVA](/images/logo_ISEGI.png) ![FCT](/images/logo_FCT.png)
 
 ## Documentation
 
