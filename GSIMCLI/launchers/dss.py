@@ -24,6 +24,7 @@ import sys
 import multiprocessing as mp
 import parsers.dss as pdss
 import subprocess as sp
+import tools.utils as ut
 
 
 class DssEnvironment(object):
@@ -130,8 +131,10 @@ class DssEnvironment(object):
 
         # update path parameters and seed:
         if self.simnum > 1:
-            outpath = (ntpath.splitext(self.output)[0] + str(self.simnum) +
-                       ntpath.splitext(self.output)[1])
+            # TODO: use utils.filename_indexing ?
+            outpath = ut.filename_indexing(self.output, self.simnum)
+            # outpath = (ntpath.splitext(self.output)[0] + str(self.simnum) +
+            #           '_' + ntpath.splitext(self.output)[1])
         else:
             outpath = self.output
         # remove the first directory in the the output tree
