@@ -155,7 +155,7 @@ def gsimcli(stations_file, stations_header, no_data, stations_order,
         if detect_save:
             candfile = os.path.join(outfolder, candname)
             candidate.save(psetfile=candfile, header=True)
-        if skip_dss:
+        if not skip_dss:
             dsspar.update(['datapath', 'output'], [reffile_nt, outfile_nt])
             dsspar.save_old(parfile)  # TODO: old
             oldpar = pdss.DssParam()
@@ -214,8 +214,7 @@ def gsimcli(stations_file, stations_header, no_data, stations_order,
     homogenised_file = os.path.join(outfolder, basename +
                                     '_homogenised_data.csv')
     hmg.save_output(pset_file=stations_pset, outfile=homogenised_file,
-                    fformat='gsimcli', header=True, station_split=True,
-                    save_stations=True)
+                    fformat='gsimcli', header=True, save_stations=True)
 
     return homogenised_file, dnumber_list, fnumber_list
 
@@ -281,7 +280,9 @@ def run_par(par_path):
                       detect_flag, gscpar.detect_save, gscpar.dss_exe, dsspar,
                       gscpar.results, gscpar.sim_purge, skew)
 
-    results.insert(1, stations_order)  # FIXME: workaround for merge dependence
+    # FIXME: workaround for merge dependence
+    results = list(results)
+    results.insert(1, stations_order)
 
     return results
 
@@ -451,6 +452,6 @@ if __name__ == '__main__':
                 os.path.join(base, 'rede000010'),
                 os.path.join(base, 'rede000020')]
     #"""
-    networks = [os.path.join(base, 'rede000010')]
+    networks = [os.path.join(base, 'rede000009')]
     batch_networks(par, networks, decades=True)
     print 'done'
