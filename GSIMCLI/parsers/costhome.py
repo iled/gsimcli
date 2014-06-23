@@ -141,9 +141,10 @@ class Station(object):
         """
         if isinstance(path, str) and os.path.isfile(path) and content:
             if content == 'd':
-                self.data = pc.datafile(self.path, self.resolution, self.md)
+                self.data = pc.datafile(path, self.resolution, self.md)
             elif content == 'f':
-                self.quality = pc.qualityfile(self.path, self.resolution)
+                self.quality = pc.qualityfile(path, self.resolution)
+            self.path = path
         elif self.ftype != 'data':
             raise ValueError('The file {} was not parsed as a data file.'.
                              format(self.path))
@@ -194,7 +195,8 @@ class Station(object):
         Parameters
         ----------
         path : string, optional
-            File path. If not present, it will look for a folder named *orig*.
+            Path to the original station file. If not present, it will look for
+            a folder named *orig*.
 
         Returns
         -------
@@ -224,7 +226,8 @@ class Station(object):
         Parameters
         ----------
         path : string, optional
-            File path. If not present, it will look for a folder named *inho*.
+            Path to the inhomogenous station file. If not present, it will look
+            for a folder named *inho*.
 
         Returns
         -------
@@ -271,10 +274,9 @@ class Station(object):
         elif func == 'sum':
             return self.data.sum(axis=1)
 
-    def setup(self, outliers=False, inho=False):
+    def setup(self, outliers=False, inho=False, orig_path=None,
+              inho_path=None):
         """Load station homogenised data, original and outliers.
-
-        No option to load from a non default path.
 
         Parameters
         ----------
@@ -282,6 +284,10 @@ class Station(object):
             Load corresponding outliers.
         inho : boolean, default False
             Load corresponding inhomogenous data.
+        orig_path : string, optional
+            Path to the original station file.
+        inho_path : string, optional
+            Path to the inhomogenous station file.
 
         Returns
         -------
@@ -298,14 +304,14 @@ class Station(object):
         if not hasattr(self, 'data'):
             self.load()
         if not hasattr(self, 'orig'):
-            self.match_orig()
+            self.match_orig(orig_path)
             self.orig.load()
         if outliers and not hasattr(self, 'outliers'):
             if 'orig' not in self.path.lower():
                 warnings.warn('loading outliers from non ORIG submission')
             self.load_outliers()
         if inho and not hasattr(self, 'inho'):
-            self.match_inho()
+            self.match_inho(inho_path)
 
     def save(self, path):
         """Write station data in the COST-HOME format (tab separated values,
@@ -459,7 +465,7 @@ class Network(object):
 
         return result
 
-    def skip_years(self, missing=False, outlier=True):
+    def skip_years(self, missing=False, outlier=True, orig_path=None):
         """List of the years in which any station in the network has missing
         data and/or has an outlier.
 
@@ -472,6 +478,8 @@ class Network(object):
             List years where any station in the network has missing data.
         outlier : boolean, default True
             List years where any station in the network has an outlier.
+        orig_path : string, optional
+            Path to the original station file.
 
         Returns
         -------
@@ -482,7 +490,7 @@ class Network(object):
         missing_list = list()
         outlier_list = list()
         for station in self.stations:
-            station.setup()
+            station.setup(orig_path=orig_path)
             if missing:
                 station.orig.load()
                 orig = station.orig.data
@@ -674,8 +682,13 @@ class Submission(object):
             self.networks.append(Network(network, md))
             self.stations_number += self.networks[-1].stations_number
             self.stations_id.extend(self.networks[-1].stations_id)
-            
+
         self.stations_id = list(np.unique(self.stations_id))
+
+    def load(self):
+        """Load all networks included in the submission. """
+        for network in self.networks:
+            network.load_stations()
 
     def save(self, path):
         """Write all networks included in the submission, according to the
