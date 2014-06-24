@@ -155,19 +155,19 @@
             <enum>QFrame::Raised</enum>
            </property>
            <property name="currentIndex">
-            <number>2</number>
+            <number>0</number>
            </property>
            <widget class="QWidget" name="DataLoad">
             <widget class="QWidget" name="layoutWidget">
              <property name="geometry">
               <rect>
-               <x>10</x>
-               <y>10</y>
-               <width>349</width>
-               <height>261</height>
+               <x>11</x>
+               <y>11</y>
+               <width>261</width>
+               <height>331</height>
               </rect>
              </property>
-             <layout class="QVBoxLayout" name="verticalLayout_8">
+             <layout class="QVBoxLayout" name="verticalLayout_3">
               <property name="spacing">
                <number>15</number>
               </property>
@@ -199,7 +199,7 @@
               <item>
                <layout class="QVBoxLayout" name="verticalLayout_6">
                 <item>
-                 <widget class="QLabel" name="label_28">
+                 <widget class="QLabel" name="DL_labelDataPath">
                   <property name="autoFillBackground">
                    <bool>false</bool>
                   </property>
@@ -225,63 +225,100 @@
                </layout>
               </item>
               <item>
-               <layout class="QVBoxLayout" name="verticalLayout_3">
+               <widget class="QCheckBox" name="DL_checkHeader">
+                <property name="text">
+                 <string>Header</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+                <property name="tristate">
+                 <bool>false</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_16">
+                <property name="spacing">
+                 <number>30</number>
+                </property>
                 <item>
-                 <widget class="QCheckBox" name="DL_checkHeader">
-                  <property name="text">
-                   <string>Header</string>
-                  </property>
-                  <property name="checked">
+                 <widget class="QLabel" name="label_2">
+                  <property name="enabled">
                    <bool>true</bool>
                   </property>
-                  <property name="tristate">
-                   <bool>false</bool>
+                  <property name="text">
+                   <string>Name</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <layout class="QFormLayout" name="formLayout">
-                  <item row="0" column="0">
-                   <widget class="QLabel" name="label_2">
-                    <property name="enabled">
-                     <bool>false</bool>
-                    </property>
-                    <property name="text">
-                     <string>Name</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="0" column="1">
-                   <widget class="QLineEdit" name="DL_dataName">
-                    <property name="enabled">
-                     <bool>false</bool>
-                    </property>
-                    <property name="placeholderText">
-                     <string>Data set description</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="1" column="0">
-                   <widget class="QLabel" name="label_3">
-                    <property name="enabled">
-                     <bool>false</bool>
-                    </property>
-                    <property name="text">
-                     <string>Variables</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="1" column="1">
-                   <widget class="QLineEdit" name="DL_varNames">
-                    <property name="enabled">
-                     <bool>false</bool>
-                    </property>
-                    <property name="text">
-                     <string>x, y, time, station, clim</string>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
+                 <widget class="QLineEdit" name="DL_dataName">
+                  <property name="enabled">
+                   <bool>true</bool>
+                  </property>
+                  <property name="placeholderText">
+                   <string>Data set description</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_18">
+                <property name="spacing">
+                 <number>15</number>
+                </property>
+                <item>
+                 <widget class="QLabel" name="label_3">
+                  <property name="enabled">
+                   <bool>true</bool>
+                  </property>
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+                    <horstretch>1</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>Variables</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QListWidget" name="DL_listVarNames">
+                  <property name="maximumSize">
+                   <size>
+                    <width>81</width>
+                    <height>91</height>
+                   </size>
+                  </property>
+                  <property name="dragEnabled">
+                   <bool>true</bool>
+                  </property>
+                  <property name="dragDropMode">
+                   <enum>QAbstractItemView::InternalMove</enum>
+                  </property>
+                  <property name="alternatingRowColors">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>90</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
                 </item>
                </layout>
               </item>
@@ -364,7 +401,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLabel" name="label_55">
+                 <widget class="QLabel" name="DB_labelBatchNetworks">
                   <property name="enabled">
                    <bool>false</bool>
                   </property>
@@ -374,54 +411,28 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QScrollArea" name="scrollArea">
-                  <property name="enabled">
-                   <bool>false</bool>
-                  </property>
-                  <property name="widgetResizable">
+                 <widget class="QListWidget" name="DB_listNetworksPaths">
+                  <property name="dragEnabled">
                    <bool>true</bool>
                   </property>
-                  <widget class="QWidget" name="scrollAreaWidgetContents">
-                   <property name="geometry">
-                    <rect>
-                     <x>0</x>
-                     <y>0</y>
-                     <width>355</width>
-                     <height>139</height>
-                    </rect>
-                   </property>
-                   <widget class="QListWidget" name="DB_networksPaths">
-                    <property name="geometry">
-                     <rect>
-                      <x>0</x>
-                      <y>0</y>
-                      <width>361</width>
-                      <height>141</height>
-                     </rect>
-                    </property>
-                    <property name="dragEnabled">
-                     <bool>true</bool>
-                    </property>
-                    <property name="dragDropMode">
-                     <enum>QAbstractItemView::InternalMove</enum>
-                    </property>
-                    <property name="alternatingRowColors">
-                     <bool>true</bool>
-                    </property>
-                    <property name="selectionMode">
-                     <enum>QAbstractItemView::ExtendedSelection</enum>
-                    </property>
-                    <property name="sortingEnabled">
-                     <bool>false</bool>
-                    </property>
-                   </widget>
-                  </widget>
+                  <property name="dragDropMode">
+                   <enum>QAbstractItemView::InternalMove</enum>
+                  </property>
+                  <property name="alternatingRowColors">
+                   <bool>true</bool>
+                  </property>
+                  <property name="selectionMode">
+                   <enum>QAbstractItemView::ExtendedSelection</enum>
+                  </property>
+                  <property name="sortingEnabled">
+                   <bool>false</bool>
+                  </property>
                  </widget>
                 </item>
                 <item>
                  <layout class="QHBoxLayout" name="horizontalLayout_3">
                   <item>
-                   <widget class="QPushButton" name="DB_networksButton">
+                   <widget class="QPushButton" name="DB_buttonAddNetworks">
                     <property name="enabled">
                      <bool>false</bool>
                     </property>
@@ -431,7 +442,7 @@
                    </widget>
                   </item>
                   <item>
-                   <widget class="QPushButton" name="DB_removeButton">
+                   <widget class="QPushButton" name="DB_buttonRemoveNetworks">
                     <property name="enabled">
                      <bool>false</bool>
                     </property>
@@ -501,7 +512,7 @@
               <rect>
                <x>10</x>
                <y>10</y>
-               <width>341</width>
+               <width>376</width>
                <height>332</height>
               </rect>
              </property>
@@ -584,7 +595,7 @@
                    <widget class="QLineEdit" name="SO_dssexePath"/>
                   </item>
                   <item>
-                   <widget class="QPushButton" name="pushButton_4">
+                   <widget class="QPushButton" name="SO_dssexeButton">
                     <property name="text">
                      <string>Browse...</string>
                     </property>
@@ -682,7 +693,7 @@
               <item>
                <widget class="QCheckBox" name="SO_checkSkipDSS">
                 <property name="text">
-                 <string>Skip simulation and use simulated maps in place</string>
+                 <string>Skip simulation and use simulated maps already in place</string>
                 </property>
                </widget>
               </item>
@@ -1387,7 +1398,7 @@
                    <widget class="QLineEdit" name="HR_resultsPath"/>
                   </item>
                   <item>
-                   <widget class="QPushButton" name="pushButton_7">
+                   <widget class="QPushButton" name="HR_resultsButton">
                     <property name="text">
                      <string>&amp;Browse...</string>
                     </property>
@@ -1520,136 +1531,7 @@
   </action>
  </widget>
  <resources/>
- <connections>
-  <connection>
-   <sender>DL_checkHeader</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>label_2</receiver>
-   <slot>setDisabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>593</x>
-     <y>188</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>319</x>
-     <y>220</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>DL_checkHeader</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>DL_dataName</receiver>
-   <slot>setDisabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>621</x>
-     <y>188</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>625</x>
-     <y>220</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>DL_checkHeader</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>DL_varNames</receiver>
-   <slot>setDisabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>621</x>
-     <y>188</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>625</x>
-     <y>251</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>DL_checkHeader</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>label_3</receiver>
-   <slot>setDisabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>607</x>
-     <y>188</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>337</x>
-     <y>251</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>DB_batchNetworks</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>label_55</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>369</x>
-     <y>106</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>373</x>
-     <y>131</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>DB_batchNetworks</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>DB_networksButton</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>317</x>
-     <y>107</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>320</x>
-     <y>314</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>DB_batchNetworks</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>scrollArea</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>346</x>
-     <y>105</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>417</x>
-     <y>185</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>DB_batchNetworks</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>DB_removeButton</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>295</x>
-     <y>106</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>534</x>
-     <y>307</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
  <slots>
   <slot>setStackedPage()</slot>
  </slots>
