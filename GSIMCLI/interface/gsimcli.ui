@@ -155,7 +155,7 @@
             <enum>QFrame::Raised</enum>
            </property>
            <property name="currentIndex">
-            <number>1</number>
+            <number>2</number>
            </property>
            <widget class="QWidget" name="DataLoad">
             <widget class="QWidget" name="layoutWidget">
@@ -316,7 +316,7 @@
             </widget>
            </widget>
            <widget class="QWidget" name="DataBatch">
-            <widget class="QWidget" name="">
+            <widget class="QWidget" name="layoutWidget">
              <property name="geometry">
               <rect>
                <x>10</x>
@@ -494,12 +494,6 @@
               </item>
              </layout>
             </widget>
-            <zorder>layoutWidget_2</zorder>
-            <zorder>layoutWidget_3</zorder>
-            <zorder>scrollArea</zorder>
-            <zorder>DB_networksPaths</zorder>
-            <zorder>DB_removeButton</zorder>
-            <zorder>label_30</zorder>
            </widget>
            <widget class="QWidget" name="SimulationOptions">
             <widget class="QWidget" name="layoutWidget">
@@ -508,7 +502,7 @@
                <x>10</x>
                <y>10</y>
                <width>341</width>
-               <height>296</height>
+               <height>301</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_11">
@@ -544,6 +538,9 @@
                <layout class="QVBoxLayout" name="verticalLayout_9">
                 <item>
                  <widget class="QLabel" name="label_9">
+                  <property name="enabled">
+                   <bool>false</bool>
+                  </property>
                   <property name="text">
                    <string>Parameters file</string>
                   </property>
@@ -552,10 +549,17 @@
                 <item>
                  <layout class="QHBoxLayout" name="horizontalLayout_5">
                   <item>
-                   <widget class="QLineEdit" name="SO_dssparPath"/>
+                   <widget class="QLineEdit" name="SO_dssparPath">
+                    <property name="enabled">
+                     <bool>false</bool>
+                    </property>
+                   </widget>
                   </item>
                   <item>
                    <widget class="QPushButton" name="pushButton_3">
+                    <property name="enabled">
+                     <bool>false</bool>
+                    </property>
                     <property name="text">
                      <string>Browse...</string>
                     </property>
@@ -868,7 +872,7 @@
               <rect>
                <x>10</x>
                <y>10</y>
-               <width>181</width>
+               <width>208</width>
                <height>450</height>
               </rect>
              </property>
@@ -918,7 +922,11 @@
                   </widget>
                  </item>
                  <item row="0" column="1">
-                  <widget class="QSpinBox" name="SG_xxNodes"/>
+                  <widget class="QSpinBox" name="SG_xxNodes">
+                   <property name="maximum">
+                    <number>1000000000</number>
+                   </property>
+                  </widget>
                  </item>
                  <item row="1" column="0">
                   <widget class="QLabel" name="label_20">
@@ -928,7 +936,11 @@
                   </widget>
                  </item>
                  <item row="1" column="1">
-                  <widget class="QSpinBox" name="SG_yyNodes"/>
+                  <widget class="QSpinBox" name="SG_yyNodes">
+                   <property name="maximum">
+                    <number>1000000000</number>
+                   </property>
+                  </widget>
                  </item>
                  <item row="2" column="0">
                   <widget class="QLabel" name="label_21">
@@ -938,7 +950,11 @@
                   </widget>
                  </item>
                  <item row="2" column="1">
-                  <widget class="QSpinBox" name="SG_zzNodes"/>
+                  <widget class="QSpinBox" name="SG_zzNodes">
+                   <property name="maximum">
+                    <number>1000000000</number>
+                   </property>
+                  </widget>
                  </item>
                 </layout>
                </widget>
@@ -960,7 +976,11 @@
                   </widget>
                  </item>
                  <item row="0" column="1">
-                  <widget class="QDoubleSpinBox" name="SG_xxMin"/>
+                  <widget class="QDoubleSpinBox" name="SG_xxMin">
+                   <property name="maximum">
+                    <double>1000000000.000000000000000</double>
+                   </property>
+                  </widget>
                  </item>
                  <item row="1" column="0">
                   <widget class="QLabel" name="label_23">
@@ -970,7 +990,11 @@
                   </widget>
                  </item>
                  <item row="1" column="1">
-                  <widget class="QDoubleSpinBox" name="SG_yyMin"/>
+                  <widget class="QDoubleSpinBox" name="SG_yyMin">
+                   <property name="maximum">
+                    <double>1000000000.000000000000000</double>
+                   </property>
+                  </widget>
                  </item>
                  <item row="2" column="0">
                   <widget class="QLabel" name="label_24">
@@ -980,7 +1004,11 @@
                   </widget>
                  </item>
                  <item row="2" column="1">
-                  <widget class="QDoubleSpinBox" name="SG_zzMin"/>
+                  <widget class="QDoubleSpinBox" name="SG_zzMin">
+                   <property name="maximum">
+                    <double>1000000000.000000000000000</double>
+                   </property>
+                  </widget>
                  </item>
                 </layout>
                </widget>
@@ -1002,7 +1030,11 @@
                   </widget>
                  </item>
                  <item row="0" column="1">
-                  <widget class="QSpinBox" name="SG_xxSpacing"/>
+                  <widget class="QSpinBox" name="SG_xxSpacing">
+                   <property name="maximum">
+                    <number>1000000000</number>
+                   </property>
+                  </widget>
                  </item>
                  <item row="1" column="0">
                   <widget class="QLabel" name="label_26">
@@ -1012,7 +1044,11 @@
                   </widget>
                  </item>
                  <item row="1" column="1">
-                  <widget class="QSpinBox" name="SG_yySpacing"/>
+                  <widget class="QSpinBox" name="SG_yySpacing">
+                   <property name="maximum">
+                    <number>1000000000</number>
+                   </property>
+                  </widget>
                  </item>
                  <item row="2" column="0">
                   <widget class="QLabel" name="label_27">
@@ -1022,7 +1058,11 @@
                   </widget>
                  </item>
                  <item row="2" column="1">
-                  <widget class="QSpinBox" name="SG_zzSpacing"/>
+                  <widget class="QSpinBox" name="SG_zzSpacing">
+                   <property name="maximum">
+                    <number>1000000000</number>
+                   </property>
+                  </widget>
                  </item>
                 </layout>
                </widget>

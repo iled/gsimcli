@@ -7,6 +7,7 @@ Created on 16/06/2014
 
 from PySide import QtCore, QtGui  # , QtUiTools
 import os
+from tempfile import NamedTemporaryFile
 
 from interface.pyside_dynamic import loadUi
 from launchers import method_classic
@@ -17,10 +18,13 @@ class MyMainWindow(QtGui.QMainWindow):
     def __init__(self, parent=None):
         # load ui file
         QtGui.QMainWindow.__init__(self, parent)
-        loadUi('/home/julio/qt/gsimcli.ui', self)
+        loadUi('gsimcli.ui', self)
         # QtUiTools.QUiLoader  # try this
+
         # set params
         self.params = GsimcliParam()
+        params = NamedTemporaryFile()
+        self.params_path = params.name
 
         # change pages
         self.treeWidget.expandAll()
@@ -31,7 +35,7 @@ class MyMainWindow(QtGui.QMainWindow):
         self.DB_batchNetworks.toggled.connect(self.enable_batch_networks)
 
         # combo boxes
-        self.HD_stOrder.currentIndexChanged.connect(self.enable_user_order)
+        self.HD_stOrder.currentIndexChanged.connect(self.change_station_order)
         self.HD_method.currentIndexChanged.connect(self.enable_skewness)
 
         # buttons
@@ -46,6 +50,8 @@ class MyMainWindow(QtGui.QMainWindow):
         self.SV_labelBatchDecades.setVisible(False)
 
         # menu
+        self.actionOpen.triggered.connect(self.open_params)
+        self.actionSave.triggered.connect(self.save_params)
         self.actionGSIMCLI.triggered.connect(self.run_gsimcli)
         self.actionClose.triggered.connect(
                                    QtCore.QCoreApplication.instance().quit)
@@ -79,7 +85,7 @@ class MyMainWindow(QtGui.QMainWindow):
         self.DB_variogLabel.setEnabled(enable)
         self.DB_variogPath.setEnabled(enable)
         self.DB_variogButton.setEnabled(enable)
-        
+
     def enable_batch_networks(self, toggle):
         tree_item = self.treeWidget.findItems("Grid", QtCore.Qt.MatchRecursive,
                                               QtCore.Qt.MatchExactly)[0]
@@ -100,15 +106,21 @@ class MyMainWindow(QtGui.QMainWindow):
         self.enable_decades_group(toggle and not
                                   self.DB_batchNetworks.isChecked())
 
-    def enable_user_order(self, index):
-        if self.HD_stOrder.currentText() == "User":
-            enable = True
+    def change_station_order(self, index):
+        st_order = self.HD_stOrder.currentText()
+        if st_order == "User":
+            enable_user = True
+            disable_checks = True
+        elif st_order == "Random":
+            enable_user = False
+            disable_checks = True
         else:
-            enable = False
-        self.HD_label_userOrder.setEnabled(enable)
-        self.HD_userOrder.setEnabled(enable)
-        self.HD_checkAscending.setDisabled(enable)
-        self.HD_checkMDLast.setDisabled(enable)
+            enable_user = False
+            disable_checks = False
+        self.HD_label_userOrder.setEnabled(enable_user)
+        self.HD_userOrder.setEnabled(enable_user)
+        self.HD_checkAscending.setDisabled(disable_checks)
+        self.HD_checkMDLast.setDisabled(disable_checks)
 
     def enable_skewness(self, index):
         if self.HD_method.currentText() == "Skewness":
@@ -152,6 +164,75 @@ class MyMainWindow(QtGui.QMainWindow):
         if filepath[0]:
             self.DB_variogPath.setText(filepath[0])
 
+    def load_settings(self):
+        # Data / Load
+        self.DL_dataPath.setText(self.params.data)
+        self.DL_noData.setValue(self.params.no_data)
+        self.DL_checkHeader.setChecked(self.params.data_header)
+        try:
+            self.DL_dataName.setText(self.params.name)
+            self.DL_varNames.setText(self.params.variables)
+        except(AttributeError):
+            # ignore if attributes are not present
+            pass
+        
+        # Simulation / Options
+        # self.SO_dssparPath.setText(self.params.dss_par)
+        self.SO_dssexePath.setText(self.params.dss_exe)
+        self.SO_numberSims.setValue(self.params.number_simulations)
+        self.SO_krigType.setCurrentIndex(self.SO_krigType.findText(
+                       self.params.krig_type[0], QtCore.Qt.MatchStartsWith))
+        self.SO_maxSearchNodes.setValue(self.params.max_search_nodes)
+
+        # Simulation / Grid
+        self.SG_xxNodes.setValue(self.params.XX_nodes_number)
+        self.SG_yyNodes.setValue(self.params.YY_nodes_number)
+        self.SG_zzNodes.setValue(self.params.ZZ_nodes_number)
+        self.SG_xxMin.setValue(self.params.XX_minimum)
+        self.SG_yyMin.setValue(self.params.YY_minimum)
+        self.SG_zzMin.setValue(self.params.ZZ_minimum)
+        self.SG_xxSpacing.setValue(self.params.XX_spacing)
+        self.SG_yySpacing.setValue(self.params.YY_spacing)
+        self.SG_zzSpacing.setValue(self.params.ZZ_spacing)
+
+        # Simulation / Variogram
+        try:
+            self.SV_varModel.setCurrentIndex(self.SV_varModel.findText(
+                                   self.params.model, QtCore.Qt.MatchStartsWith))
+            self.SV_nugget.setValue(self.params.nugget)
+            self.SV_sill.setValue(self.params.sill)
+            self.SV_ranges.setText(self.params.ranges)
+            self.SV_angles.setText(self.params.angles)
+        except(AttributeError):
+            self.DB_batchDecades.setChecked(True)
+        
+        # Homogenisation / Detection
+        st_order = self.params.st_order
+        if st_order == "sorted":
+            st_order = "id order"
+        self.HD_stOrder.setCurrentIndex(self.HD_stOrder.findText(st_order,
+                                                     QtCore.Qt.MatchContains))
+        if st_order == "user":
+            self.HD_userOrder.setText(self.params.st_user)
+        else:
+            self.HD_checkAscending.setChecked(self.params.ascending)
+            self.HD_checkMDLast.setChecked(self.params.md_last)
+        self.HD_method.setCurrentIndex(self.HD_method.findText(
+                           self.params.detect_method, QtCore.Qt.MatchContains))
+        if self.params.detect_method == "skewness":
+            self.HD_skewness.setValue(self.params.skewness)
+        self.HD_prob.setValue(self.params.detect_prob)
+
+        # Homogenisation / Results
+        self.HR_checkSaveInter.setChecked(self.params.detect_save)
+        self.HR_checkPurgeSims.setChecked(self.params.sim_purge)
+        self.HR_resultsPath.setText(self.params.results)
+        
+        self.actionGSIMCLI.setEnabled(True)
+
+        # TODO: set status or something to show it was loaded
+        print "loaded from: ", self.params.path
+
     def save_settings(self):
         # Data / Load
         self.params.data = self.DL_dataPath.text()
@@ -186,6 +267,9 @@ class MyMainWindow(QtGui.QMainWindow):
         # Simulation / Variogram
         self.params.model = self.SV_varModel.currentText()[0]
         self.params.nugget = self.SV_nugget.value()
+        self.params.sill = self.SV_sill.value()
+        self.params.ranges = self.SV_ranges.text()
+        self.params.angles = self.SV_angles.text()
 
         # Homogenisation / Detection
         st_order = self.HD_stOrder.currentText().lower()
@@ -207,14 +291,16 @@ class MyMainWindow(QtGui.QMainWindow):
         self.params.sim_purge = self.HR_checkPurgeSims.isChecked()
         self.params.results = self.HR_resultsPath.text()
 
-        self.params.save("/home/julio/teste.txt")
+        self.params.save(self.params_path)
         self.actionGSIMCLI.setEnabled(True)
-        print "saved"
+
+        # TODO: set status or something to show it was saved
+        print "saved at: ", self.params.path
 
     def run_gsimcli(self):
         batch_networks = self.DB_batchNetworks.isChecked()
         batch_decades = self.DB_batchDecades.isChecked()
-        
+
         if batch_networks:
             networks = list()
             for item_row in xrange(self.DB_networksPaths.count()):
@@ -226,7 +312,24 @@ class MyMainWindow(QtGui.QMainWindow):
                                         self.DB_variogPath.text())
         else:
             method_classic.run_par(self.params.path)
-        
+
+    def save_params(self):
+        filepath = QtGui.QFileDialog.getSaveFileName(self,
+                                     caption="Save parameters file",
+                                     dir=os.path.expanduser('~/'))
+        if filepath[0]:
+            self.params_path = filepath[0]
+            self.save_settings()
+
+    def open_params(self):
+        filepath = QtGui.QFileDialog.getOpenFileName(self,
+                                     caption="Open parameters file",
+                                     dir=os.path.expanduser('~/'))
+        self.params.load(filepath[0])
+        self.params_path = filepath[0]
+        self.load_settings()
+
+        print self.params_path
 
 # def loadUiWidget(uifilename, parent=None):
 #     loader = QtUiTools.QUiLoader()
