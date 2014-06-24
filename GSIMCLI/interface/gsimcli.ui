@@ -502,7 +502,7 @@
                <x>10</x>
                <y>10</y>
                <width>341</width>
-               <height>301</height>
+               <height>332</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_11">
@@ -678,6 +678,13 @@
                  </widget>
                 </item>
                </layout>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="SO_checkSkipDSS">
+                <property name="text">
+                 <string>Skip simulation and use simulated maps in place</string>
+                </property>
+               </widget>
               </item>
              </layout>
             </widget>

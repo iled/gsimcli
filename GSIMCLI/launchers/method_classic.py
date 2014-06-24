@@ -219,13 +219,16 @@ def gsimcli(stations_file, stations_header, no_data, stations_order,
     return homogenised_file, dnumber_list, fnumber_list
 
 
-def run_par(par_path):
+def run_par(par_path, skip_dss=False):
     """Run GSIMCLI using the settings included in a parameters file.
 
     Parameters
     ----------
     par_path : string or GsimcliParam object
         File path or GsimcliParam instance with GSIMCLI parameters.
+    skip_dss : boolean, default False
+        Do not run DSS. Choose if the simulated maps are already in place and
+        only the homogenisation process is needed.
 
     Returns
     -------
@@ -278,7 +281,8 @@ def run_par(par_path):
     results = gsimcli(stations_pset, gscpar.data_header, gscpar.no_data,
                       stations_order, gscpar.detect_method, gscpar.detect_prob,
                       detect_flag, gscpar.detect_save, gscpar.dss_exe, dsspar,
-                      gscpar.results, gscpar.sim_purge, skew)
+                      gscpar.results, gscpar.sim_purge, skew,
+                      skip_dss=skip_dss)
 
     # FIXME: workaround for merge dependence
     results = list(results)
@@ -287,7 +291,7 @@ def run_par(par_path):
     return results
 
 
-def batch_decade(par_path, variograms_file):
+def batch_decade(par_path, variograms_file, skip_dss=False):
     """Batch process to run GSIMCLI with data files divided in decades.
 
     Parameters
@@ -296,6 +300,9 @@ def batch_decade(par_path, variograms_file):
         File path or GsimcliParam instance with GSIMCLI parameters.
     variograms_file : string
         Variograms file path.
+    skip_dss : boolean, default False
+        Do not run DSS. Choose if the simulated maps are already in place and
+        only the homogenisation process is needed.
 
     See Also
     --------
@@ -365,7 +372,7 @@ def batch_decade(par_path, variograms_file):
                   first_year, results_folder]
         gscpar.update(fields, values, True, ut.filename_indexing
                       (network_parpath, decade[1].ix['decade']))
-        results.append(run_par(gscpar))
+        results.append(run_par(gscpar, skip_dss))
 
     outpath = os.path.dirname(variograms_file)
     gsimclipath = os.path.join(outpath, 'gsimcli_results.xls')
@@ -377,7 +384,7 @@ def batch_decade(par_path, variograms_file):
                     yearly_sum=True)
 
 
-def batch_networks(par_path, networks, decades=False):
+def batch_networks(par_path, networks, decades=False, skip_dss=False):
     """Batch process to run GSIMCLI along different networks.
 
     Parameters
@@ -392,6 +399,9 @@ def batch_networks(par_path, networks, decades=False):
         Run GSIMCLI by decades separately. Each network directory must have a
         variogram file within it, and this file name must be of the type
         *\*variog\*.csv*.
+    skip_dss : boolean, default False
+        Do not run DSS. Choose if the simulated maps are already in place and
+        only the homogenisation process is needed.
 
     See Also
     --------
@@ -433,9 +443,9 @@ def batch_networks(par_path, networks, decades=False):
         if decades:
             variogram_file = os.path.join(network,
                                           glob.glob('*variog*.csv')[0])
-            batch_decade(gscpar, variogram_file)
+            batch_decade(gscpar, variogram_file, skip_dss)
         else:
-            run_par(par_path)
+            run_par(par_path, skip_dss)
 
 
 if __name__ == '__main__':

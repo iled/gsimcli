@@ -33,6 +33,7 @@ class MyMainWindow(QtGui.QMainWindow):
         # check boxes
         self.DB_batchDecades.toggled.connect(self.enable_batch_decades)
         self.DB_batchNetworks.toggled.connect(self.enable_batch_networks)
+        self.SO_checkSkipDSS.toggled.connect(self.enable_skipp_dss)
 
         # combo boxes
         self.HD_stOrder.currentIndexChanged.connect(self.change_station_order)
@@ -105,6 +106,9 @@ class MyMainWindow(QtGui.QMainWindow):
                              " are specified in variography files.")
         self.enable_decades_group(toggle and not
                                   self.DB_batchNetworks.isChecked())
+        
+    def enable_skip_dss(self, toggle):
+        pass
 
     def change_station_order(self, index):
         st_order = self.HD_stOrder.currentText()
