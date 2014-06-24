@@ -463,5 +463,5 @@ if __name__ == '__main__':
                 os.path.join(base, 'rede000020')]
     #"""
     networks = [os.path.join(base, 'rede000009')]
-    batch_networks(par, networks, decades=True)
+    batch_networks(par, networks, decades=True, skip_dss=True)
     print 'done'
