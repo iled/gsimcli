@@ -325,11 +325,10 @@ class MyMainWindow(QtGui.QMainWindow):
         filepath = QtGui.QFileDialog.getOpenFileName(self,
                                      caption="Open parameters file",
                                      dir=os.path.expanduser('~/'))
-        self.params.load(filepath[0])
-        self.params_path = filepath[0]
-        self.load_settings()
-
-        print self.params_path
+        if filepath[0]:
+            self.params.load(filepath[0])
+            self.params_path = filepath[0]
+            self.load_settings()
 
 # def loadUiWidget(uifilename, parent=None):
 #     loader = QtUiTools.QUiLoader()
