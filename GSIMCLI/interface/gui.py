@@ -7,7 +7,11 @@ Created on 16/06/2014
 
 from PySide import QtCore, QtGui  # , QtUiTools
 import os
+import sys
 from tempfile import NamedTemporaryFile
+
+base = os.path.dirname(os.path.dirname(__file__))
+sys.path.append(base)
 
 from interface.pyside_dynamic import loadUi
 from launchers import method_classic
@@ -18,7 +22,8 @@ class MyMainWindow(QtGui.QMainWindow):
     def __init__(self, parent=None):
         # load ui file
         QtGui.QMainWindow.__init__(self, parent)
-        loadUi('gsimcli.ui', self)
+        print os.path.join(base, "interface", "gsimcli.ui")
+        loadUi(os.path.join(base, "interface", "gsimcli.ui"), self)
         # QtUiTools.QUiLoader  # try this
 
         # set params

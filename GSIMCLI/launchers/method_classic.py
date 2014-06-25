@@ -24,7 +24,7 @@ import ntpath
 import os
 import sys
 
-sys.path.append('/home/julio/git/gsimcli/GSIMCLI')
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 import launchers.dss as dss
 import multiprocessing as mp
