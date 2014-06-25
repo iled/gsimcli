@@ -187,8 +187,9 @@ class MyMainWindow(QtGui.QMainWindow):
             self.DB_listNetworksPaths.addItems(dialog.selectedFiles())
 
     def remove_networks(self):
-        for path in self.DB_networksPaths.selectedItems():
-            self.DB_networksPaths.takeItem(self.DB_networksPaths.row(path))
+        for path in self.DB_listNetworksPaths.selectedItems():
+            self.DB_listNetworksPaths.takeItem(
+                                           self.DB_listNetworksPaths.row(path))
 
     def browse_variog_file(self):
         filepath = QtGui.QFileDialog.getOpenFileName(self,
