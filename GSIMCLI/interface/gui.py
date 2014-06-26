@@ -22,7 +22,6 @@ class MyMainWindow(QtGui.QMainWindow):
     def __init__(self, parent=None):
         # load ui file
         QtGui.QMainWindow.__init__(self, parent)
-        print os.path.join(base, "interface", "gsimcli.ui")
         loadUi(os.path.join(base, "interface", "gsimcli.ui"), self)
         # QtUiTools.QUiLoader  # try this
 
@@ -37,23 +36,25 @@ class MyMainWindow(QtGui.QMainWindow):
         self.treeWidget.currentItemChanged.connect(self.set_stacked_item)
 
         # check boxes
-        self.DB_batchDecades.toggled.connect(self.enable_batch_decades)
-        self.DB_batchNetworks.toggled.connect(self.enable_batch_networks)
+        self.DB_checkBatchDecades.toggled.connect(self.enable_batch_decades)
+        self.DB_checkBatchNetworks.toggled.connect(self.enable_batch_networks)
         self.SO_checkSkipDSS.toggled.connect(self.enable_skip_dss)
 
         # combo boxes
-        self.HD_stOrder.currentIndexChanged.connect(self.change_station_order)
-        self.HD_method.currentIndexChanged.connect(self.enable_skewness)
+        self.HD_comboStationOrder.currentIndexChanged.connect(
+                                                  self.change_station_order)
+        self.HD_comboDetectionMethod.currentIndexChanged.connect(
+                                                         self.enable_skewness)
 
         # buttons
         self.buttonBox.button(QtGui.QDialogButtonBox.Apply).clicked.connect(
                                                             self.save_settings)
-        self.DL_dataButton.clicked.connect(self.browse_data_file)
+        self.DL_buttonDataPath.clicked.connect(self.browse_data_file)
         self.DB_buttonAddNetworks.clicked.connect(self.browse_networks)
         self.DB_buttonRemoveNetworks.clicked.connect(self.remove_networks)
-        self.DB_variogButton.clicked.connect(self.browse_variog_file)
-        self.SO_dssexeButton.clicked.connect(self.browse_exe_file)
-        self.HR_resultsButton.clicked.connect(self.browse_results)
+        self.DB_buttonVariogPath.clicked.connect(self.browse_variog_file)
+        self.SO_buttonExePath.clicked.connect(self.browse_exe_file)
+        self.HR_buttonResultsPath.clicked.connect(self.browse_results)
 
         # hidden
         self.SV_labelBatchDecades.setVisible(False)
@@ -94,17 +95,17 @@ class MyMainWindow(QtGui.QMainWindow):
             self.stackedWidget.setCurrentWidget(self.HomogenisationResults)
 
     def enable_decades_group(self, enable):
-        self.DB_variogLabel.setEnabled(enable)
-        self.DB_variogPath.setEnabled(enable)
-        self.DB_variogButton.setEnabled(enable)
+        self.DB_labelVariogPath.setEnabled(enable)
+        self.DB_lineVariogPath.setEnabled(enable)
+        self.DB_buttonVariogPath.setEnabled(enable)
 
     def disable_datapath_group(self, disable):
         self.DL_labelDataPath.setDisabled(disable)
-        self.DL_dataPath.setDisabled(disable)
-        self.DL_dataButton.setDisabled(disable)
+        self.DL_lineDataPath.setDisabled(disable)
+        self.DL_buttonDataPath.setDisabled(disable)
 
     def enable_batch_networks(self, toggle):
-        self.DB_labelBatchNetworks.setEnabled(toggle)
+        self.DB_labelNetworksPaths.setEnabled(toggle)
         self.DB_buttonAddNetworks.setEnabled(toggle)
         self.DB_buttonRemoveNetworks.setEnabled(toggle)
         self.DB_listNetworksPaths.setEnabled(toggle)
@@ -117,9 +118,9 @@ class MyMainWindow(QtGui.QMainWindow):
         else:
             tool_tip = None
         tree_item.setToolTip(0, tool_tip)
-        self.enable_decades_group(self.DB_batchDecades.isChecked() and not
-                                  self.DB_batchNetworks.isChecked())
-        if not self.DB_batchDecades.isChecked():
+        self.enable_decades_group(self.DB_checkBatchDecades.isChecked() and not
+                                  self.DB_checkBatchNetworks.isChecked())
+        if not self.DB_checkBatchDecades.isChecked():
             self.disable_datapath_group(toggle)
 
     def enable_batch_decades(self, toggle):
@@ -135,15 +136,15 @@ class MyMainWindow(QtGui.QMainWindow):
             tool_tip = None
         tree_item.setToolTip(0, tool_tip)
         self.enable_decades_group(toggle and not
-                                  self.DB_batchNetworks.isChecked())
-        if not self.DB_batchNetworks.isChecked():
+                                  self.DB_checkBatchNetworks.isChecked())
+        if not self.DB_checkBatchNetworks.isChecked():
             self.disable_datapath_group(toggle)
 
     def enable_skip_dss(self, toggle):
         self.skip_dss = toggle
 
     def change_station_order(self, index):
-        st_order = self.HD_stOrder.currentText()
+        st_order = self.HD_comboStationOrder.currentText()
         if st_order == "User":
             enable_user = True
             disable_checks = True
@@ -153,25 +154,25 @@ class MyMainWindow(QtGui.QMainWindow):
         else:
             enable_user = False
             disable_checks = False
-        self.HD_label_userOrder.setEnabled(enable_user)
-        self.HD_userOrder.setEnabled(enable_user)
+        self.HD_labelUserOrder.setEnabled(enable_user)
+        self.HD_lineUserOrder.setEnabled(enable_user)
         self.HD_checkAscending.setDisabled(disable_checks)
         self.HD_checkMDLast.setDisabled(disable_checks)
 
     def enable_skewness(self, index):
-        if self.HD_method.currentText() == "Skewness":
+        if self.HD_comboDetectionMethod.currentText() == "Skewness":
             enable = True
         else:
             enable = False
         self.HD_labelSkewness.setEnabled(enable)
-        self.HD_skewness.setEnabled(enable)
+        self.HD_spinSkewness.setEnabled(enable)
 
     def browse_data_file(self):
         filepath = QtGui.QFileDialog.getOpenFileName(self,
                                      caption="Select data file",
                                      dir=os.path.expanduser('~/'))
         if filepath[0]:
-            self.DL_dataPath.setText(filepath[0])
+            self.DL_lineDataPath.setText(filepath[0])
 
     def browse_networks(self):
         dialog = QtGui.QFileDialog(self)
@@ -197,7 +198,7 @@ class MyMainWindow(QtGui.QMainWindow):
                                      dir=os.path.expanduser('~/'),
                                      filter="Text CSV (*.csv)")
         if filepath[0]:
-            self.DB_variogPath.setText(filepath[0])
+            self.DB_lineVariogPath.setText(filepath[0])
 
     def browse_exe_file(self):
         filepath = QtGui.QFileDialog.getOpenFileName(self,
@@ -205,81 +206,84 @@ class MyMainWindow(QtGui.QMainWindow):
                                      dir=os.path.expanduser('~/'),
                                      filter="Executable (*.exe)")
         if filepath[0]:
-            self.SO_dssexePath.setText(filepath[0])
+            self.SO_lineExePath.setText(filepath[0])
 
     def browse_results(self):
         filepath = QtGui.QFileDialog.getExistingDirectory(self,
                                      caption="Select results directory",
                                      dir=os.path.expanduser('~/'))
         if filepath:
-            self.HR_resultsPath.setText(filepath)
+            self.HR_lineResultsPath.setText(filepath)
 
     def load_settings(self):
         # Data / Load
-        self.DL_dataPath.setText(self.params.data)
-        self.DL_noData.setValue(self.params.no_data)
+        self.DL_lineDataPath.setText(self.params.data)
+        self.DL_spinNoData.setValue(self.params.no_data)
         self.DL_checkHeader.setChecked(self.params.data_header)
         try:
-            self.DL_dataName.setText(self.params.name)
+            self.DL_lineDataName.setText(self.params.name)
             pylist_to_qlist(self.params.variables, self.DL_listVarNames)
         except(AttributeError):
             # ignore if attributes are not present
             pass
 
         # Simulation / Options
-        # self.SO_dssparPath.setText(self.params.dss_par)
-        self.SO_dssexePath.setText(self.params.dss_exe)
-        self.SO_numberSims.setValue(self.params.number_simulations)
-        self.SO_krigType.setCurrentIndex(self.SO_krigType.findText(
+        # self.SO_lineParPath.setText(self.params.dss_par)
+        self.SO_lineExePath.setText(self.params.dss_exe)
+        self.SO_spinNumberSims.setValue(self.params.number_simulations)
+        self.SO_comboKrigType.setCurrentIndex(self.SO_comboKrigType.findText(
                        self.params.krig_type[0], QtCore.Qt.MatchStartsWith))
-        self.SO_maxSearchNodes.setValue(self.params.max_search_nodes)
+        self.SO_spinMaxSearchNodes.setValue(self.params.max_search_nodes)
 
         # Simulation / Grid
         try:
-            self.SG_xxNodes.setValue(self.params.XX_nodes_number)
-            self.SG_yyNodes.setValue(self.params.YY_nodes_number)
-            self.SG_zzNodes.setValue(self.params.ZZ_nodes_number)
-            self.SG_xxMin.setValue(self.params.XX_minimum)
-            self.SG_yyMin.setValue(self.params.YY_minimum)
-            self.SG_zzMin.setValue(self.params.ZZ_minimum)
-            self.SG_xxSpacing.setValue(self.params.XX_spacing)
-            self.SG_yySpacing.setValue(self.params.YY_spacing)
-            self.SG_zzSpacing.setValue(self.params.ZZ_spacing)
+            self.SG_spinXXNodes.setValue(self.params.XX_nodes_number)
+            self.SG_spinYYNodes.setValue(self.params.YY_nodes_number)
+            self.SG_spinZZNodes.setValue(self.params.ZZ_nodes_number)
+            self.SG_spinXXOrig.setValue(self.params.XX_minimum)
+            self.SG_spinYYOrig.setValue(self.params.YY_minimum)
+            self.SG_spinZZOrig.setValue(self.params.ZZ_minimum)
+            self.SG_spinXXSize.setValue(self.params.XX_spacing)
+            self.SG_spinYYSize.setValue(self.params.YY_spacing)
+            self.SG_spinZZSize.setValue(self.params.ZZ_spacing)
         except(AttributeError):
-            self.DB_batchNetworks.setChecked(True)
+            self.DB_checkBatchNetworks.setChecked(True)
 
         # Simulation / Variogram
         try:
-            self.SV_varModel.setCurrentIndex(self.SV_varModel.findText(
-                               self.params.model, QtCore.Qt.MatchStartsWith))
-            self.SV_nugget.setValue(self.params.nugget)
-            self.SV_sill.setValue(self.params.sill)
-            self.SV_ranges.setText(self.params.ranges)
-            self.SV_angles.setText(self.params.angles)
+            self.SV_comboVarModel.setCurrentIndex(
+                          self.SV_comboVarModel.findText(self.params.model,
+                                                 QtCore.Qt.MatchStartsWith))
+            self.SV_spinNugget.setValue(self.params.nugget)
+            self.SV_spinSill.setValue(self.params.sill)
+            self.SV_lineRanges.setText(self.params.ranges)
+            self.SV_lineAngles.setText(self.params.angles)
         except(AttributeError):
-            self.DB_batchDecades.setChecked(True)
+            self.DB_checkBatchDecades.setChecked(True)
 
         # Homogenisation / Detection
         st_order = self.params.st_order
         if st_order == "sorted":
             st_order = "id order"
-        self.HD_stOrder.setCurrentIndex(self.HD_stOrder.findText(st_order,
+        self.HD_comboStationOrder.setCurrentIndex(
+                                  self.HD_comboStationOrder.findText(st_order,
                                                      QtCore.Qt.MatchContains))
         if st_order == "user":
-            self.HD_userOrder.setText(self.params.st_user)
+            self.HD_lineUserOrder.setText(self.params.st_user)
         else:
             self.HD_checkAscending.setChecked(self.params.ascending)
             self.HD_checkMDLast.setChecked(self.params.md_last)
-        self.HD_method.setCurrentIndex(self.HD_method.findText(
-                           self.params.detect_method, QtCore.Qt.MatchContains))
+        self.HD_comboDetectionMethod.setCurrentIndex(
+             self.HD_comboDetectionMethod.findText(self.params.detect_method,
+                                                   QtCore.Qt.MatchContains))
         if self.params.detect_method == "skewness":
-            self.HD_skewness.setValue(self.params.skewness)
-        self.HD_prob.setValue(self.params.detect_prob)
+            self.HD_spinSkewness.setValue(self.params.skewness)
+        self.HD_spinProb.setValue(self.params.detect_prob)
 
         # Homogenisation / Results
         self.HR_checkSaveInter.setChecked(self.params.detect_save)
         self.HR_checkPurgeSims.setChecked(self.params.sim_purge)
-        self.HR_resultsPath.setText(self.params.results.decode('utf-8'))
+        self.HR_lineResultsPath.setText(self.params.results.decode('utf-8'))
 
         self.actionGSIMCLI.setEnabled(True)
 
@@ -288,64 +292,65 @@ class MyMainWindow(QtGui.QMainWindow):
 
     def save_settings(self):
         # Data / Load
-        self.params.data = self.DL_dataPath.text()
-        self.params.no_data = self.DL_noData.value()
+        self.params.data = self.DL_lineDataPath.text()
+        self.params.no_data = self.DL_spinNoData.value()
         self.params.data_header = self.DL_checkHeader.isChecked()
-        self.params.name = self.DL_dataName.text()
+        self.params.name = self.DL_lineDataName.text()
         self.params.variables = qlist_to_pylist(self.DL_listVarNames)
 
         # Simulation / Options
-        if self.SO_dssparPath.text():
-            self.params.dss_par = self.SO_dssparPath.text()
-        self.params.dss_exe = self.SO_dssexePath.text()
-        self.params.number_simulations = self.SO_numberSims.value()
-        krigtype = self.SO_krigType.currentText()
+        if self.SO_lineParPath.text():
+            self.params.dss_par = self.SO_lineParPath.text()
+        self.params.dss_exe = self.SO_lineExePath.text()
+        self.params.number_simulations = self.SO_spinNumberSims.value()
+        krigtype = self.SO_comboKrigType.currentText()
         if krigtype == "Simple":
             krigtype = "SK"
         elif krigtype == "Ordinary":
             krigtype = "OK"
         self.params.krig_type = krigtype
-        self.params.max_search_nodes = self.SO_maxSearchNodes.value()
+        self.params.max_search_nodes = self.SO_spinMaxSearchNodes.value()
 
         # Simulation / Grid
-        if not self.DB_batchNetworks.isChecked():
-            self.params.XX_nodes_number = self.SG_xxNodes.value()
-            self.params.YY_nodes_number = self.SG_yyNodes.value()
-            self.params.ZZ_nodes_number = self.SG_zzNodes.value()
-            self.params.XX_minimum = self.SG_xxMin.value()
-            self.params.YY_minimum = self.SG_yyMin.value()
-            self.params.ZZ_minimum = self.SG_zzMin.value()
-            self.params.XX_spacing = self.SG_xxSpacing.value()
-            self.params.YY_spacing = self.SG_yySpacing.value()
-            self.params.ZZ_spacing = self.SG_zzSpacing.value()
+        if not self.DB_checkBatchNetworks.isChecked():
+            self.params.XX_nodes_number = self.SG_spinXXNodes.value()
+            self.params.YY_nodes_number = self.SG_spinYYNodes.value()
+            self.params.ZZ_nodes_number = self.SG_spinZZNodes.value()
+            self.params.XX_minimum = self.SG_spinXXOrig.value()
+            self.params.YY_minimum = self.SG_spinYYOrig.value()
+            self.params.ZZ_minimum = self.SG_spinZZOrig.value()
+            self.params.XX_spacing = self.SG_spinXXSize.value()
+            self.params.YY_spacing = self.SG_spinYYSize.value()
+            self.params.ZZ_spacing = self.SG_spinZZSize.value()
 
         # Simulation / Variogram
-        if not self.DB_batchDecades.isChecked():
-            self.params.model = self.SV_varModel.currentText()[0]
-            self.params.nugget = self.SV_nugget.value()
-            self.params.sill = self.SV_sill.value()
-            self.params.ranges = self.SV_ranges.text()
-            self.params.angles = self.SV_angles.text()
+        if not self.DB_checkBatchDecades.isChecked():
+            self.params.model = self.SV_comboVarModel.currentText()[0]
+            self.params.nugget = self.SV_spinNugget.value()
+            self.params.sill = self.SV_spinSill.value()
+            self.params.ranges = self.SV_lineRanges.text()
+            self.params.angles = self.SV_lineAngles.text()
 
         # Homogenisation / Detection
-        st_order = self.HD_stOrder.currentText().lower()
+        st_order = self.HD_comboStationOrder.currentText().lower()
         if st_order == "id order":
             st_order = "sorted"
         self.params.st_order = st_order
         if st_order == "user":
-            self.params.st_user = self.HD_userOrder.text()
+            self.params.st_user = self.HD_lineUserOrder.text()
         else:
             self.params.ascending = self.HD_checkAscending.isChecked()
             self.params.md_last = self.HD_checkMDLast.isChecked()
-        self.params.detect_method = self.HD_method.currentText().lower()
+        self.params.detect_method = (self.HD_comboDetectionMethod.
+                                     currentText().lower())
         if self.params.detect_method == "skewness":
-            self.params.skewness = self.HD_skewness.value()
-        self.params.detect_prob = self.HD_prob.value()
+            self.params.skewness = self.HD_spinSkewness.value()
+        self.params.detect_prob = self.HD_spinProb.value()
 
         # Homogenisation / Results
         self.params.detect_save = self.HR_checkSaveInter.isChecked()
         self.params.sim_purge = self.HR_checkPurgeSims.isChecked()
-        self.params.results = str(self.HR_resultsPath.text())
+        self.params.results = str(self.HR_lineResultsPath.text())
 
         self.params.save(self.params_path)
         self.actionGSIMCLI.setEnabled(True)
@@ -354,15 +359,12 @@ class MyMainWindow(QtGui.QMainWindow):
         print "saved at: ", self.params.path
 
     def run_gsimcli(self):
-        batch_networks = self.DB_batchNetworks.isChecked()
-        batch_decades = self.DB_batchDecades.isChecked()
+        batch_networks = self.DB_checkBatchNetworks.isChecked()
+        batch_decades = self.DB_checkBatchDecades.isChecked()
         self.params.path = str(self.params.path)
         self.params.results = str(self.params.results)
 
         if batch_networks:
-#             networks = list()
-#             for item_row in xrange(self.DB_networksPaths.count()):
-#                 networks.append(self.DB_networksPaths.item(item_row).text())
             networks = qlist_to_pylist(self.DB_listNetworksPaths)
             # workaround for unicode/bytes issues
             networks = map(str, networks)
@@ -370,7 +372,7 @@ class MyMainWindow(QtGui.QMainWindow):
                                           batch_decades, self.skip_dss)
         elif batch_decades:
             method_classic.batch_decade(self.params.path,
-                                    self.DB_variogPath.text(), self.skip_dss)
+                                self.DB_lineVariogPath.text(), self.skip_dss)
         else:
             method_classic.run_par(self.params.path, self.skip_dss)
 
@@ -424,7 +426,6 @@ def pylist_to_qlist(pylist, qlist):
 #         self.setupUi(self)
 
 if __name__ == '__main__':
-    import sys
     app = QtGui.QApplication(sys.argv)
     # MainWindow = loadUiWidget("/home/julio/qt/gsimcli.ui")
     MainWindow = MyMainWindow()

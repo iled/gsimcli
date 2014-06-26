@@ -155,7 +155,7 @@
             <enum>QFrame::Raised</enum>
            </property>
            <property name="currentIndex">
-            <number>6</number>
+            <number>2</number>
            </property>
            <widget class="QWidget" name="DataLoad">
             <widget class="QWidget" name="layoutWidget">
@@ -211,10 +211,10 @@
                 <item>
                  <layout class="QHBoxLayout" name="horizontalLayout">
                   <item>
-                   <widget class="QLineEdit" name="DL_dataPath"/>
+                   <widget class="QLineEdit" name="DL_lineDataPath"/>
                   </item>
                   <item>
-                   <widget class="QPushButton" name="DL_dataButton">
+                   <widget class="QPushButton" name="DL_buttonDataPath">
                     <property name="text">
                      <string>&amp;Browse...</string>
                     </property>
@@ -243,7 +243,7 @@
                  <number>30</number>
                 </property>
                 <item>
-                 <widget class="QLabel" name="label_2">
+                 <widget class="QLabel" name="DL_labelDataName">
                   <property name="enabled">
                    <bool>true</bool>
                   </property>
@@ -253,7 +253,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLineEdit" name="DL_dataName">
+                 <widget class="QLineEdit" name="DL_lineDataName">
                   <property name="enabled">
                    <bool>true</bool>
                   </property>
@@ -270,7 +270,7 @@
                  <number>15</number>
                 </property>
                 <item>
-                 <widget class="QLabel" name="label_3">
+                 <widget class="QLabel" name="DL_labelVarNames">
                   <property name="enabled">
                    <bool>true</bool>
                   </property>
@@ -325,14 +325,14 @@
               <item>
                <layout class="QHBoxLayout" name="horizontalLayout_2">
                 <item>
-                 <widget class="QLabel" name="label">
+                 <widget class="QLabel" name="DL_labelNoData">
                   <property name="text">
                    <string>No data</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QDoubleSpinBox" name="DL_noData">
+                 <widget class="QDoubleSpinBox" name="DL_spinNoData">
                   <property name="decimals">
                    <number>3</number>
                   </property>
@@ -394,14 +394,14 @@
               <item>
                <layout class="QVBoxLayout" name="verticalLayout_23">
                 <item>
-                 <widget class="QCheckBox" name="DB_batchNetworks">
+                 <widget class="QCheckBox" name="DB_checkBatchNetworks">
                   <property name="text">
                    <string>Batch networks</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLabel" name="DB_labelBatchNetworks">
+                 <widget class="QLabel" name="DB_labelNetworksPaths">
                   <property name="enabled">
                    <bool>false</bool>
                   </property>
@@ -458,14 +458,14 @@
               <item>
                <layout class="QVBoxLayout" name="verticalLayout_4">
                 <item>
-                 <widget class="QCheckBox" name="DB_batchDecades">
+                 <widget class="QCheckBox" name="DB_checkBatchDecades">
                   <property name="text">
                    <string>Batch decades</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLabel" name="DB_variogLabel">
+                 <widget class="QLabel" name="DB_labelVariogPath">
                   <property name="enabled">
                    <bool>false</bool>
                   </property>
@@ -477,7 +477,7 @@
                 <item>
                  <layout class="QHBoxLayout" name="horizontalLayout_4">
                   <item>
-                   <widget class="QLineEdit" name="DB_variogPath">
+                   <widget class="QLineEdit" name="DB_lineVariogPath">
                     <property name="enabled">
                      <bool>false</bool>
                     </property>
@@ -490,7 +490,7 @@
                    </widget>
                   </item>
                   <item>
-                   <widget class="QPushButton" name="DB_variogButton">
+                   <widget class="QPushButton" name="DB_buttonVariogPath">
                     <property name="enabled">
                      <bool>false</bool>
                     </property>
@@ -560,14 +560,14 @@
                 <item>
                  <layout class="QHBoxLayout" name="horizontalLayout_5">
                   <item>
-                   <widget class="QLineEdit" name="SO_dssparPath">
+                   <widget class="QLineEdit" name="SO_lineParPath">
                     <property name="enabled">
                      <bool>false</bool>
                     </property>
                    </widget>
                   </item>
                   <item>
-                   <widget class="QPushButton" name="pushButton_3">
+                   <widget class="QPushButton" name="SO_buttonParPath">
                     <property name="enabled">
                      <bool>false</bool>
                     </property>
@@ -583,7 +583,7 @@
               <item>
                <layout class="QVBoxLayout" name="verticalLayout_10">
                 <item>
-                 <widget class="QLabel" name="label_10">
+                 <widget class="QLabel" name="SO_labelExePath">
                   <property name="text">
                    <string>Executable file</string>
                   </property>
@@ -592,10 +592,10 @@
                 <item>
                  <layout class="QHBoxLayout" name="horizontalLayout_6">
                   <item>
-                   <widget class="QLineEdit" name="SO_dssexePath"/>
+                   <widget class="QLineEdit" name="SO_lineExePath"/>
                   </item>
                   <item>
-                   <widget class="QPushButton" name="SO_dssexeButton">
+                   <widget class="QPushButton" name="SO_buttonExePath">
                     <property name="text">
                      <string>Browse...</string>
                     </property>
@@ -608,7 +608,7 @@
               <item>
                <layout class="QHBoxLayout" name="horizontalLayout_7">
                 <item>
-                 <widget class="QLabel" name="label_11">
+                 <widget class="QLabel" name="SO_labelNumberSims">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                     <horstretch>1</horstretch>
@@ -621,7 +621,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QSpinBox" name="SO_numberSims">
+                 <widget class="QSpinBox" name="SO_spinNumberSims">
                   <property name="minimum">
                    <number>1</number>
                   </property>
@@ -638,7 +638,7 @@
               <item>
                <layout class="QHBoxLayout" name="horizontalLayout_8">
                 <item>
-                 <widget class="QLabel" name="label_12">
+                 <widget class="QLabel" name="SO_labelKrigType">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                     <horstretch>1</horstretch>
@@ -651,7 +651,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QComboBox" name="SO_krigType">
+                 <widget class="QComboBox" name="SO_comboKrigType">
                   <item>
                    <property name="text">
                     <string>Ordinary</string>
@@ -669,14 +669,14 @@
               <item>
                <layout class="QHBoxLayout" name="horizontalLayout_9">
                 <item>
-                 <widget class="QLabel" name="label_18">
+                 <widget class="QLabel" name="SO_labelMaxSearchNodes">
                   <property name="text">
                    <string>Maximum number of nodes to be found</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QSpinBox" name="SO_maxSearchNodes">
+                 <widget class="QSpinBox" name="SO_spinMaxSearchNodes">
                   <property name="minimum">
                    <number>1</number>
                   </property>
@@ -776,7 +776,7 @@
               <item>
                <layout class="QHBoxLayout" name="horizontalLayout_10">
                 <item>
-                 <widget class="QLabel" name="label_13">
+                 <widget class="QLabel" name="SV_comboVarModel_2">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                     <horstretch>1</horstretch>
@@ -789,7 +789,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QComboBox" name="SV_varModel">
+                 <widget class="QComboBox" name="SV_comboVarModel">
                   <item>
                    <property name="text">
                     <string>Spherical</string>
@@ -812,7 +812,7 @@
               <item>
                <layout class="QHBoxLayout" name="horizontalLayout_11">
                 <item>
-                 <widget class="QLabel" name="label_14">
+                 <widget class="QLabel" name="SV_labelNugget">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                     <horstretch>1</horstretch>
@@ -825,7 +825,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QDoubleSpinBox" name="SV_nugget">
+                 <widget class="QDoubleSpinBox" name="SV_spinNugget">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -839,14 +839,14 @@
               <item>
                <layout class="QHBoxLayout" name="horizontalLayout_12">
                 <item>
-                 <widget class="QLabel" name="label_15">
+                 <widget class="QLabel" name="SV_labelSill">
                   <property name="text">
                    <string>Sill</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QDoubleSpinBox" name="SV_sill">
+                 <widget class="QDoubleSpinBox" name="SV_spinSill">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -860,24 +860,24 @@
               <item>
                <layout class="QFormLayout" name="formLayout_2">
                 <item row="0" column="0">
-                 <widget class="QLabel" name="label_16">
+                 <widget class="QLabel" name="SV_labelRanges">
                   <property name="text">
                    <string>Ranges</string>
                   </property>
                  </widget>
                 </item>
                 <item row="0" column="1">
-                 <widget class="QLineEdit" name="SV_ranges"/>
+                 <widget class="QLineEdit" name="SV_lineRanges"/>
                 </item>
                 <item row="1" column="0">
-                 <widget class="QLabel" name="label_17">
+                 <widget class="QLabel" name="SV_labelAngles">
                   <property name="text">
                    <string>Angles</string>
                   </property>
                  </widget>
                 </item>
                 <item row="1" column="1">
-                 <widget class="QLineEdit" name="SV_angles"/>
+                 <widget class="QLineEdit" name="SV_lineAngles"/>
                 </item>
                </layout>
               </item>
@@ -890,7 +890,7 @@
               <rect>
                <x>10</x>
                <y>10</y>
-               <width>208</width>
+               <width>313</width>
                <height>450</height>
               </rect>
              </property>
@@ -925,50 +925,110 @@
               </item>
               <item>
                <widget class="QGroupBox" name="groupBox_7">
+                <property name="toolTip">
+                 <string>The number of nodes in each direction.</string>
+                </property>
                 <property name="title">
-                 <string>Number of nodes</string>
+                 <string>Grid dimensions</string>
                 </property>
                 <layout class="QFormLayout" name="formLayout_3">
                  <property name="horizontalSpacing">
                   <number>50</number>
                  </property>
                  <item row="0" column="0">
-                  <widget class="QLabel" name="label_19">
+                  <widget class="QLabel" name="SG_labelXXNodes">
                    <property name="text">
-                    <string>X</string>
+                    <string>Number of cells in XX'</string>
                    </property>
                   </widget>
                  </item>
                  <item row="0" column="1">
-                  <widget class="QSpinBox" name="SG_xxNodes">
+                  <widget class="QSpinBox" name="SG_spinXXNodes">
                    <property name="maximum">
                     <number>1000000000</number>
                    </property>
                   </widget>
                  </item>
                  <item row="1" column="0">
-                  <widget class="QLabel" name="label_20">
+                  <widget class="QLabel" name="SG_labelYYNodes">
                    <property name="text">
-                    <string>Y</string>
+                    <string>Number of cells in YY'</string>
                    </property>
                   </widget>
                  </item>
                  <item row="1" column="1">
-                  <widget class="QSpinBox" name="SG_yyNodes">
+                  <widget class="QSpinBox" name="SG_spinYYNodes">
                    <property name="maximum">
                     <number>1000000000</number>
                    </property>
                   </widget>
                  </item>
                  <item row="2" column="0">
-                  <widget class="QLabel" name="label_21">
+                  <widget class="QLabel" name="SG_labelZZNodes">
                    <property name="text">
-                    <string>Z</string>
+                    <string>Number of cells in ZZ'</string>
                    </property>
                   </widget>
                  </item>
                  <item row="2" column="1">
-                  <widget class="QSpinBox" name="SG_zzNodes">
+                  <widget class="QSpinBox" name="SG_spinZZNodes">
+                   <property name="maximum">
+                    <number>1000000000</number>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QGroupBox" name="groupBox_9">
+                <property name="toolTip">
+                 <string>The dimensions of a single cell.</string>
+                </property>
+                <property name="title">
+                 <string>Cell size</string>
+                </property>
+                <layout class="QFormLayout" name="formLayout_5">
+                 <property name="horizontalSpacing">
+                  <number>50</number>
+                 </property>
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="SG_labelXXSize">
+                   <property name="text">
+                    <string>Size in XX'</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QSpinBox" name="SG_spinXXSize">
+                   <property name="maximum">
+                    <number>1000000000</number>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="0">
+                  <widget class="QLabel" name="SG_labelYYSize">
+                   <property name="text">
+                    <string>Size in YY'</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="1">
+                  <widget class="QSpinBox" name="SG_spinYYSize">
+                   <property name="maximum">
+                    <number>1000000000</number>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="0">
+                  <widget class="QLabel" name="SG_labelZZSize">
+                   <property name="text">
+                    <string>Size in ZZ'</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="1">
+                  <widget class="QSpinBox" name="SG_spinZZSize">
                    <property name="maximum">
                     <number>1000000000</number>
                    </property>
@@ -979,106 +1039,55 @@
               </item>
               <item>
                <widget class="QGroupBox" name="groupBox_8">
+                <property name="toolTip">
+                 <string>The coordinates of the lower left corner of the grid.</string>
+                </property>
                 <property name="title">
-                 <string>Minimum coordinate</string>
+                 <string>Origin coordinates</string>
                 </property>
                 <layout class="QFormLayout" name="formLayout_4">
                  <property name="horizontalSpacing">
                   <number>50</number>
                  </property>
                  <item row="0" column="0">
-                  <widget class="QLabel" name="label_22">
+                  <widget class="QLabel" name="SG_labelXXOrig">
                    <property name="text">
-                    <string>X</string>
+                    <string>Minimum X value</string>
                    </property>
                   </widget>
                  </item>
                  <item row="0" column="1">
-                  <widget class="QDoubleSpinBox" name="SG_xxMin">
+                  <widget class="QDoubleSpinBox" name="SG_spinXXOrig">
                    <property name="maximum">
                     <double>1000000000.000000000000000</double>
                    </property>
                   </widget>
                  </item>
                  <item row="1" column="0">
-                  <widget class="QLabel" name="label_23">
+                  <widget class="QLabel" name="SG_labelYYOrig">
                    <property name="text">
-                    <string>Y</string>
+                    <string>Minimum Y value</string>
                    </property>
                   </widget>
                  </item>
                  <item row="1" column="1">
-                  <widget class="QDoubleSpinBox" name="SG_yyMin">
+                  <widget class="QDoubleSpinBox" name="SG_spinYYOrig">
                    <property name="maximum">
                     <double>1000000000.000000000000000</double>
                    </property>
                   </widget>
                  </item>
                  <item row="2" column="0">
-                  <widget class="QLabel" name="label_24">
+                  <widget class="QLabel" name="SG_labelZZOrig">
                    <property name="text">
-                    <string>Z</string>
+                    <string>Minimum Z value</string>
                    </property>
                   </widget>
                  </item>
                  <item row="2" column="1">
-                  <widget class="QDoubleSpinBox" name="SG_zzMin">
+                  <widget class="QDoubleSpinBox" name="SG_spinZZOrig">
                    <property name="maximum">
                     <double>1000000000.000000000000000</double>
-                   </property>
-                  </widget>
-                 </item>
-                </layout>
-               </widget>
-              </item>
-              <item>
-               <widget class="QGroupBox" name="groupBox_9">
-                <property name="title">
-                 <string>Nodes size/spacing</string>
-                </property>
-                <layout class="QFormLayout" name="formLayout_5">
-                 <property name="horizontalSpacing">
-                  <number>50</number>
-                 </property>
-                 <item row="0" column="0">
-                  <widget class="QLabel" name="label_25">
-                   <property name="text">
-                    <string>X</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="0" column="1">
-                  <widget class="QSpinBox" name="SG_xxSpacing">
-                   <property name="maximum">
-                    <number>1000000000</number>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="1" column="0">
-                  <widget class="QLabel" name="label_26">
-                   <property name="text">
-                    <string>Y</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="1" column="1">
-                  <widget class="QSpinBox" name="SG_yySpacing">
-                   <property name="maximum">
-                    <number>1000000000</number>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="2" column="0">
-                  <widget class="QLabel" name="label_27">
-                   <property name="text">
-                    <string>Z</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="2" column="1">
-                  <widget class="QSpinBox" name="SG_zzSpacing">
-                   <property name="maximum">
-                    <number>1000000000</number>
                    </property>
                   </widget>
                  </item>
@@ -1132,7 +1141,7 @@
                 <item>
                  <layout class="QHBoxLayout" name="horizontalLayout_14">
                   <item>
-                   <widget class="QLabel" name="label_4">
+                   <widget class="QLabel" name="HD_comboStationOrder_2">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                       <horstretch>1</horstretch>
@@ -1145,7 +1154,7 @@
                    </widget>
                   </item>
                   <item>
-                   <widget class="QComboBox" name="HD_stOrder">
+                   <widget class="QComboBox" name="HD_comboStationOrder">
                     <property name="currentIndex">
                      <number>2</number>
                     </property>
@@ -1193,7 +1202,7 @@
                 <item>
                  <layout class="QHBoxLayout" name="horizontalLayout_15">
                   <item>
-                   <widget class="QLabel" name="HD_label_userOrder">
+                   <widget class="QLabel" name="HD_labelUserOrder">
                     <property name="enabled">
                      <bool>false</bool>
                     </property>
@@ -1209,7 +1218,7 @@
                    </widget>
                   </item>
                   <item>
-                   <widget class="QLineEdit" name="HD_userOrder">
+                   <widget class="QLineEdit" name="HD_lineUserOrder">
                     <property name="enabled">
                      <bool>false</bool>
                     </property>
@@ -1222,7 +1231,7 @@
               <item>
                <layout class="QFormLayout" name="formLayout_6">
                 <item row="0" column="0">
-                 <widget class="QLabel" name="label_6">
+                 <widget class="QLabel" name="HD_labelDetectionMethod">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                     <horstretch>1</horstretch>
@@ -1235,7 +1244,7 @@
                  </widget>
                 </item>
                 <item row="0" column="1">
-                 <widget class="QComboBox" name="HD_method">
+                 <widget class="QComboBox" name="HD_comboDetectionMethod">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -1276,7 +1285,7 @@
                  </widget>
                 </item>
                 <item row="1" column="1">
-                 <widget class="QDoubleSpinBox" name="HD_skewness">
+                 <widget class="QDoubleSpinBox" name="HD_spinSkewness">
                   <property name="enabled">
                    <bool>false</bool>
                   </property>
@@ -1287,7 +1296,7 @@
               <item>
                <layout class="QHBoxLayout" name="horizontalLayout_13">
                 <item>
-                 <widget class="QLabel" name="label_8">
+                 <widget class="QLabel" name="HD_labelProb">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                     <horstretch>1</horstretch>
@@ -1300,7 +1309,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QDoubleSpinBox" name="HD_prob">
+                 <widget class="QDoubleSpinBox" name="HD_spinProb">
                   <property name="decimals">
                    <number>4</number>
                   </property>
@@ -1386,7 +1395,7 @@
               <item>
                <layout class="QVBoxLayout" name="verticalLayout_20">
                 <item>
-                 <widget class="QLabel" name="label_29">
+                 <widget class="QLabel" name="HR_labelResultsPath">
                   <property name="text">
                    <string>Results directory</string>
                   </property>
@@ -1395,10 +1404,10 @@
                 <item>
                  <layout class="QHBoxLayout" name="horizontalLayout_17">
                   <item>
-                   <widget class="QLineEdit" name="HR_resultsPath"/>
+                   <widget class="QLineEdit" name="HR_lineResultsPath"/>
                   </item>
                   <item>
-                   <widget class="QPushButton" name="HR_resultsButton">
+                   <widget class="QPushButton" name="HR_buttonResultsPath">
                     <property name="text">
                      <string>&amp;Browse...</string>
                     </property>
