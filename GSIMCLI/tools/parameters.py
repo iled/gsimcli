@@ -7,6 +7,7 @@ Created on 6 de Dez de 2013
 
 from utils import yes_no
 
+
 class ParametersFile(object):
     """Base class to construct a ParametersClass.
 
@@ -23,6 +24,9 @@ class ParametersFile(object):
     Fields are separated from values with a given separator (field_sep). Values
     can be a single value or a list of values, which are separated with yet
     another given separator (values_sep).
+    
+    Only one field per line will be parsed. This allows values containing
+    field_sep.
 
     """
 
@@ -57,7 +61,7 @@ class ParametersFile(object):
 
     def template(self, par_path):
         """Write a parameter file with the template to follow, which must have
-        been defined in the docstring.
+        been defined in the constructor docstring.
 
         """
         self.path = par_path
@@ -95,9 +99,10 @@ class ParametersFile(object):
         checklist = list(self.fields)
 
         for line in lines:
-            field = line.split(self.field_sep)[0]
+            fieldvalue = line.split(self.field_sep, 1)
+            field = fieldvalue[0]
             if field in self.fields + self.optional:
-                value = line.split(self.field_sep)[1]
+                value = fieldvalue[1]
                 self.set_field(field, value)
                 if field in self.fields:
                     checklist.remove(field)
