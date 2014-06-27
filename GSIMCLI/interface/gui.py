@@ -27,8 +27,8 @@ class MyMainWindow(QtGui.QMainWindow):
 
         # set params
         self.params = GsimcliParam()
-        params = NamedTemporaryFile()
-        self.params_path = params.name
+        self.temp_params = NamedTemporaryFile()
+        self.loaded_params = None
         self.skip_dss = self.SO_checkSkipDSS.isChecked()
 
         # change pages
@@ -48,7 +48,7 @@ class MyMainWindow(QtGui.QMainWindow):
 
         # buttons
         self.buttonBox.button(QtGui.QDialogButtonBox.Apply).clicked.connect(
-                                                            self.save_settings)
+                                                        self.apply_settings)
         self.DL_buttonDataPath.clicked.connect(self.browse_data_file)
         self.DB_buttonAddNetworks.clicked.connect(self.browse_networks)
         self.DB_buttonRemoveNetworks.clicked.connect(self.remove_networks)
@@ -62,6 +62,7 @@ class MyMainWindow(QtGui.QMainWindow):
         # menu
         self.actionOpen.triggered.connect(self.open_params)
         self.actionSave.triggered.connect(self.save_params)
+        self.actionSaveAs.triggered.connect(self.save_as_params)
         self.actionGSIMCLI.triggered.connect(self.run_gsimcli)
         self.actionClose.triggered.connect(
                                    QtCore.QCoreApplication.instance().quit)
@@ -290,7 +291,7 @@ class MyMainWindow(QtGui.QMainWindow):
         # TODO: set status or something to show it was loaded
         print "loaded from: ", self.params.path
 
-    def save_settings(self):
+    def save_settings(self, par_path=None):
         # Data / Load
         self.params.data = self.DL_lineDataPath.text()
         self.params.no_data = self.DL_spinNoData.value()
@@ -352,7 +353,7 @@ class MyMainWindow(QtGui.QMainWindow):
         self.params.sim_purge = self.HR_checkPurgeSims.isChecked()
         self.params.results = str(self.HR_lineResultsPath.text())
 
-        self.params.save(self.params_path)
+        self.params.save(par_path)
         self.actionGSIMCLI.setEnabled(True)
 
         # TODO: set status or something to show it was saved
@@ -376,22 +377,28 @@ class MyMainWindow(QtGui.QMainWindow):
         else:
             method_classic.run_par(self.params.path, self.skip_dss)
 
+    def apply_settings(self):
+        self.save_settings(self.temp_params.name)
+    
     def save_params(self):
+        self.save_settings(self.loaded_params)
+    
+    def save_as_params(self):
         filepath = QtGui.QFileDialog.getSaveFileName(self,
                                      caption="Save parameters file",
                                      dir=os.path.expanduser('~/'))
         if filepath[0]:
-            self.params_path = filepath[0]
-            self.save_settings()
+            self.save_settings(filepath[0])
 
     def open_params(self):
         filepath = QtGui.QFileDialog.getOpenFileName(self,
                                      caption="Open parameters file",
                                      dir=os.path.expanduser('~/'))
         if filepath[0]:
+            self.loaded_params = filepath[0]
             self.params.load(filepath[0])
-            self.params_path = filepath[0]
             self.load_settings()
+        self.actionSave.setEnabled(True)
 
     def default_varnames(self):
         pylist_to_qlist(["x", "y", "time", "station", "clim"],
