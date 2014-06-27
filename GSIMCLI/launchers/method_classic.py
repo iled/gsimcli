@@ -219,13 +219,15 @@ def gsimcli(stations_file, stations_header, no_data, stations_order,
     return homogenised_file, dnumber_list, fnumber_list
 
 
-def run_par(par_path, skip_dss=False):
+def run_par(par_path, print_status=False, skip_dss=False):
     """Run GSIMCLI using the settings included in a parameters file.
 
     Parameters
     ----------
     par_path : string or GsimcliParam object
         File path or GsimcliParam instance with GSIMCLI parameters.
+    print_status : boolean, default False
+        Print some messages with the procedure status while it is running.
     skip_dss : boolean, default False
         Do not run DSS. Choose if the simulated maps are already in place and
         only the homogenisation process is needed.
@@ -276,8 +278,9 @@ def run_par(par_path, skip_dss=False):
     else:
         skew = None
 
-    print 'Candidates order: ', ', '.join(map(str, stations_order))
-    print 'Set up complete. Running GSIMCLI...'
+    if print_status:
+        print 'Candidates order: ', ', '.join(map(str, stations_order))
+        print 'Set up complete. Running GSIMCLI...'
     results = gsimcli(stations_pset, gscpar.data_header, gscpar.no_data,
                       stations_order, gscpar.detect_method, gscpar.detect_prob,
                       detect_flag, gscpar.detect_save, gscpar.dss_exe, dsspar,
@@ -291,7 +294,8 @@ def run_par(par_path, skip_dss=False):
     return results
 
 
-def batch_decade(par_path, variograms_file, skip_dss=False):
+def batch_decade(par_path, variograms_file, print_status=False,
+                 skip_dss=False):
     """Batch process to run GSIMCLI with data files divided in decades.
 
     Parameters
@@ -300,6 +304,8 @@ def batch_decade(par_path, variograms_file, skip_dss=False):
         File path or GsimcliParam instance with GSIMCLI parameters.
     variograms_file : string
         Variograms file path.
+    print_status : boolean, default False
+        Print some messages with the procedure status while it is running.
     skip_dss : boolean, default False
         Do not run DSS. Choose if the simulated maps are already in place and
         only the homogenisation process is needed.
@@ -372,7 +378,7 @@ def batch_decade(par_path, variograms_file, skip_dss=False):
                   first_year, results_folder]
         gscpar.update(fields, values, True, ut.filename_indexing
                       (network_parpath, decade[1].ix['decade']))
-        results.append(run_par(gscpar, skip_dss))
+        results.append(run_par(gscpar, print_status, skip_dss))
 
     outpath = os.path.dirname(variograms_file)
     gsimclipath = os.path.join(outpath, 'gsimcli_results.xls')
@@ -384,7 +390,8 @@ def batch_decade(par_path, variograms_file, skip_dss=False):
                     yearly_sum=True)
 
 
-def batch_networks(par_path, networks, decades=False, skip_dss=False):
+def batch_networks(par_path, networks, decades=False, print_status=False,
+                   skip_dss=False):
     """Batch process to run GSIMCLI along different networks.
 
     Parameters
@@ -399,6 +406,8 @@ def batch_networks(par_path, networks, decades=False, skip_dss=False):
         Run GSIMCLI by decades separately. Each network directory must have a
         variogram file within it, and this file name must be of the type
         *\*variog\*.csv*.
+    print_status : boolean, default False
+        Print some messages with the procedure status while it is running.
     skip_dss : boolean, default False
         Do not run DSS. Choose if the simulated maps are already in place and
         only the homogenisation process is needed.
@@ -443,9 +452,9 @@ def batch_networks(par_path, networks, decades=False, skip_dss=False):
         if decades:
             variogram_file = os.path.join(network,
                                           glob.glob('*variog*.csv')[0])
-            batch_decade(gscpar, variogram_file, skip_dss)
+            batch_decade(gscpar, variogram_file, print_status, skip_dss)
         else:
-            run_par(par_path, skip_dss)
+            run_par(par_path, print_status, skip_dss)
 
 
 if __name__ == '__main__':
@@ -463,5 +472,6 @@ if __name__ == '__main__':
                 os.path.join(base, 'rede000020')]
     #"""
     networks = [os.path.join(base, 'rede000009')]
-    batch_networks(par, networks, decades=True, skip_dss=True)
+    batch_networks(par, networks, decades=True,
+                   print_status=True, skip_dss=True)
     print 'done'
