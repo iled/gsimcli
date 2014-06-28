@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>GSIMCLI</string>
   </property>
   <property name="locale">
    <locale language="English" country="UnitedKingdom"/>
@@ -155,7 +155,7 @@
             <enum>QFrame::Raised</enum>
            </property>
            <property name="currentIndex">
-            <number>1</number>
+            <number>2</number>
            </property>
            <widget class="QWidget" name="DataLoad">
             <widget class="QWidget" name="layoutWidget">
@@ -1056,24 +1056,10 @@
                    </property>
                   </widget>
                  </item>
-                 <item row="0" column="1">
-                  <widget class="QDoubleSpinBox" name="SG_spinXXOrig">
-                   <property name="maximum">
-                    <double>1000000000.000000000000000</double>
-                   </property>
-                  </widget>
-                 </item>
                  <item row="1" column="0">
                   <widget class="QLabel" name="SG_labelYYOrig">
                    <property name="text">
                     <string>Minimum Y value</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="1" column="1">
-                  <widget class="QDoubleSpinBox" name="SG_spinYYOrig">
-                   <property name="maximum">
-                    <double>1000000000.000000000000000</double>
                    </property>
                   </widget>
                  </item>
@@ -1084,10 +1070,24 @@
                    </property>
                   </widget>
                  </item>
-                 <item row="2" column="1">
-                  <widget class="QDoubleSpinBox" name="SG_spinZZOrig">
+                 <item row="0" column="1">
+                  <widget class="QSpinBox" name="SG_spinXXOrig">
                    <property name="maximum">
-                    <double>1000000000.000000000000000</double>
+                    <number>1000000000</number>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="1">
+                  <widget class="QSpinBox" name="SG_spinYYOrig">
+                   <property name="maximum">
+                    <number>1000000000</number>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="1">
+                  <widget class="QSpinBox" name="SG_spinZZOrig">
+                   <property name="maximum">
+                    <number>1000000000</number>
                    </property>
                   </widget>
                  </item>
