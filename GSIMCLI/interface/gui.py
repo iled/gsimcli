@@ -27,7 +27,7 @@ class MyMainWindow(QtGui.QMainWindow):
 
         # set params
         self.params = GsimcliParam()
-        self.temp_params = NamedTemporaryFile()
+        self.temp_params = NamedTemporaryFile(delete=False)
         self.loaded_params = None
         self.skip_dss = self.SO_checkSkipDSS.isChecked()
 
@@ -143,6 +143,14 @@ class MyMainWindow(QtGui.QMainWindow):
 
     def enable_skip_dss(self, toggle):
         self.skip_dss = toggle
+        self.HR_checkSaveInter.setChecked(toggle)
+        self.HR_checkSaveInter.setDisabled(toggle)
+        if toggle:
+            tool_tip = ("Deleting intermediary files not possible when "
+                        "skipping the simulation process.")
+        else:
+            tool_tip = None
+        self.HR_checkSaveInter.setToolTip(tool_tip)
 
     def change_station_order(self, index):
         st_order = self.HD_comboStationOrder.currentText()
@@ -370,19 +378,22 @@ class MyMainWindow(QtGui.QMainWindow):
             # workaround for unicode/bytes issues
             networks = map(str, networks)
             method_classic.batch_networks(self.params.path, networks,
-                                          batch_decades, self.skip_dss)
+                                          batch_decades,
+                                          skip_dss=self.skip_dss)
         elif batch_decades:
             method_classic.batch_decade(self.params.path,
-                                self.DB_lineVariogPath.text(), self.skip_dss)
+                                        str(self.DB_lineVariogPath.text()),
+                                        print_status=True,
+                                        skip_dss=self.skip_dss)
         else:
-            method_classic.run_par(self.params.path, self.skip_dss)
+            method_classic.run_par(self.params.path, skip_dss=self.skip_dss)
 
     def apply_settings(self):
         self.save_settings(self.temp_params.name)
-    
+
     def save_params(self):
         self.save_settings(self.loaded_params)
-    
+
     def save_as_params(self):
         filepath = QtGui.QFileDialog.getSaveFileName(self,
                                      caption="Save parameters file",
@@ -403,6 +414,9 @@ class MyMainWindow(QtGui.QMainWindow):
     def default_varnames(self):
         pylist_to_qlist(["x", "y", "time", "station", "clim"],
                         self.DL_listVarNames)
+
+    def on_exit(self):
+        os.remove(self.temp_params.name)
 
 
 def qlist_to_pylist(qlist):
@@ -436,5 +450,7 @@ if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     # MainWindow = loadUiWidget("/home/julio/qt/gsimcli.ui")
     MainWindow = MyMainWindow()
+    # on exit
+    app.aboutToQuit.connect(MainWindow.on_exit)
     MainWindow.show()
     sys.exit(app.exec_())

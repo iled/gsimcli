@@ -461,6 +461,7 @@ if __name__ == '__main__':
     # main()
 
     par = '/home/julio/Testes/cost-home/gsimcli.par'
+    par = '/home/julio/Área de Trabalho/teste.par'
     # run_par(par)
 
     base = '/home/julio/Testes/cost-home'
@@ -472,6 +473,8 @@ if __name__ == '__main__':
                 os.path.join(base, 'rede000020')]
     #"""
     networks = [os.path.join(base, 'rede000009')]
-    batch_networks(par, networks, decades=True,
-                   print_status=True, skip_dss=True)
+#     batch_networks(par, networks, decades=True,
+#                    print_status=True, skip_dss=False)
+    variog = os.path.join(networks[0], "rede09_variografia_media.csv")
+    batch_decade(par, variog, print_status=True, skip_dss=False)
     print 'done'
