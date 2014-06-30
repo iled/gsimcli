@@ -76,11 +76,11 @@ class DssEnvironment(object):
         Parameters
         ----------
         dss_path : string
-            Binary file path.
+            Binary file full path.
         par_path : string or DssParam object
-            Parameters file path or DssParam instance.
+            Parameters file full path or DssParam instance.
         output : string, default 'dssim.out'
-            Simulation output file path.
+            Simulation output file full path.
         simnum : int, default 0
             Number of the next realization.
 
@@ -97,13 +97,13 @@ class DssEnvironment(object):
         self.dss_path = dss_path
         self.exedir, self.exefile = os.path.split(dss_path)
         self.pardir, self.parfile = os.path.split(self.par_path)
-        self.output = output
+        self.outputdir, self.outputfile = os.path.split(output)
         self.simnum = simnum
 
         self.tempdir = os.path.join(self.pardir, 'temp')
         if not os.path.isdir(self.tempdir):
             os.mkdir(self.tempdir)
-        self._update_paths()
+        self.update_paths()
 
     def new(self):
         """Create a new directory, within the environment's temporary
@@ -124,24 +124,27 @@ class DssEnvironment(object):
             os.mkdir(new_dir)
 
         new_exe = os.path.join(new_dir, self.exefile)
-        new_par = os.path.join(new_dir, 'DSSim.PAR')
+        new_par = os.path.join(new_dir, 'DSSim.PAR')  # TODO: old
         if not os.path.isfile(new_exe):
             shutil.copyfile(self.dss_path, new_exe)
         self.envs.append([new_dir, new_exe, new_par])
 
         # update path parameters and seed:
         if self.simnum > 1:
-            # TODO: use utils.filename_indexing ?
-            outpath = ut.filename_indexing(self.output, self.simnum)
-            # outpath = (ntpath.splitext(self.output)[0] + str(self.simnum) +
+            outfile = ut.filename_indexing(self.output, self.simnum)
+            # outfile = (ntpath.splitext(self.output)[0] + str(self.simnum) +
             #           '_' + ntpath.splitext(self.output)[1])
         else:
-            outpath = self.output
-        # remove the first directory in the the output tree
-        # splitpath = ntpath.split(outpath)
-        # outpath = ntpath.join(ntpath.basename(splitpath[0]), splitpath[1])
+            outfile = self.output
+        # update output file full path
+        if self.outputdir:
+            outdir = self.outputdir
+        else:
+            # try to guess the output directory
+            outdir = '..\\..\\..\\'
         keywords = ['output', 'seed']
-        values = ['..\\..\\..\\' + outpath, self.par.seed + 2 * self.simnum]
+        values = [ntpath.join(outdir, outfile),
+                  self.par.seed + 2 * self.simnum]
         self.par.update(keywords, values)
         self.par.save_old(new_par)
         self.simnum += 1
@@ -160,7 +163,7 @@ class DssEnvironment(object):
         """
         self.par.path = os.path.join(self.pardir, self.parfile)
 
-    def _update_paths(self):
+    def update_paths(self):
         """Update the parameters related to file paths. Prepends '..\..\'.
         Necessary to call multiprocessing DSS launcher.
 
@@ -169,9 +172,9 @@ class DssEnvironment(object):
 
         for param in params:
             val = getattr(self.par, param)
-            if val and val != 'no file':
+            if not ntpath.isfile(val) and val != 'no file':
                 # FIXME: not a pretty solution... code smell
-                setattr(self.par, param, '..\\..\\..\\' + val)
+                setattr(self.par, param, ntpath.join('..\\..\\..\\', val))
 
 
 def _normal(exe_path, par):
@@ -223,17 +226,17 @@ def exec_ssdir(dss_path, par_path, dbg=None, print_status=False):
     Parameters
     ----------
     dss_path : string
-        Binary file path.
+        Binary file full path.
     par_path : string
-        Parameters file path.
+        Parameters file full path.
     dbg : string, optional
         Debug output file path. Write DSS console output to a file.
     print_status : boolean, default False
         Print execution status.
 
     """
-    # print 'Running {}...'.format(os.path.basename(dss_path))
-    print mp.current_process().name
+    if print_status:
+        print "Computing: {}".format(mp.current_process().name)
 
     if os.name == 'posix':
         env = 'wine '
@@ -294,11 +297,11 @@ def mp_exec(dss_path, par_path, output, simnum, totalsim=None, dbg=None,
     Parameters
     ----------
     dss_path : string
-        Binary file path.
+        Binary file full path.
     par_path : string or DssParam object
-        Parameters file path or DssParam instance.
+        Parameters file full path or DssParam instance.
     output : string
-        Simulation output file path.
+        Simulation output file full path.
     simnum : int
         Number of the next realization.
     totalsim : int, optional
