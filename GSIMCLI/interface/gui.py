@@ -56,6 +56,10 @@ class MyMainWindow(QtGui.QMainWindow):
         self.SO_buttonExePath.clicked.connect(self.browse_exe_file)
         self.HR_buttonResultsPath.clicked.connect(self.browse_results)
 
+        # line edits
+        self.DL_plainDataPreview.setPlainText("Data file preview")
+        self.DL_lineDataPath.editingFinished.connect(self.preview_data_file)
+
         # hidden
         self.SV_labelBatchDecades.setVisible(False)
 
@@ -182,6 +186,7 @@ class MyMainWindow(QtGui.QMainWindow):
                                      dir=os.path.expanduser('~/'))
         if filepath[0]:
             self.DL_lineDataPath.setText(filepath[0])
+            self.preview_data_file()
 
     def browse_networks(self):
         dialog = QtGui.QFileDialog(self)
@@ -223,6 +228,16 @@ class MyMainWindow(QtGui.QMainWindow):
                                      dir=os.path.expanduser('~/'))
         if filepath:
             self.HR_lineResultsPath.setText(filepath)
+
+    def preview_data_file(self):
+        try:
+            with open(self.DL_lineDataPath.text(), 'r+') as datafile:
+                lines = str()
+                for i in xrange(10):  # @UnusedVariable
+                    lines += datafile.readline()
+        except IOError:
+            lines = "Error loading file"
+        self.DL_plainDataPreview.setPlainText(lines)
 
     def load_settings(self):
         # Data / Load

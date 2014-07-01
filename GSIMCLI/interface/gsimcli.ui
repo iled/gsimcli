@@ -155,19 +155,19 @@
             <enum>QFrame::Raised</enum>
            </property>
            <property name="currentIndex">
-            <number>2</number>
+            <number>0</number>
            </property>
            <widget class="QWidget" name="DataLoad">
-            <widget class="QWidget" name="layoutWidget">
+            <widget class="QWidget" name="">
              <property name="geometry">
               <rect>
-               <x>11</x>
-               <y>11</y>
-               <width>261</width>
-               <height>331</height>
+               <x>12</x>
+               <y>12</y>
+               <width>331</width>
+               <height>381</height>
               </rect>
              </property>
-             <layout class="QVBoxLayout" name="verticalLayout_3">
+             <layout class="QVBoxLayout" name="verticalLayout_8">
               <property name="spacing">
                <number>15</number>
               </property>
@@ -266,16 +266,13 @@
               </item>
               <item>
                <layout class="QHBoxLayout" name="horizontalLayout_18">
-                <property name="spacing">
-                 <number>15</number>
-                </property>
                 <item>
                  <widget class="QLabel" name="DL_labelVarNames">
                   <property name="enabled">
                    <bool>true</bool>
                   </property>
                   <property name="sizePolicy">
-                   <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+                   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                     <horstretch>1</horstretch>
                     <verstretch>0</verstretch>
                    </sizepolicy>
@@ -289,36 +286,53 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QListWidget" name="DL_listVarNames">
-                  <property name="maximumSize">
-                   <size>
-                    <width>81</width>
-                    <height>91</height>
-                   </size>
+                 <layout class="QVBoxLayout" name="verticalLayout_3">
+                  <item>
+                   <widget class="QListWidget" name="DL_listVarNames">
+                    <property name="maximumSize">
+                     <size>
+                      <width>81</width>
+                      <height>91</height>
+                     </size>
+                    </property>
+                    <property name="dragEnabled">
+                     <bool>true</bool>
+                    </property>
+                    <property name="dragDropMode">
+                     <enum>QAbstractItemView::InternalMove</enum>
+                    </property>
+                    <property name="alternatingRowColors">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <spacer name="verticalSpacer">
+                    <property name="orientation">
+                     <enum>Qt::Vertical</enum>
+                    </property>
+                    <property name="sizeHint" stdset="0">
+                     <size>
+                      <width>20</width>
+                      <height>40</height>
+                     </size>
+                    </property>
+                   </spacer>
+                  </item>
+                 </layout>
+                </item>
+                <item>
+                 <widget class="QPlainTextEdit" name="DL_plainDataPreview">
+                  <property name="documentTitle">
+                   <string>Data file preview</string>
                   </property>
-                  <property name="dragEnabled">
-                   <bool>true</bool>
+                  <property name="lineWrapMode">
+                   <enum>QPlainTextEdit::NoWrap</enum>
                   </property>
-                  <property name="dragDropMode">
-                   <enum>QAbstractItemView::InternalMove</enum>
-                  </property>
-                  <property name="alternatingRowColors">
+                  <property name="readOnly">
                    <bool>true</bool>
                   </property>
                  </widget>
-                </item>
-                <item>
-                 <spacer name="horizontalSpacer">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>90</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
                 </item>
                </layout>
               </item>
