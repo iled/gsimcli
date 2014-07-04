@@ -80,7 +80,7 @@ class DssEnvironment(object):
         par_path : string or DssParam object
             Parameters file full path or DssParam instance.
         output : string, default 'dssim.out'
-            Simulation output file full path.
+            Simulation output file full (NT) path.
         simnum : int, default 0
             Number of the next realization.
 
@@ -97,7 +97,7 @@ class DssEnvironment(object):
         self.dss_path = dss_path
         self.exedir, self.exefile = os.path.split(dss_path)
         self.pardir, self.parfile = os.path.split(self.par_path)
-        self.outputdir, self.outputfile = os.path.split(output)
+        self.outputdir, self.outputfile = ntpath.split(output)
         self.simnum = simnum
 
         self.tempdir = os.path.join(self.pardir, 'temp')
@@ -131,17 +131,18 @@ class DssEnvironment(object):
 
         # update path parameters and seed:
         if self.simnum > 1:
-            outfile = ut.filename_indexing(self.output, self.simnum)
-            # outfile = (ntpath.splitext(self.output)[0] + str(self.simnum) +
-            #           '_' + ntpath.splitext(self.output)[1])
+            outfile = ut.filename_indexing(self.outputfile, self.simnum)
         else:
-            outfile = self.output
+            outfile = self.outputfile
         # update output file full path
-        if self.outputdir:
-            outdir = self.outputdir
-        else:
-            # try to guess the output directory
-            outdir = '..\\..\\..\\'
+#         if self.outputdir:
+#             outdir = ntpath.abspath(self.outputdir)
+#         else:
+#             # try to guess the output directory
+#             outdir = '..\\..\\..\\'
+
+        outdir = '..\\..\\'
+
         keywords = ['output', 'seed']
         values = [ntpath.join(outdir, outfile),
                   self.par.seed + 2 * self.simnum]
@@ -174,7 +175,8 @@ class DssEnvironment(object):
             val = getattr(self.par, param)
             if not ntpath.isfile(val) and val != 'no file':
                 # FIXME: not a pretty solution... code smell
-                setattr(self.par, param, ntpath.join('..\\..\\..\\', val))
+                setattr(self.par, param, ntpath.join('..\\..\\',
+                                                     ntpath.basename(val)))
 
 
 def _normal(exe_path, par):
@@ -242,7 +244,8 @@ def exec_ssdir(dss_path, par_path, dbg=None, print_status=False):
         env = 'wine '
     else:
         env = str()
-    command = env + dss_path + ' ' + par_path
+    command = (env + os.path.basename(dss_path) + ' ' +
+               os.path.basename(par_path))
     wd = os.path.dirname(dss_path)
     process = sp.Popen(command, shell=True, stdout=sp.PIPE, stderr=sp.STDOUT,
                        cwd=wd)
