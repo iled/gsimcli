@@ -449,6 +449,10 @@ def batch_networks(par_path, networks, decades=False, print_status=False,
     for network in networks:
         os.chdir(network)
         specfile = os.path.join(network, glob.glob('*grid*.csv')[0])
+        network_results = os.path.join(gscpar.results,
+                               os.path.basename(network))
+        if not os.path.isdir(network_results):
+            os.mkdir(network_results)
         grid = pd.read_csv(specfile)
         # make case insensitive
         grid.rename(columns=lambda x: x.lower(), inplace=True)
@@ -457,7 +461,8 @@ def batch_networks(par_path, networks, decades=False, print_status=False,
                  'ZZ_nodes_number', 'ZZ_spacing', 'results']
         values = [grid.xnodes, grid.xmin, grid.xsize,
                   grid.ynodes, grid.ymin, grid.ysize,
-                  str(10), str(1), network]
+                  str(10), str(1), network_results]
+
         gscpar.update(fields, values, True, ut.filename_indexing
                       (par_path, os.path.basename(network)))
 
@@ -485,8 +490,8 @@ if __name__ == '__main__':
                 os.path.join(base, 'rede000020')]
     #"""
     networks = [os.path.join(base, 'rede000009')]
-#     batch_networks(par, networks, decades=True,
-#                    print_status=True, skip_dss=False)
-    variog = os.path.join(networks[0], "rede09_variografia_media.csv")
-    batch_decade(par, variog, print_status=True, skip_dss=False)
+    batch_networks(par, networks, decades=True,
+                   print_status=True, skip_dss=False)
+#     variog = os.path.join(networks[0], "rede09_variografia_media.csv")
+#     batch_decade(par, variog, print_status=True, skip_dss=False)
     print 'done'
