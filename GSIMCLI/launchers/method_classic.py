@@ -163,7 +163,7 @@ def gsimcli(stations_file, stations_header, no_data, stations_order,
             oldpar.nsim = 1
             purge_temp = False
             for sim in xrange(1, dsspar.nsim + 1, cores):
-                if print_status and not skip_dss:
+                if print_status:
                     print ('[{}/{}] Working on realization {}'.
                            format(i + 1, len(stations_order), sim))
                 if sim >= dsspar.nsim + 1 - cores:
@@ -295,7 +295,7 @@ def run_par(par_path, print_status=False, skip_dss=False):
 
 
 def batch_decade(par_path, variograms_file, print_status=False,
-                 skip_dss=False):
+                 skip_dss=False, network_id=None):
     """Batch process to run GSIMCLI with data files divided in decades.
 
     Parameters
@@ -309,6 +309,9 @@ def batch_decade(par_path, variograms_file, print_status=False,
     skip_dss : boolean, default False
         Do not run DSS. Choose if the simulated maps are already in place and
         only the homogenisation process is needed.
+    network_id : string, optional
+        Network ID. If not given, will try to deduce from 'data' field, which
+    should be passed in par_path.
 
     See Also
     --------
@@ -332,23 +335,34 @@ def batch_decade(par_path, variograms_file, print_status=False,
             - sill_norm: variance-normalised total sill
             - other columns will be ignored
 
+    The directory containing the decadal data files, which should be passed in
+    the field 'data' of par_path, must have data files containing, as least,
+    the first year of each decade in their file names.
+
     """
     if isinstance(par_path, pgc.GsimcliParam):
         gscpar = par_path
     else:
         gscpar = pgc.GsimcliParam(par_path)
 
-    network_parpath = gscpar.path
     variograms = pd.read_csv(variograms_file)
     # make case insensitive
     variograms.rename(columns=lambda x: x.lower(), inplace=True)
 
     results = list()
+    outpath = str(gscpar.results)
+    if network_id is None:
+        network_id = os.path.basename(os.path.dirname(gscpar.data))
 
     for decade in variograms.iterrows():
         os.chdir(os.path.dirname(variograms_file))
         first_year = decade[1].ix['decade'].split('-')[0].strip()
-        data_folder = os.path.join(os.getcwd(), glob.glob('dec*')[0])
+        # try to use the directory containing the decadal data, otherwise try
+        # to find it in the same directory as the variograms file
+        if os.path.exists(gscpar.data):
+            data_folder = str(gscpar.data)
+        else:
+            data_folder = os.path.join(os.getcwd(), glob.glob('dec*')[0])
         data_file = os.path.join(data_folder, glob.glob
                                  (data_folder + '/*' + first_year + '*')[0])
 
@@ -365,8 +379,7 @@ def batch_decade(par_path, variograms_file, print_status=False,
             nugget = decade[1].ix['nugget'] / variance
             psill = decade[1].ix['partial sill'] / variance
 
-        results_folder = os.path.join(os.path.dirname(variograms_file),
-                                      decade[1].ix['decade'])
+        results_folder = os.path.join(gscpar.results, decade[1].ix['decade'])
         if not os.path.isdir(results_folder):
             os.mkdir(results_folder)
         fields = ['data', 'model', 'nugget', 'sill', 'ranges', 'zz_minimum',
@@ -376,18 +389,17 @@ def batch_decade(par_path, variograms_file, print_status=False,
                   ', '.join(map(str, ([decade[1].ix['range'],
                                        decade[1].ix['range'], 1]))),
                   first_year, results_folder]
+        new_par = os.path.join(gscpar.results, os.path.basename(gscpar.path))
         gscpar.update(fields, values, True, ut.filename_indexing
-                      (network_parpath, decade[1].ix['decade']))
+                      (new_par, decade[1].ix['decade']))
         results.append(run_par(gscpar, print_status, skip_dss))
 
-    outpath = os.path.dirname(variograms_file)
     gsimclipath = os.path.join(outpath, 'gsimcli_results.xls')
     hmg.merge_output(results, gsimclipath)
     ss.xls2costhome(xlspath=gsimclipath, outpath=outpath, nd=gscpar.no_data,
                     sheet='All stations', header=False, skip_rows=[1],
-                    network_id=os.path.basename(outpath), status='ho',
-                    variable='vv', resolution='y', content='d', ftype='data',
-                    yearly_sum=True)
+                    network_id=network_id, status='ho', variable='vv',
+                    resolution='y', content='d', ftype='data', yearly_sum=True)
 
 
 def batch_networks(par_path, networks, decades=False, print_status=False,
