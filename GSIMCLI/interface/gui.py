@@ -52,6 +52,7 @@ class MyMainWindow(QtGui.QMainWindow):
         self.DL_buttonDataPath.clicked.connect(self.browse_data_file)
         self.DB_buttonAddNetworks.clicked.connect(self.browse_networks)
         self.DB_buttonRemoveNetworks.clicked.connect(self.remove_networks)
+        self.DB_buttonDecadesPath.clicked.connect(self.browse_decades)
         self.DB_buttonVariogPath.clicked.connect(self.browse_variog_file)
         self.SO_buttonExePath.clicked.connect(self.browse_exe_file)
         self.HR_buttonResultsPath.clicked.connect(self.browse_results)
@@ -103,6 +104,9 @@ class MyMainWindow(QtGui.QMainWindow):
         self.DB_labelVariogPath.setEnabled(enable)
         self.DB_lineVariogPath.setEnabled(enable)
         self.DB_buttonVariogPath.setEnabled(enable)
+        self.DB_labelDecadesPath.setEnabled(enable)
+        self.DB_lineDecadesPath.setEnabled(enable)
+        self.DB_buttonDecadesPath.setEnabled(enable)
 
     def disable_datapath_group(self, disable):
         self.DL_labelDataPath.setDisabled(disable)
@@ -206,6 +210,13 @@ class MyMainWindow(QtGui.QMainWindow):
             self.DB_listNetworksPaths.takeItem(
                                            self.DB_listNetworksPaths.row(path))
 
+    def browse_decades(self):
+        dirpath = QtGui.QFileDialog.getExistingDirectory(self,
+                                    caption="Select decades directory",
+                                    dir=os.path.expanduser('~/'))
+        if dirpath:
+            self.DB_lineDecadesPath.setText(dirpath)
+
     def browse_variog_file(self):
         filepath = QtGui.QFileDialog.getOpenFileName(self,
                                      caption="Select variography file",
@@ -284,6 +295,8 @@ class MyMainWindow(QtGui.QMainWindow):
             self.SV_lineAngles.setText(self.params.angles)
         except(AttributeError):
             self.DB_checkBatchDecades.setChecked(True)
+            self.DB_lineDecadesPath = self.params.data
+            self.DL_lineDataPath.clear()
 
         # Homogenisation / Detection
         st_order = self.params.st_order
@@ -316,7 +329,10 @@ class MyMainWindow(QtGui.QMainWindow):
 
     def save_settings(self, par_path=None):
         # Data / Load
-        self.params.data = self.DL_lineDataPath.text()
+        if self.DB_checkBatchDecades.isChecked():
+            self.params.data = self.DB_lineDecadesPath.text()
+        else:
+            self.params.data = self.DL_lineDataPath.text()
         self.params.no_data = self.DL_spinNoData.value()
         self.params.data_header = self.DL_checkHeader.isChecked()
         self.params.name = self.DL_lineDataName.text()
