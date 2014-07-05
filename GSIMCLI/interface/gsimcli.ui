@@ -155,7 +155,7 @@
             <enum>QFrame::Raised</enum>
            </property>
            <property name="currentIndex">
-            <number>1</number>
+            <number>4</number>
            </property>
            <widget class="QWidget" name="DataLoad">
             <widget class="QWidget" name="">
@@ -998,6 +998,9 @@
                  </item>
                  <item row="0" column="1">
                   <widget class="QSpinBox" name="SG_spinXXNodes">
+                   <property name="minimum">
+                    <number>1</number>
+                   </property>
                    <property name="maximum">
                     <number>1000000000</number>
                    </property>
@@ -1012,6 +1015,9 @@
                  </item>
                  <item row="1" column="1">
                   <widget class="QSpinBox" name="SG_spinYYNodes">
+                   <property name="minimum">
+                    <number>1</number>
+                   </property>
                    <property name="maximum">
                     <number>1000000000</number>
                    </property>
@@ -1026,6 +1032,9 @@
                  </item>
                  <item row="2" column="1">
                   <widget class="QSpinBox" name="SG_spinZZNodes">
+                   <property name="minimum">
+                    <number>1</number>
+                   </property>
                    <property name="maximum">
                     <number>1000000000</number>
                    </property>
@@ -1055,6 +1064,9 @@
                  </item>
                  <item row="0" column="1">
                   <widget class="QSpinBox" name="SG_spinXXSize">
+                   <property name="minimum">
+                    <number>1</number>
+                   </property>
                    <property name="maximum">
                     <number>1000000000</number>
                    </property>
@@ -1069,6 +1081,9 @@
                  </item>
                  <item row="1" column="1">
                   <widget class="QSpinBox" name="SG_spinYYSize">
+                   <property name="minimum">
+                    <number>1</number>
+                   </property>
                    <property name="maximum">
                     <number>1000000000</number>
                    </property>
@@ -1083,6 +1098,9 @@
                  </item>
                  <item row="2" column="1">
                   <widget class="QSpinBox" name="SG_spinZZSize">
+                   <property name="minimum">
+                    <number>1</number>
+                   </property>
                    <property name="maximum">
                     <number>1000000000</number>
                    </property>
