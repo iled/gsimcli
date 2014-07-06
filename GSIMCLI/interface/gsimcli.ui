@@ -1551,6 +1551,7 @@
     <property name="title">
      <string>&amp;View</string>
     </property>
+    <addaction name="actionPrintStatus"/>
    </widget>
    <widget class="QMenu" name="menuTools">
     <property name="enabled">
@@ -1640,6 +1641,17 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="actionPrintStatus">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Print status (console)</string>
    </property>
   </action>
  </widget>

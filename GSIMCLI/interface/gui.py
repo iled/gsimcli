@@ -30,6 +30,7 @@ class MyMainWindow(QtGui.QMainWindow):
         self.temp_params = NamedTemporaryFile(delete=False)
         self.loaded_params = None
         self.skip_dss = self.SO_checkSkipDSS.isChecked()
+        self.print_status = self.actionPrintStatus.isChecked()
 
         # change pages
         self.treeWidget.expandAll()
@@ -39,6 +40,7 @@ class MyMainWindow(QtGui.QMainWindow):
         self.DB_checkBatchDecades.toggled.connect(self.enable_batch_decades)
         self.DB_checkBatchNetworks.toggled.connect(self.enable_batch_networks)
         self.SO_checkSkipDSS.toggled.connect(self.enable_skip_dss)
+        self.actionPrintStatus.toggled.connect(self.disable_print_status)
 
         # combo boxes
         self.HD_comboStationOrder.currentIndexChanged.connect(
@@ -162,6 +164,9 @@ class MyMainWindow(QtGui.QMainWindow):
         else:
             tool_tip = None
         self.HR_checkSaveInter.setToolTip(tool_tip)
+        
+    def disable_print_status(self, toggle):
+        self.print_status = toggle
 
     def change_station_order(self, index):
         st_order = self.HD_comboStationOrder.currentText()
@@ -302,7 +307,7 @@ class MyMainWindow(QtGui.QMainWindow):
             self.SV_lineAngles.setText(self.params.angles)
         except(AttributeError):
             self.DB_checkBatchDecades.setChecked(True)
-            self.DB_lineDecadesPath = self.params.data
+            self.DB_lineDecadesPath.setText(self.params.data)
             self.DL_lineDataPath.clear()
 
         # Homogenisation / Detection
@@ -332,7 +337,8 @@ class MyMainWindow(QtGui.QMainWindow):
         self.actionGSIMCLI.setEnabled(True)
 
         # TODO: set status or something to show it was loaded
-        print "loaded from: ", self.params.path
+        if self.print_status:
+            print "loaded from: ", self.params.path
 
     def save_settings(self, par_path=None):
         # Data / Load
@@ -403,7 +409,8 @@ class MyMainWindow(QtGui.QMainWindow):
         self.actionGSIMCLI.setEnabled(True)
 
         # TODO: set status or something to show it was saved
-        print "saved at: ", self.params.path
+        if self.print_status:
+            print "saved at: ", self.params.path
 
     def run_gsimcli(self):
         batch_networks = self.DB_checkBatchNetworks.isChecked()
@@ -419,17 +426,17 @@ class MyMainWindow(QtGui.QMainWindow):
                                           networks=networks_list,
                                           decades=batch_decades,
                                           skip_dss=self.skip_dss,
-                                          print_status=True)
+                                          print_status=self.print_status)
         elif batch_decades:
             method_classic.batch_decade(par_path=self.params.path,
                             variograms_file=str(self.DB_lineVariogPath.text()),
-                            print_status=True,
+                            print_status=self.print_status,
                             skip_dss=self.skip_dss,
                             network_id=self.DB_lineNetworkID.text())
         else:
             method_classic.run_par(par_path=self.params.path,
                                    skip_dss=self.skip_dss,
-                                   print_status=True)
+                                   print_status=self.print_status)
 
     def apply_settings(self):
         self.save_settings(self.temp_params.name)
@@ -443,6 +450,7 @@ class MyMainWindow(QtGui.QMainWindow):
                                      dir=os.path.expanduser('~/'))
         if filepath[0]:
             self.save_settings(filepath[0])
+            self.actionSave.setEnabled(True)
 
     def open_params(self):
         filepath = QtGui.QFileDialog.getOpenFileName(self,
@@ -452,7 +460,7 @@ class MyMainWindow(QtGui.QMainWindow):
             self.loaded_params = filepath[0]
             self.params.load(filepath[0])
             self.load_settings()
-        self.actionSave.setEnabled(True)
+            self.actionSave.setEnabled(True)
 
     def default_varnames(self):
         pylist_to_qlist(["x", "y", "time", "station", "clim"],
