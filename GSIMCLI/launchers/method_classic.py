@@ -285,7 +285,7 @@ def run_par(par_path, print_status=False, skip_dss=False):
                       stations_order, gscpar.detect_method, gscpar.detect_prob,
                       detect_flag, gscpar.detect_save, gscpar.dss_exe, dsspar,
                       gscpar.results, gscpar.sim_purge, skew,
-                      skip_dss=skip_dss)
+                      print_status=print_status, skip_dss=skip_dss)
 
     # FIXME: workaround for merge dependence
     results = list(results)
@@ -355,14 +355,20 @@ def batch_decade(par_path, variograms_file, print_status=False,
         network_id = os.path.basename(os.path.dirname(gscpar.data))
 
     for decade in variograms.iterrows():
+        if print_status:
+            print "Processing decade: ", decade[1].ix['decade']
         os.chdir(os.path.dirname(variograms_file))
         first_year = decade[1].ix['decade'].split('-')[0].strip()
         # try to use the directory containing the decadal data, otherwise try
         # to find it in the same directory as the variograms file
         if os.path.exists(gscpar.data):
-            data_folder = str(gscpar.data)
+            if os.path.isfile(gscpar.data):
+                data_folder = os.path.dirname(gscpar.data)
+            else:
+                data_folder = str(gscpar.data)
         else:
             data_folder = os.path.join(os.getcwd(), glob.glob('dec*')[0])
+
         data_file = os.path.join(data_folder, glob.glob
                                  (data_folder + '/*' + first_year + '*')[0])
 
