@@ -60,6 +60,7 @@ class MyMainWindow(QtGui.QMainWindow):
         # line edits
         self.DL_plainDataPreview.setPlainText("Data file preview")
         self.DL_lineDataPath.editingFinished.connect(self.preview_data_file)
+        self.DB_lineDecadesPath.textChanged.connect(self.guess_network_id)
 
         # hidden
         self.SV_labelBatchDecades.setVisible(False)
@@ -107,6 +108,8 @@ class MyMainWindow(QtGui.QMainWindow):
         self.DB_labelDecadesPath.setEnabled(enable)
         self.DB_lineDecadesPath.setEnabled(enable)
         self.DB_buttonDecadesPath.setEnabled(enable)
+        self.DB_labelNetworkID.setEnabled(enable)
+        self.DB_lineNetworkID.setEnabled(enable)
 
     def disable_datapath_group(self, disable):
         self.DL_labelDataPath.setDisabled(disable)
@@ -249,6 +252,10 @@ class MyMainWindow(QtGui.QMainWindow):
         except IOError:
             lines = "Error loading file"
         self.DL_plainDataPreview.setPlainText(lines)
+        
+    def guess_network_id(self):
+        self.DB_lineNetworkID.setText(os.path.basename(os.path.dirname(
+                                           self.DB_lineDecadesPath.text())))
 
     def load_settings(self):
         # Data / Load
@@ -405,19 +412,24 @@ class MyMainWindow(QtGui.QMainWindow):
         self.params.results = str(self.params.results)
 
         if batch_networks:
-            networks = qlist_to_pylist(self.DB_listNetworksPaths)
+            networks_list = qlist_to_pylist(self.DB_listNetworksPaths)
             # workaround for unicode/bytes issues
-            networks = map(str, networks)
-            method_classic.batch_networks(self.params.path, networks,
-                                          batch_decades,
-                                          skip_dss=self.skip_dss)
+            networks_list = map(str, networks_list)
+            method_classic.batch_networks(par_path=self.params.path,
+                                          networks=networks_list,
+                                          decades=batch_decades,
+                                          skip_dss=self.skip_dss,
+                                          print_status=True)
         elif batch_decades:
-            method_classic.batch_decade(self.params.path,
-                                        str(self.DB_lineVariogPath.text()),
-                                        print_status=True,
-                                        skip_dss=self.skip_dss)
+            method_classic.batch_decade(par_path=self.params.path,
+                            variograms_file=str(self.DB_lineVariogPath.text()),
+                            print_status=True,
+                            skip_dss=self.skip_dss,
+                            network_id=self.DB_lineNetworkID.text())
         else:
-            method_classic.run_par(self.params.path, skip_dss=self.skip_dss)
+            method_classic.run_par(par_path=self.params.path,
+                                   skip_dss=self.skip_dss,
+                                   print_status=True)
 
     def apply_settings(self):
         self.save_settings(self.temp_params.name)

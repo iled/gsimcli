@@ -351,7 +351,7 @@ def batch_decade(par_path, variograms_file, print_status=False,
 
     results = list()
     outpath = str(gscpar.results)
-    if network_id is None:
+    if not network_id:
         network_id = os.path.basename(os.path.dirname(gscpar.data))
 
     for decade in variograms.iterrows():

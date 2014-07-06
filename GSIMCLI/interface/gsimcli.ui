@@ -136,7 +136,7 @@
           <x>0</x>
           <y>0</y>
           <width>401</width>
-          <height>521</height>
+          <height>581</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout">
@@ -155,7 +155,7 @@
             <enum>QFrame::Raised</enum>
            </property>
            <property name="currentIndex">
-            <number>4</number>
+            <number>1</number>
            </property>
            <widget class="QWidget" name="DataLoad">
             <widget class="QWidget" name="">
@@ -370,13 +370,13 @@
             <widget class="QWidget" name="">
              <property name="geometry">
               <rect>
-               <x>11</x>
-               <y>11</y>
+               <x>10</x>
+               <y>13</y>
                <width>321</width>
-               <height>451</height>
+               <height>521</height>
               </rect>
              </property>
-             <layout class="QVBoxLayout" name="verticalLayout_24">
+             <layout class="QVBoxLayout" name="verticalLayout_4">
               <property name="spacing">
                <number>15</number>
               </property>
@@ -470,90 +470,110 @@
                </layout>
               </item>
               <item>
-               <layout class="QVBoxLayout" name="verticalLayout_4">
+               <widget class="QCheckBox" name="DB_checkBatchDecades">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+                <property name="text">
+                 <string>Batch decades</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="DB_labelDecadesPath">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="text">
+                 <string>Decades directory</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_19">
                 <item>
-                 <widget class="QCheckBox" name="DB_checkBatchDecades">
+                 <widget class="QLineEdit" name="DB_lineDecadesPath">
                   <property name="enabled">
-                   <bool>true</bool>
+                   <bool>false</bool>
                   </property>
-                  <property name="text">
-                   <string>Batch decades</string>
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                    <horstretch>1</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLabel" name="DB_labelDecadesPath">
+                 <widget class="QPushButton" name="DB_buttonDecadesPath">
                   <property name="enabled">
                    <bool>false</bool>
                   </property>
                   <property name="text">
-                   <string>Decades directory</string>
+                   <string>Browse...</string>
                   </property>
                  </widget>
                 </item>
+               </layout>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_20">
+                <property name="spacing">
+                 <number>15</number>
+                </property>
                 <item>
-                 <layout class="QHBoxLayout" name="horizontalLayout_19">
-                  <item>
-                   <widget class="QLineEdit" name="DB_lineDecadesPath">
-                    <property name="enabled">
-                     <bool>false</bool>
-                    </property>
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                      <horstretch>1</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QPushButton" name="DB_buttonDecadesPath">
-                    <property name="enabled">
-                     <bool>false</bool>
-                    </property>
-                    <property name="text">
-                     <string>Browse...</string>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
-                </item>
-                <item>
-                 <widget class="QLabel" name="DB_labelVariogPath">
+                 <widget class="QLabel" name="DB_labelNetworkID">
                   <property name="enabled">
                    <bool>false</bool>
                   </property>
                   <property name="text">
-                   <string>Variography file</string>
+                   <string>Network ID</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <layout class="QHBoxLayout" name="horizontalLayout_4">
-                  <item>
-                   <widget class="QLineEdit" name="DB_lineVariogPath">
-                    <property name="enabled">
-                     <bool>false</bool>
-                    </property>
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                      <horstretch>1</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QPushButton" name="DB_buttonVariogPath">
-                    <property name="enabled">
-                     <bool>false</bool>
-                    </property>
-                    <property name="text">
-                     <string>&amp;Browse...</string>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
+                 <widget class="QLineEdit" name="DB_lineNetworkID">
+                  <property name="enabled">
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <widget class="QLabel" name="DB_labelVariogPath">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="text">
+                 <string>Variography file</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_4">
+                <item>
+                 <widget class="QLineEdit" name="DB_lineVariogPath">
+                  <property name="enabled">
+                   <bool>false</bool>
+                  </property>
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                    <horstretch>1</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="DB_buttonVariogPath">
+                  <property name="enabled">
+                   <bool>false</bool>
+                  </property>
+                  <property name="text">
+                   <string>&amp;Browse...</string>
+                  </property>
+                 </widget>
                 </item>
                </layout>
               </item>
