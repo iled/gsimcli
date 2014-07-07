@@ -125,6 +125,10 @@ def gsimcli(stations_file, stations_header, no_data, stations_order,
     dnumber_list = list()
     fnumber_list = list()
 
+    # workaround for Qt forcing backslash
+    if os.name == "nt":
+        exe_path = ntpath.abspath(exe_path)
+    
     commonpath = os.path.commonprefix((outfolder, exe_path))
     # start iterative process
     for i in xrange(len(stations_order)):
