@@ -156,6 +156,7 @@ class DssEnvironment(object):
         """Remove all files and directories created for the environment.
 
         """
+        os.chdir(os.path.dirname(self.par_path))
         shutil.rmtree(self.tempdir)
 
     def reset_par_path(self):
