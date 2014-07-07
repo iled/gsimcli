@@ -413,6 +413,7 @@ class MyMainWindow(QtGui.QMainWindow):
             print "saved at: ", self.params.path
 
     def run_gsimcli(self):
+        self.apply_settings()
         batch_networks = self.DB_checkBatchNetworks.isChecked()
         batch_decades = self.DB_checkBatchDecades.isChecked()
         self.params.path = str(self.params.path)
