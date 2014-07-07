@@ -71,7 +71,7 @@ def gsimcli(stations_file, stations_header, no_data, stations_order,
     detect_save : boolean
         Save generated files in the procedure\: intermediary PointSet files
         containing candidate and reference stations, homogenised and simulated
-        values, DSS parameters and cluster transformation files.
+        values, and DSS parameters files.
     exe_path : string
         DSS binary file path.
     par_file : string or DssParam object
@@ -199,7 +199,7 @@ def gsimcli(stations_file, stations_header, no_data, stations_order,
         stations_pset = hmg.append_homog_station(references, homogenised)
         if not detect_save:
             [os.remove(fpath) for fpath in
-             [reffile, parfile, dsspar.transfile]]
+             [reffile, parfile]]  # , dsspar.transfile]]
         if purge_sims:
             sim_maps.purge()
         else:
@@ -385,7 +385,7 @@ def batch_decade(par_path, variograms_file, print_status=False,
             nugget = decade[1].ix['nugget'] / variance
             psill = decade[1].ix['partial sill'] / variance
 
-        results_folder = os.path.join(gscpar.results, decade[1].ix['decade'])
+        results_folder = os.path.join(outpath, decade[1].ix['decade'])
         if not os.path.isdir(results_folder):
             os.mkdir(results_folder)
         fields = ['data', 'model', 'nugget', 'sill', 'ranges', 'zz_minimum',
@@ -496,8 +496,8 @@ if __name__ == '__main__':
                 os.path.join(base, 'rede000020')]
     #"""
     networks = [os.path.join(base, 'rede000009')]
-    batch_networks(par, networks, decades=True,
-                   print_status=True, skip_dss=False)
-#     variog = os.path.join(networks[0], "rede09_variografia_media.csv")
-#     batch_decade(par, variog, print_status=True, skip_dss=False)
+#     batch_networks(par, networks, decades=True,
+#                    print_status=True, skip_dss=False)
+    variog = os.path.join(networks[0], "rede09_variografia_media.csv")
+    batch_decade(par, variog, print_status=True, skip_dss=False)
     print 'done'
