@@ -60,7 +60,6 @@ class MyMainWindow(QtGui.QMainWindow):
         self.HR_buttonResultsPath.clicked.connect(self.browse_results)
 
         # line edits
-        self.DL_plainDataPreview.setPlainText("Data file preview")
         self.DL_lineDataPath.editingFinished.connect(self.preview_data_file)
         self.DB_lineDecadesPath.textChanged.connect(self.guess_network_id)
 
@@ -336,7 +335,8 @@ class MyMainWindow(QtGui.QMainWindow):
 
         self.actionGSIMCLI.setEnabled(True)
 
-        # TODO: set status or something to show it was loaded
+        self.statusBar().showMessage("Parameters loaded from: {}".
+                                     format(self.params.path), 5000)
         if self.print_status:
             print "loaded from: ", self.params.path
 
@@ -408,7 +408,8 @@ class MyMainWindow(QtGui.QMainWindow):
         self.params.save(par_path)
         self.actionGSIMCLI.setEnabled(True)
 
-        # TODO: set status or something to show it was saved
+        self.statusBar().showMessage("Parameters saved at: {}".
+                                     format(self.params.path), 5000)
         if self.print_status:
             print "saved at: ", self.params.path
 
@@ -447,16 +448,18 @@ class MyMainWindow(QtGui.QMainWindow):
 
     def save_as_params(self):
         filepath = QtGui.QFileDialog.getSaveFileName(self,
-                                     caption="Save parameters file",
-                                     dir=os.path.expanduser('~/'))
+                                 caption="Save parameters file",
+                                 dir=os.path.expanduser('~/'),
+                                 filter="Parameters (*.par);;All files (*.*)")
         if filepath[0]:
             self.save_settings(filepath[0])
             self.actionSave.setEnabled(True)
 
     def open_params(self):
         filepath = QtGui.QFileDialog.getOpenFileName(self,
-                                     caption="Open parameters file",
-                                     dir=os.path.expanduser('~/'))
+                                 caption="Open parameters file",
+                                 dir=os.path.expanduser('~/'),
+                                 filter="Parameters (*.par);;All files (*.*)")
         if filepath[0]:
             self.loaded_params = filepath[0]
             self.params.load(filepath[0])

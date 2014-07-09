@@ -128,7 +128,7 @@ def gsimcli(stations_file, stations_header, no_data, stations_order,
     # workaround for Qt forcing backslash
     if os.name == "nt":
         exe_path = ntpath.abspath(exe_path)
-    
+
     commonpath = os.path.commonprefix((outfolder, exe_path))
     # start iterative process
     for i in xrange(len(stations_order)):
@@ -455,12 +455,14 @@ def batch_networks(par_path, networks, decades=False, print_status=False,
 
     """
     gscpar = pgc.GsimcliParam(par_path)
+    results_dir = str(gscpar.results)
 
     for network in networks:
+        if print_status:
+            print "Processing network: ", os.path.basename(network)
         os.chdir(network)
         specfile = os.path.join(network, glob.glob('*grid*.csv')[0])
-        network_results = os.path.join(gscpar.results,
-                               os.path.basename(network))
+        network_results = os.path.join(results_dir, os.path.basename(network))
         if not os.path.isdir(network_results):
             os.mkdir(network_results)
         grid = pd.read_csv(specfile)
