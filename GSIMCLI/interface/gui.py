@@ -439,6 +439,10 @@ class MyMainWindow(QtGui.QMainWindow):
             method_classic.run_par(par_path=self.params.path,
                                    skip_dss=self.skip_dss,
                                    print_status=self.print_status)
+            
+        self.statusBar().showMessage("Homogenisation process completed.", 5000)
+        if self.print_status:
+            print "Done."
 
     def apply_settings(self):
         self.save_settings(self.temp_params.name)

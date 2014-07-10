@@ -254,8 +254,9 @@ def run_par(par_path, print_status=False, skip_dss=False):
     else:
         gscpar = pgc.GsimcliParam(par_path)
 
-    dsspar_path = os.path.join(os.path.dirname(gscpar.dss_exe), 'DSSim.par')
-    dsspar = gscpar.update_dsspar(True, dsspar_path)
+    # dsspar_path = os.path.join(os.path.dirname(gscpar.dss_exe), 'DSSim.par')
+    # dsspar = gscpar.update_dsspar(True, dsspar_path)
+    dsspar = gscpar.update_dsspar(False)
 
     stations_pset = gr.PointSet()
     stations_pset.load(gscpar.data, gscpar.no_data, gscpar.data_header)
@@ -399,17 +400,18 @@ def batch_decade(par_path, variograms_file, print_status=False,
                   ', '.join(map(str, ([decade[1].ix['range'],
                                        decade[1].ix['range'], 1]))),
                   first_year, results_folder]
-        new_par = os.path.join(gscpar.results, os.path.basename(gscpar.path))
-        gscpar.update(fields, values, True, ut.filename_indexing
-                      (new_par, decade[1].ix['decade']))
+#         new_par = os.path.join(gscpar.results, os.path.basename(gscpar.path))
+#         gscpar.update(fields, values, True, ut.filename_indexing
+#                       (new_par, decade[1].ix['decade']))
+        gscpar.update(fields, values)
         results.append(run_par(gscpar, print_status, skip_dss))
 
     gsimclipath = os.path.join(outpath, 'gsimcli_results.xls')
     hmg.merge_output(results, gsimclipath)
-    ss.xls2costhome(xlspath=gsimclipath, outpath=outpath, nd=gscpar.no_data,
-                    sheet='All stations', header=False, skip_rows=[1],
-                    network_id=network_id, status='ho', variable='vv',
-                    resolution='y', content='d', ftype='data', yearly_sum=True)
+#     ss.xls2costhome(xlspath=gsimclipath, outpath=outpath, nd=gscpar.no_data,
+#                     sheet='All stations', header=False, skip_rows=[1],
+#                     network_id=network_id, status='ho', variable='vv',
+#                     resolution='y', content='d', ftype='data', yearly_sum=True)
 
 
 def batch_networks(par_path, networks, decades=False, print_status=False,
@@ -490,7 +492,7 @@ if __name__ == '__main__':
     # main()
 
     par = '/home/julio/Testes/cost-home/gsimcli.par'
-    par = '/home/julio/Área de Trabalho/teste.par'
+    par = '/home/julio/Área de Trabalho/teste3.par'
     # run_par(par)
 
     base = '/home/julio/Testes/cost-home'
@@ -502,8 +504,8 @@ if __name__ == '__main__':
                 os.path.join(base, 'rede000020')]
     #"""
     networks = [os.path.join(base, 'rede000009')]
-#     batch_networks(par, networks, decades=True,
-#                    print_status=True, skip_dss=False)
-    variog = os.path.join(networks[0], "rede09_variografia_media.csv")
-    batch_decade(par, variog, print_status=True, skip_dss=False)
+    batch_networks(par, networks, decades=True,
+                   print_status=True, skip_dss=True)
+#     variog = os.path.join(networks[0], "rede09_variografia_media.csv")
+#     batch_decade(par, variog, print_status=True, skip_dss=False)
     print 'done'
