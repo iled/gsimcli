@@ -41,6 +41,17 @@ class MyMainWindow(QtGui.QMainWindow):
         self.wildcard_variog = '*variog*.csv'
         self.wildcard_grid = '*grid*.csv'
 
+        # buttons
+        self.buttonBox.button(QtGui.QDialogButtonBox.Apply).clicked.connect(
+                                                        self.apply_settings)
+        self.DL_buttonDataPath.clicked.connect(self.browse_data_file)
+        self.DB_buttonAddNetworks.clicked.connect(self.browse_networks)
+        self.DB_buttonRemoveNetworks.clicked.connect(self.remove_networks)
+        self.DB_buttonDecadesPath.clicked.connect(self.browse_decades)
+        self.DB_buttonVariogPath.clicked.connect(self.browse_variog_file)
+        self.SO_buttonExePath.clicked.connect(self.browse_exe_file)
+        self.HR_buttonResultsPath.clicked.connect(self.browse_results)
+
         # change pages
         self.treeWidget.expandAll()
         self.treeWidget.currentItemChanged.connect(self.set_stacked_item)
@@ -58,24 +69,16 @@ class MyMainWindow(QtGui.QMainWindow):
         self.HD_comboDetectionMethod.currentIndexChanged.connect(
                                                          self.enable_skewness)
 
-        # buttons
-        self.buttonBox.button(QtGui.QDialogButtonBox.Apply).clicked.connect(
-                                                        self.apply_settings)
-        self.DL_buttonDataPath.clicked.connect(self.browse_data_file)
-        self.DB_buttonAddNetworks.clicked.connect(self.browse_networks)
-        self.DB_buttonRemoveNetworks.clicked.connect(self.remove_networks)
-        self.DB_buttonDecadesPath.clicked.connect(self.browse_decades)
-        self.DB_buttonVariogPath.clicked.connect(self.browse_variog_file)
-        self.SO_buttonExePath.clicked.connect(self.browse_exe_file)
-        self.HR_buttonResultsPath.clicked.connect(self.browse_results)
-
-        # line edits
-        self.DL_lineDataPath.editingFinished.connect(self.preview_data_file)
-        self.DB_lineDecadesPath.textChanged.connect(self.guess_network_id)
-        self.HR_lineResultsPath.textChanged.connect(self.available_space)
-
         # hidden
         self.SV_labelBatchDecades.setVisible(False)
+
+        # line edits
+        self.DL_lineDataPath.textChanged.connect(self.preview_data_file)
+        self.DB_lineDecadesPath.textChanged.connect(self.changed_decades_path)
+        self.HR_lineResultsPath.textChanged.connect(self.available_space)
+
+        # lists
+        self.DB_listNetworksPaths.currentItemChanged.connect(self.current_network)
 
         # menu
         self.actionOpen.triggered.connect(self.open_params)
@@ -150,6 +153,7 @@ class MyMainWindow(QtGui.QMainWindow):
         self.estimate_necessary_space()
 
     def enable_batch_decades(self, toggle):
+        # disable variogram
         # self.SimulationVariogram.setDisabled(toggle)
         # self.SV_labelBatchDecades.setVisible(toggle)
         tree_item = self.treeWidget.findItems("Variogram",
@@ -164,6 +168,7 @@ class MyMainWindow(QtGui.QMainWindow):
             tool_tip = None
             znodes = self.previous_znodes
         tree_item.setToolTip(0, tool_tip)
+        # enable group widgets
         self.enable_decades_group(toggle and not
                                   self.DB_checkBatchNetworks.isChecked())
         if not self.DB_checkBatchNetworks.isChecked():
@@ -172,6 +177,10 @@ class MyMainWindow(QtGui.QMainWindow):
         self.SG_spinZZNodes.setValue(znodes)
         self.SG_spinZZNodes.setDisabled(toggle)
         self.SG_spinZZNodes.setToolTip("Batch decades is enabled.")
+        # try to find a data file
+        if (self.DB_checkBatchNetworks.isChecked() and
+            self.DB_listNetworksPaths.count()):
+            self.preview_data_file(self.find_data_file())
         # calc space
         self.estimate_necessary_space()
 
@@ -273,19 +282,26 @@ class MyMainWindow(QtGui.QMainWindow):
         if filepath:
             self.HR_lineResultsPath.setText(filepath)
 
-    def preview_data_file(self):
+    def preview_data_file(self, filepath=None):
+        if not filepath:
+            filepath = self.DL_lineDataPath.text()
         try:
-            with open(self.DL_lineDataPath.text(), 'r+') as datafile:
+            with open(filepath, 'r+') as datafile:
                 lines = str()
                 for i in xrange(10):  # @UnusedVariable
                     lines += datafile.readline()
+            self.DL_labelDataPathPreview.setText(filepath)
         except IOError:
-            lines = "Error loading file"
+            lines = "Error loading file: " + filepath
+            self.DL_labelDataPathPreview.setText(None)
         self.DL_plainDataPreview.setPlainText(lines)
 
-    def guess_network_id(self):
+    def changed_decades_path(self):
+        # guess network_id
         self.DB_lineNetworkID.setText(os.path.basename(os.path.dirname(
                                            self.DB_lineDecadesPath.text())))
+        # try to find a data file
+        self.preview_data_file(self.find_data_file())
 
     def load_settings(self):
         # Data / Load
@@ -603,6 +619,25 @@ class MyMainWindow(QtGui.QMainWindow):
                 total = 0
 
         return hmg._ntuple_stations(stations_list, total)
+
+    def find_data_file(self):
+        decades = self.DB_checkBatchDecades.isChecked()
+        networks = self.DB_checkBatchNetworks.isChecked()
+        header = self.DL_checkHeader.isChecked()
+        if decades and not networks:
+            directory = self.DB_lineDecadesPath.text()
+        elif networks and not decades:
+            directory = self.DB_listNetworksPaths.currentItem().text()
+        elif decades and networks:
+            network_dir = self.DB_listNetworksPaths.currentItem().text()
+            directory = os.path.join(network_dir,
+                 glob.glob(os.path.join(network_dir, self.wildcard_decade))[0])
+
+        if decades or networks:
+            return hmg.find_pset_file(directory, header, nvars=5)
+
+    def current_network(self, current, previous):
+        self.preview_data_file(self.find_data_file())
 
 
 def qlist_to_pylist(qlist):

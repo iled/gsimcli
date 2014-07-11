@@ -146,10 +146,10 @@
          <enum>QFrame::Raised</enum>
         </property>
         <property name="currentIndex">
-         <number>2</number>
+         <number>0</number>
         </property>
         <widget class="QWidget" name="DataLoad">
-         <layout class="QVBoxLayout" name="verticalLayout_3">
+         <layout class="QVBoxLayout" name="verticalLayout_8">
           <property name="spacing">
            <number>15</number>
           </property>
@@ -220,13 +220,30 @@
            </widget>
           </item>
           <item>
-           <layout class="QVBoxLayout" name="verticalLayout_8">
+           <layout class="QVBoxLayout" name="verticalLayout_3">
             <item>
-             <widget class="QLabel" name="DL_labelDataPreview">
-              <property name="text">
-               <string>File preview</string>
-              </property>
-             </widget>
+             <layout class="QHBoxLayout" name="horizontalLayout_24">
+              <item>
+               <widget class="QLabel" name="DL_labelDataPreview">
+                <property name="text">
+                 <string>File preview: </string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="DL_labelDataPathPreview">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                  <horstretch>1</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="text">
+                 <string>no file selected</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </item>
             <item>
              <widget class="QPlainTextEdit" name="DL_plainDataPreview">
