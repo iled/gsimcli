@@ -5,6 +5,7 @@ Created on 16/06/2014
 @author: julio
 """
 
+import glob
 from PySide import QtCore, QtGui  # , QtUiTools
 import os
 import sys
@@ -13,9 +14,11 @@ from tempfile import NamedTemporaryFile
 base = os.path.dirname(os.path.dirname(__file__))
 sys.path.append(base)
 
-from interface.pyside_dynamic import loadUi
+import external_libs.disk as fs
+from external_libs.pyside_dynamic import loadUi
 from launchers import method_classic
 from parsers.gsimcli import GsimcliParam
+import tools.homog as hmg
 
 
 class MyMainWindow(QtGui.QMainWindow):
@@ -29,8 +32,14 @@ class MyMainWindow(QtGui.QMainWindow):
         self.params = GsimcliParam()
         self.temp_params = NamedTemporaryFile(delete=False)
         self.loaded_params = None
-        self.skip_dss = self.SO_checkSkipDSS.isChecked()
+        self.skip_dss = self.SO_checkSkipSim.isChecked()
         self.print_status = self.actionPrintStatus.isChecked()
+        self.needed_space = None
+        self.free_space = None
+        self.stations_list = list()
+        self.wildcard_decade = 'dec*'
+        self.wildcard_variog = '*variog*.csv'
+        self.wildcard_grid = '*grid*.csv'
 
         # change pages
         self.treeWidget.expandAll()
@@ -39,8 +48,9 @@ class MyMainWindow(QtGui.QMainWindow):
         # check boxes
         self.DB_checkBatchDecades.toggled.connect(self.enable_batch_decades)
         self.DB_checkBatchNetworks.toggled.connect(self.enable_batch_networks)
-        self.SO_checkSkipDSS.toggled.connect(self.enable_skip_dss)
+        self.SO_checkSkipSim.toggled.connect(self.enable_skip_dss)
         self.actionPrintStatus.toggled.connect(self.disable_print_status)
+        self.HR_checkPurgeSims.toggled.connect(self.enable_purge_sims)
 
         # combo boxes
         self.HD_comboStationOrder.currentIndexChanged.connect(
@@ -62,6 +72,7 @@ class MyMainWindow(QtGui.QMainWindow):
         # line edits
         self.DL_lineDataPath.editingFinished.connect(self.preview_data_file)
         self.DB_lineDecadesPath.textChanged.connect(self.guess_network_id)
+        self.HR_lineResultsPath.textChanged.connect(self.available_space)
 
         # hidden
         self.SV_labelBatchDecades.setVisible(False)
@@ -136,6 +147,8 @@ class MyMainWindow(QtGui.QMainWindow):
         if not self.DB_checkBatchDecades.isChecked():
             self.disable_datapath_group(toggle)
 
+        self.estimate_necessary_space()
+
     def enable_batch_decades(self, toggle):
         # self.SimulationVariogram.setDisabled(toggle)
         # self.SV_labelBatchDecades.setVisible(toggle)
@@ -145,13 +158,22 @@ class MyMainWindow(QtGui.QMainWindow):
         if toggle:
             tool_tip = ("Batch mode for decades is enabled, variograms "
                                  "are specified in variography files.")
+            self.previous_znodes = self.SG_spinZZNodes.value()
+            znodes = 10
         else:
             tool_tip = None
+            znodes = self.previous_znodes
         tree_item.setToolTip(0, tool_tip)
         self.enable_decades_group(toggle and not
                                   self.DB_checkBatchNetworks.isChecked())
         if not self.DB_checkBatchNetworks.isChecked():
             self.disable_datapath_group(toggle)
+        # lock z-nodes
+        self.SG_spinZZNodes.setValue(znodes)
+        self.SG_spinZZNodes.setDisabled(toggle)
+        self.SG_spinZZNodes.setToolTip("Batch decades is enabled.")
+        # calc space
+        self.estimate_necessary_space()
 
     def enable_skip_dss(self, toggle):
         self.skip_dss = toggle
@@ -163,7 +185,11 @@ class MyMainWindow(QtGui.QMainWindow):
         else:
             tool_tip = None
         self.HR_checkSaveInter.setToolTip(tool_tip)
-        
+        self.estimate_necessary_space()
+
+    def enable_purge_sims(self, toggle):
+        self.estimate_necessary_space()
+
     def disable_print_status(self, toggle):
         self.print_status = toggle
 
@@ -256,7 +282,7 @@ class MyMainWindow(QtGui.QMainWindow):
         except IOError:
             lines = "Error loading file"
         self.DL_plainDataPreview.setPlainText(lines)
-        
+
     def guess_network_id(self):
         self.DB_lineNetworkID.setText(os.path.basename(os.path.dirname(
                                            self.DB_lineDecadesPath.text())))
@@ -407,6 +433,7 @@ class MyMainWindow(QtGui.QMainWindow):
 
         self.params.save(par_path)
         self.actionGSIMCLI.setEnabled(True)
+        self.estimate_necessary_space()
 
         self.statusBar().showMessage("Parameters saved at: {}".
                                      format(self.params.path), 5000)
@@ -439,7 +466,7 @@ class MyMainWindow(QtGui.QMainWindow):
             method_classic.run_par(par_path=self.params.path,
                                    skip_dss=self.skip_dss,
                                    print_status=self.print_status)
-            
+
         self.statusBar().showMessage("Homogenisation process completed.", 5000)
         if self.print_status:
             print "Done."
@@ -476,6 +503,106 @@ class MyMainWindow(QtGui.QMainWindow):
 
     def on_exit(self):
         os.remove(self.temp_params.name)
+
+    def available_space(self):
+        self.free_space = fs.disk_usage(self.HR_lineResultsPath.text()).free
+        self.HR_labelAvailableDiskValue.setText(
+                                            fs.bytes2human(self.free_space))
+        self.compare_space()
+
+    def estimate_necessary_space(self):
+        # TODO: estimate for other files
+        if self.SO_checkSkipSim.isChecked():
+            sims_size = 0
+        else:
+            purge = self.HR_checkPurgeSims.isChecked()
+            each_max = 0
+            # number of decades
+            if self.DB_checkBatchDecades.isChecked():
+                decades = 10
+            else:
+                decades = 1
+
+            stations_list = self.find_stations_ids()
+            # per nerwork
+            if self.DB_checkBatchNetworks.isChecked():
+                count = 0
+                for network in qlist_to_pylist(self.DB_listNetworksPaths):
+                    network_id = os.path.basename(network)
+                    # simulation grid
+                    specf = os.path.join(network, glob.glob(
+                                os.path.join(network, self.wildcard_grid))[0])
+                    spec = hmg.read_specfile(specf)
+                    each_map = (14 * spec.xnodes * spec.ynodes *
+                                self.SG_spinZZNodes.value()).values[0]
+                    if purge and each_map > each_max:
+                        each_max = each_map
+                    # number of stations
+                    n_stations = len(stations_list.stations[network_id])
+                    # sum up
+                    count += each_map * n_stations
+            # only one network
+            else:
+                # simulation grid
+                each_map = 14 * (self.SG_spinXXNodes.value() *
+                                 self.SG_spinYYNodes.value() *
+                                 self.SG_spinZZNodes.value())
+                # number of stations
+                n_stations = stations_list.total
+                count = each_map * n_stations
+
+            if purge:
+                count = each_max
+                decades = 1
+
+            sims_size = count * self.SO_spinNumberSims.value() * decades
+
+        self.needed_space = sims_size
+        self.HR_labelEstimatedDiskValue.setText(
+                                        fs.bytes2human((self.needed_space)))
+        self.compare_space()
+
+    def compare_space(self):
+        size_warning = None
+        if self.needed_space and self.needed_space < self.free_space:
+            style = "QLabel { color : green }"
+        elif self.needed_space:
+            style = "QLabel { color : red }"
+            size_warning = ("Not enough available space in the selected drive."
+                            "\nChoose another drive or enable 'Purge simulated"
+                            " maps' to remove them after each detection.")
+            self.HR_groupDisk.setToolTip(size_warning)
+        else:
+            style = None
+        self.HR_groupDisk.setToolTip(size_warning)
+        self.HR_labelEstimatedDiskValue.setStyleSheet(style)
+
+    def find_stations_ids(self):
+        header = self.DL_checkHeader.isChecked()
+        if self.DB_checkBatchDecades.isChecked():
+            secdir = self.wildcard_decade
+        else:
+            secdir = None
+        if self.DB_checkBatchNetworks.isChecked():
+            stations_list, total = hmg.list_networks_stations(
+                           networks=qlist_to_pylist(self.DB_listNetworksPaths),
+                           variables=qlist_to_pylist(self.DL_listVarNames),
+                           secdir=secdir, header=header, nvars=5)
+        else:
+            data_path = self.DL_lineDataPath.text()
+            if data_path:
+                if self.DB_checkBatchDecades.isChecked():
+                    pset_file = hmg.find_pset_file(directory=data_path,
+                                                  header=header, nvars=5)
+                else:
+                    pset_file = data_path
+                stations_list = hmg.list_stations(pset_file, header)
+                total = len(stations_list)
+            else:
+                stations_list = list()
+                total = 0
+
+        return hmg._ntuple_stations(stations_list, total)
 
 
 def qlist_to_pylist(qlist):

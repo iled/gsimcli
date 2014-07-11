@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>584</width>
-    <height>583</height>
+    <height>590</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -146,7 +146,7 @@
          <enum>QFrame::Raised</enum>
         </property>
         <property name="currentIndex">
-         <number>0</number>
+         <number>2</number>
         </property>
         <widget class="QWidget" name="DataLoad">
          <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -837,7 +837,7 @@
            </layout>
           </item>
           <item>
-           <widget class="QCheckBox" name="SO_checkSkipDSS">
+           <widget class="QCheckBox" name="SO_checkSkipSim">
             <property name="text">
              <string>Skip simulation and use simulated maps already in place</string>
             </property>
@@ -1375,16 +1375,21 @@
                <widget class="QComboBox" name="HD_comboStationOrder">
                 <property name="maximumSize">
                  <size>
-                  <width>100</width>
+                  <width>1000</width>
                   <height>16777215</height>
                  </size>
                 </property>
                 <property name="currentIndex">
-                 <number>2</number>
+                 <number>0</number>
                 </property>
                 <item>
                  <property name="text">
                   <string>ID order</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Network deviation</string>
                  </property>
                 </item>
                 <item>
@@ -1645,9 +1650,6 @@
         </widget>
         <widget class="QWidget" name="HomogenisationResults">
          <layout class="QVBoxLayout" name="verticalLayout_22">
-          <property name="spacing">
-           <number>15</number>
-          </property>
           <item>
            <layout class="QVBoxLayout" name="verticalLayout_18">
             <item>
@@ -1718,6 +1720,49 @@
              </layout>
             </item>
            </layout>
+          </item>
+          <item>
+           <widget class="QGroupBox" name="HR_groupDisk">
+            <property name="title">
+             <string>Hard drive requirements</string>
+            </property>
+            <property name="flat">
+             <bool>false</bool>
+            </property>
+            <layout class="QFormLayout" name="formLayout">
+             <property name="margin">
+              <number>6</number>
+             </property>
+             <item row="0" column="0">
+              <widget class="QLabel" name="HR_labelEstimatedDisk">
+               <property name="text">
+                <string>Estimated necessary disk space:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLabel" name="HR_labelEstimatedDiskValue">
+               <property name="text">
+                <string>...</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="HR_labelAvailableDisk">
+               <property name="text">
+                <string>Disk space available:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QLabel" name="HR_labelAvailableDiskValue">
+               <property name="text">
+                <string>...</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
           </item>
           <item>
            <spacer name="verticalSpacer_7">
