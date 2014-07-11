@@ -34,6 +34,9 @@ class MyMainWindow(QtGui.QMainWindow):
         self.loaded_params = None
         self.skip_dss = self.SO_checkSkipSim.isChecked()
         self.print_status = self.actionPrintStatus.isChecked()
+        self.batch_decades = self.DB_checkBatchDecades.isChecked()
+        self.batch_networks = self.DB_checkBatchNetworks.isChecked()
+        self.header = self.DL_checkHeader.isChecked()
         self.needed_space = None
         self.free_space = None
         self.stations_list = list()
@@ -57,6 +60,7 @@ class MyMainWindow(QtGui.QMainWindow):
         self.treeWidget.currentItemChanged.connect(self.set_stacked_item)
 
         # check boxes
+        self.DL_checkHeader.toggled.connect(self.enable_header)
         self.DB_checkBatchDecades.toggled.connect(self.enable_batch_decades)
         self.DB_checkBatchNetworks.toggled.connect(self.enable_batch_networks)
         self.SO_checkSkipSim.toggled.connect(self.enable_skip_dss)
@@ -71,6 +75,7 @@ class MyMainWindow(QtGui.QMainWindow):
 
         # hidden
         self.SV_labelBatchDecades.setVisible(False)
+        self.HD_groupUserOrder.setVisible(False)
 
         # line edits
         self.DL_lineDataPath.textChanged.connect(self.preview_data_file)
@@ -78,7 +83,8 @@ class MyMainWindow(QtGui.QMainWindow):
         self.HR_lineResultsPath.textChanged.connect(self.available_space)
 
         # lists
-        self.DB_listNetworksPaths.currentItemChanged.connect(self.current_network)
+        self.DB_listNetworksPaths.currentItemChanged.connect(
+                                                     self.current_network)
 
         # menu
         self.actionOpen.triggered.connect(self.open_params)
@@ -116,6 +122,14 @@ class MyMainWindow(QtGui.QMainWindow):
         elif tree_item == "Results":
             self.stackedWidget.setCurrentWidget(self.HomogenisationResults)
 
+    def enable_header(self, toggle):
+        self.header = toggle
+        if toggle and self.DL_plainDataPreview.blockCount() > 1:
+            self.DL_lineDataName.setText(self.DL_plainDataPreview.toPlainText()
+                                         .split(os.linesep)[0])
+        else:
+            self.DL_lineDataName.clear()
+    
     def enable_decades_group(self, enable):
         self.DB_labelVariogPath.setEnabled(enable)
         self.DB_lineVariogPath.setEnabled(enable)
@@ -132,6 +146,7 @@ class MyMainWindow(QtGui.QMainWindow):
         self.DL_buttonDataPath.setDisabled(disable)
 
     def enable_batch_networks(self, toggle):
+        self.batch_networks = toggle
         self.DB_labelNetworksPaths.setEnabled(toggle)
         self.DB_buttonAddNetworks.setEnabled(toggle)
         self.DB_buttonRemoveNetworks.setEnabled(toggle)
@@ -145,14 +160,15 @@ class MyMainWindow(QtGui.QMainWindow):
         else:
             tool_tip = None
         tree_item.setToolTip(0, tool_tip)
-        self.enable_decades_group(self.DB_checkBatchDecades.isChecked() and not
-                                  self.DB_checkBatchNetworks.isChecked())
-        if not self.DB_checkBatchDecades.isChecked():
+        self.enable_decades_group(self.batch_decades and not
+                                  self.batch_networks)
+        if not self.batch_decades:
             self.disable_datapath_group(toggle)
 
         self.estimate_necessary_space()
 
     def enable_batch_decades(self, toggle):
+        self.batch_decades = toggle
         # disable variogram
         # self.SimulationVariogram.setDisabled(toggle)
         # self.SV_labelBatchDecades.setVisible(toggle)
@@ -169,17 +185,15 @@ class MyMainWindow(QtGui.QMainWindow):
             znodes = self.previous_znodes
         tree_item.setToolTip(0, tool_tip)
         # enable group widgets
-        self.enable_decades_group(toggle and not
-                                  self.DB_checkBatchNetworks.isChecked())
-        if not self.DB_checkBatchNetworks.isChecked():
+        self.enable_decades_group(toggle and not self.batch_networks)
+        if not self.batch_networks:
             self.disable_datapath_group(toggle)
         # lock z-nodes
         self.SG_spinZZNodes.setValue(znodes)
         self.SG_spinZZNodes.setDisabled(toggle)
         self.SG_spinZZNodes.setToolTip("Batch decades is enabled.")
         # try to find a data file
-        if (self.DB_checkBatchNetworks.isChecked() and
-            self.DB_listNetworksPaths.count()):
+        if self.batch_networks and self.DB_listNetworksPaths.currentItem():
             self.preview_data_file(self.find_data_file())
         # calc space
         self.estimate_necessary_space()
@@ -202,19 +216,29 @@ class MyMainWindow(QtGui.QMainWindow):
     def disable_print_status(self, toggle):
         self.print_status = toggle
 
-    def change_station_order(self, index):
+    def change_station_order(self, index=None):
         st_order = self.HD_comboStationOrder.currentText()
+        order_warning = None
         if st_order == "User":
-            enable_user = True
-            disable_checks = True
+            if self.DB_listNetworksPaths.count() > 1:
+                enable_user = False
+                disable_checks = False
+                order_warning = ("Not possible to define candidate stations "
+                                 "order manually while processing multiple "
+                                 "networks.")
+            else:
+                enable_user = True
+                disable_checks = True
+                pylist_to_qlist(qlist=self.HD_listUserOrder,
+                    pylist=map(str, self.find_stations_ids().stations.items()[0][1]))
         elif st_order == "Random":
             enable_user = False
             disable_checks = True
         else:
             enable_user = False
             disable_checks = False
-        self.HD_labelUserOrder.setEnabled(enable_user)
-        self.HD_lineUserOrder.setEnabled(enable_user)
+        self.HD_comboStationOrder.setToolTip(order_warning)
+        self.HD_groupUserOrder.setVisible(enable_user)
         self.HD_checkAscending.setDisabled(disable_checks)
         self.HD_checkMDLast.setDisabled(disable_checks)
 
@@ -233,6 +257,7 @@ class MyMainWindow(QtGui.QMainWindow):
         if filepath[0]:
             self.DL_lineDataPath.setText(filepath[0])
             self.preview_data_file()
+        self.enable_header(self.header)
 
     def browse_networks(self):
         dialog = QtGui.QFileDialog(self)
@@ -246,11 +271,15 @@ class MyMainWindow(QtGui.QMainWindow):
                                QtGui.QAbstractItemView.ExtendedSelection)
         if dialog.exec_():
             self.DB_listNetworksPaths.addItems(dialog.selectedFiles())
+        # update stations order
+        self.change_station_order()
 
     def remove_networks(self):
         for path in self.DB_listNetworksPaths.selectedItems():
             self.DB_listNetworksPaths.takeItem(
                                            self.DB_listNetworksPaths.row(path))
+        # update stations order
+        self.change_station_order()
 
     def browse_decades(self):
         dirpath = QtGui.QFileDialog.getExistingDirectory(self,
@@ -359,7 +388,7 @@ class MyMainWindow(QtGui.QMainWindow):
                                   self.HD_comboStationOrder.findText(st_order,
                                                      QtCore.Qt.MatchContains))
         if st_order == "user":
-            self.HD_lineUserOrder.setText(self.params.st_user)
+            pylist_to_qlist(self.params.st_user, self.HD_listUserOrder)
         else:
             self.HD_checkAscending.setChecked(self.params.ascending)
             self.HD_checkMDLast.setChecked(self.params.md_last)
@@ -384,12 +413,12 @@ class MyMainWindow(QtGui.QMainWindow):
 
     def save_settings(self, par_path=None):
         # Data / Load
-        if self.DB_checkBatchDecades.isChecked():
+        if self.batch_decades:
             self.params.data = self.DB_lineDecadesPath.text()
         else:
             self.params.data = self.DL_lineDataPath.text()
         self.params.no_data = self.DL_spinNoData.value()
-        self.params.data_header = self.DL_checkHeader.isChecked()
+        self.params.data_header = self.header
         self.params.name = self.DL_lineDataName.text()
         self.params.variables = qlist_to_pylist(self.DL_listVarNames)
 
@@ -407,7 +436,7 @@ class MyMainWindow(QtGui.QMainWindow):
         self.params.max_search_nodes = self.SO_spinMaxSearchNodes.value()
 
         # Simulation / Grid
-        if not self.DB_checkBatchNetworks.isChecked():
+        if not self.batch_networks:
             self.params.XX_nodes_number = self.SG_spinXXNodes.value()
             self.params.YY_nodes_number = self.SG_spinYYNodes.value()
             self.params.ZZ_nodes_number = self.SG_spinZZNodes.value()
@@ -419,7 +448,7 @@ class MyMainWindow(QtGui.QMainWindow):
             self.params.ZZ_spacing = self.SG_spinZZSize.value()
 
         # Simulation / Variogram
-        if not self.DB_checkBatchDecades.isChecked():
+        if not self.batch_decades:
             self.params.model = self.SV_comboVarModel.currentText()[0]
             self.params.nugget = self.SV_spinNugget.value()
             self.params.sill = self.SV_spinSill.value()
@@ -432,7 +461,7 @@ class MyMainWindow(QtGui.QMainWindow):
             st_order = "sorted"
         self.params.st_order = st_order
         if st_order == "user":
-            self.params.st_user = self.HD_lineUserOrder.text()
+            self.params.st_user = qlist_to_pylist(self.HD_listUserOrder)
         else:
             self.params.ascending = self.HD_checkAscending.isChecked()
             self.params.md_last = self.HD_checkMDLast.isChecked()
@@ -458,21 +487,19 @@ class MyMainWindow(QtGui.QMainWindow):
 
     def run_gsimcli(self):
         self.apply_settings()
-        batch_networks = self.DB_checkBatchNetworks.isChecked()
-        batch_decades = self.DB_checkBatchDecades.isChecked()
         self.params.path = str(self.params.path)
         self.params.results = str(self.params.results)
 
-        if batch_networks:
+        if self.batch_networks:
             networks_list = qlist_to_pylist(self.DB_listNetworksPaths)
             # workaround for unicode/bytes issues
             networks_list = map(str, networks_list)
             method_classic.batch_networks(par_path=self.params.path,
                                           networks=networks_list,
-                                          decades=batch_decades,
+                                          decades=self.batch_decades,
                                           skip_dss=self.skip_dss,
                                           print_status=self.print_status)
-        elif batch_decades:
+        elif self.batch_decades:
             method_classic.batch_decade(par_path=self.params.path,
                             variograms_file=str(self.DB_lineVariogPath.text()),
                             print_status=self.print_status,
@@ -528,20 +555,23 @@ class MyMainWindow(QtGui.QMainWindow):
 
     def estimate_necessary_space(self):
         # TODO: estimate for other files
-        if self.SO_checkSkipSim.isChecked():
+        if self.skip_dss:
             sims_size = 0
         else:
             purge = self.HR_checkPurgeSims.isChecked()
             each_max = 0
             # number of decades
-            if self.DB_checkBatchDecades.isChecked():
+            if self.batch_decades:
                 decades = 10
             else:
                 decades = 1
 
+            # use all stations or a user-given list
+            if self.HD_comboStationOrder.currentText() == "User":
+                stations_list = self.HD_line
             stations_list = self.find_stations_ids()
             # per nerwork
-            if self.DB_checkBatchNetworks.isChecked():
+            if self.batch_networks:
                 count = 0
                 for network in qlist_to_pylist(self.DB_listNetworksPaths):
                     network_id = os.path.basename(network)
@@ -594,25 +624,24 @@ class MyMainWindow(QtGui.QMainWindow):
         self.HR_labelEstimatedDiskValue.setStyleSheet(style)
 
     def find_stations_ids(self):
-        header = self.DL_checkHeader.isChecked()
-        if self.DB_checkBatchDecades.isChecked():
+        if self.batch_decades:
             secdir = self.wildcard_decade
         else:
             secdir = None
-        if self.DB_checkBatchNetworks.isChecked():
+        if self.batch_networks:
             stations_list, total = hmg.list_networks_stations(
                            networks=qlist_to_pylist(self.DB_listNetworksPaths),
                            variables=qlist_to_pylist(self.DL_listVarNames),
-                           secdir=secdir, header=header, nvars=5)
+                           secdir=secdir, header=self.header, nvars=5)
         else:
             data_path = self.DL_lineDataPath.text()
             if data_path:
-                if self.DB_checkBatchDecades.isChecked():
+                if self.batch_decades:
                     pset_file = hmg.find_pset_file(directory=data_path,
-                                                  header=header, nvars=5)
+                                                  header=self.header, nvars=5)
                 else:
                     pset_file = data_path
-                stations_list = hmg.list_stations(pset_file, header)
+                stations_list = hmg.list_stations(pset_file, self.header)
                 total = len(stations_list)
             else:
                 stations_list = list()
@@ -621,20 +650,17 @@ class MyMainWindow(QtGui.QMainWindow):
         return hmg._ntuple_stations(stations_list, total)
 
     def find_data_file(self):
-        decades = self.DB_checkBatchDecades.isChecked()
-        networks = self.DB_checkBatchNetworks.isChecked()
-        header = self.DL_checkHeader.isChecked()
-        if decades and not networks:
+        if self.batch_decades and not self.batch_networks:
             directory = self.DB_lineDecadesPath.text()
-        elif networks and not decades:
+        elif self.batch_networks and not self.batch_decades:
             directory = self.DB_listNetworksPaths.currentItem().text()
-        elif decades and networks:
+        elif self.batch_decades and self.batch_networks:
             network_dir = self.DB_listNetworksPaths.currentItem().text()
             directory = os.path.join(network_dir,
                  glob.glob(os.path.join(network_dir, self.wildcard_decade))[0])
 
-        if decades or networks:
-            return hmg.find_pset_file(directory, header, nvars=5)
+        if self.batch_decades or self.batch_networks:
+            return hmg.find_pset_file(directory, self.header, nvars=5)
 
     def current_network(self, current, previous):
         self.preview_data_file(self.find_data_file())
