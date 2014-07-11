@@ -21,6 +21,9 @@ import pandas as pd
 import tools.grid as gr
 
 
+_ntuple_stations = namedtuple('Stations', 'stations total')
+
+
 def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
            flag=True, save=False, outfile=None, header=True):
     """Try to detect and homogenise irregularities in data series, following
@@ -308,7 +311,7 @@ def list_networks_stations(networks, variables, secdir=None, header=True,
     find_pset_file : Find a point-set file in a given directory tree.
 
     """
-    networks_stations = namedtuple('Stations', 'stations total')
+
     stations = dict()
     total = 0
     for network in networks:
@@ -329,7 +332,7 @@ def list_networks_stations(networks, variables, secdir=None, header=True,
 
         stations[os.path.basename(network)] = ids
 
-    return networks_stations(stations, total)
+    return _ntuple_stations(stations, total)
 
 
 def take_candidate(pset_file, station, header=True, save=False, path=None):
@@ -827,6 +830,33 @@ def find_pset_file(directory, header=True, nvars=None,
                     return filename
             except ValueError:
                 continue
+
+
+def read_specfile(file_path):
+    """Read a CSV file containing grid specifications: number of nodes, origin
+    coordinates and nodes sizes (x and y axis).
+
+    Parameters
+    ----------
+    file_path : string
+        Full path to the CSV file.
+
+    Returns
+    -------
+    grid : pandas.DataFrame
+        DataFrame containing the grid specifications: xnodes, ynodes, xmin,
+        ymin, xmax, ymax, xsize, ysize.
+
+    """
+    grid = pd.read_csv(file_path)
+    # make case insensitive
+    grid.rename(columns=lambda x: x.lower(), inplace=True)
+    # check specs
+    specs = ['xnodes', 'ynodes', 'xmin', 'ymin', 'xmax', 'ymax',
+             'xsize','ysize']
+    if not all([spec in specs for spec in grid.columns]):
+        raise ValueError('Missing or invalid grid specifications file')
+    return grid
 
 
 if __name__ == '__main__':

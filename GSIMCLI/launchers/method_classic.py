@@ -32,7 +32,7 @@ import numpy as np
 import pandas as pd
 import parsers.dss as pdss
 import parsers.gsimcli as pgc
-import parsers.spreadsheet as ss
+# import parsers.spreadsheet as ss
 import tools.grid as gr
 import tools.homog as hmg
 import tools.utils as ut
@@ -467,9 +467,7 @@ def batch_networks(par_path, networks, decades=False, print_status=False,
         network_results = os.path.join(results_dir, os.path.basename(network))
         if not os.path.isdir(network_results):
             os.mkdir(network_results)
-        grid = pd.read_csv(specfile)
-        # make case insensitive
-        grid.rename(columns=lambda x: x.lower(), inplace=True)
+        grid = hmg.read_specfile(specfile)
         fields = ['XX_nodes_number', 'XX_minimum', 'XX_spacing',
                  'YY_nodes_number', 'YY_minimum', 'YY_spacing',
                  'ZZ_nodes_number', 'ZZ_spacing', 'results']
