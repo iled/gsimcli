@@ -129,7 +129,7 @@ class MyMainWindow(QtGui.QMainWindow):
                                          .split(os.linesep)[0])
         else:
             self.DL_lineDataName.clear()
-    
+
     def enable_decades_group(self, enable):
         self.DB_labelVariogPath.setEnabled(enable)
         self.DB_lineVariogPath.setEnabled(enable)
@@ -169,6 +169,15 @@ class MyMainWindow(QtGui.QMainWindow):
 
     def enable_batch_decades(self, toggle):
         self.batch_decades = toggle
+        # if batching networks, check if each network has a decades directory
+        if self.batch_networks and not self.check_decades_dir():
+            self.DB_checkBatchDecades.setChecked(False)
+            self.DB_checkBatchDecades.setToolTip(("There are networks "
+              "directories without the necessary decades directory inside."))
+            return self
+        else:
+            self.DB_checkBatchDecades.setToolTip(None)
+        
         # disable variogram
         # self.SimulationVariogram.setDisabled(toggle)
         # self.SV_labelBatchDecades.setVisible(toggle)
@@ -230,7 +239,8 @@ class MyMainWindow(QtGui.QMainWindow):
                 enable_user = True
                 disable_checks = True
                 pylist_to_qlist(qlist=self.HD_listUserOrder,
-                    pylist=map(str, self.find_stations_ids().stations.items()[0][1]))
+                    pylist=map(str, self.find_stations_ids().
+                                    stations.items()[0][1]))
         elif st_order == "Random":
             enable_user = False
             disable_checks = True
@@ -650,20 +660,27 @@ class MyMainWindow(QtGui.QMainWindow):
         return hmg._ntuple_stations(stations_list, total)
 
     def find_data_file(self):
+        selected_netw = self.DB_listNetworksPaths.currentItem()
         if self.batch_decades and not self.batch_networks:
             directory = self.DB_lineDecadesPath.text()
-        elif self.batch_networks and not self.batch_decades:
-            directory = self.DB_listNetworksPaths.currentItem().text()
-        elif self.batch_decades and self.batch_networks:
-            network_dir = self.DB_listNetworksPaths.currentItem().text()
+        elif self.batch_networks and not self.batch_decades and selected_netw:
+            directory = selected_netw.text()
+        elif self.batch_decades and self.batch_networks and selected_netw:
+            network_dir = selected_netw.text()
             directory = os.path.join(network_dir,
                  glob.glob(os.path.join(network_dir, self.wildcard_decade))[0])
 
-        if self.batch_decades or self.batch_networks:
+        if self.batch_decades or (self.batch_networks and selected_netw):
             return hmg.find_pset_file(directory, self.header, nvars=5)
 
     def current_network(self, current, previous):
         self.preview_data_file(self.find_data_file())
+
+    def check_decades_dir(self):
+        for network in qlist_to_pylist(self.DB_listNetworksPaths):
+            if not glob.glob(os.path.join(network, self.wildcard_decade)):
+                return False
+        return True
 
 
 def qlist_to_pylist(qlist):
