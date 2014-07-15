@@ -21,12 +21,19 @@ from parsers.gsimcli import GsimcliParam
 import tools.homog as hmg
 
 
-class MyMainWindow(QtGui.QMainWindow):
+class GsimcliMainWindow(QtGui.QMainWindow):
     def __init__(self, parent=None):
         # load ui file
         QtGui.QMainWindow.__init__(self, parent)
         loadUi(os.path.join(base, "interface", "gsimcli.ui"), self)
         # QtUiTools.QUiLoader  # try this
+
+        # settings
+        self.settings = QtCore.QSettings()
+        self.resize(self.settings.value("main/size", QtCore.QSize(584, 592)))
+        self.move(self.settings.value("main/position", QtCore.QPoint(50, 50)))
+        if self.settings.contains("main/state"):
+            self.restoreState(self.settings.value("main/state"), 1)
 
         # set params
         self.params = GsimcliParam()
@@ -87,12 +94,11 @@ class MyMainWindow(QtGui.QMainWindow):
                                                      self.current_network)
 
         # menu
-        self.actionOpen.triggered.connect(self.open_params)
-        self.actionSave.triggered.connect(self.save_params)
-        self.actionSaveAs.triggered.connect(self.save_as_params)
+        self.actionOpen.triggered.connect(self.open_gsimcli_params)
+        self.actionSave.triggered.connect(self.save_gsimcli_params)
+        self.actionSaveAs.triggered.connect(self.save_as_gsimcli_params)
         self.actionGSIMCLI.triggered.connect(self.run_gsimcli)
-        self.actionClose.triggered.connect(
-                                   QtCore.QCoreApplication.instance().quit)
+        self.actionClose.triggered.connect(self.close)
 
         # default
         self.default_varnames()
@@ -177,7 +183,7 @@ class MyMainWindow(QtGui.QMainWindow):
             return self
         else:
             self.DB_checkBatchDecades.setToolTip(None)
-        
+
         # disable variogram
         # self.SimulationVariogram.setDisabled(toggle)
         # self.SV_labelBatchDecades.setVisible(toggle)
@@ -342,7 +348,7 @@ class MyMainWindow(QtGui.QMainWindow):
         # try to find a data file
         self.preview_data_file(self.find_data_file())
 
-    def load_settings(self):
+    def load_gsimcli_settings(self):
         # Data / Load
         self.DL_lineDataPath.setText(self.params.data)
         self.DL_spinNoData.setValue(self.params.no_data)
@@ -421,7 +427,7 @@ class MyMainWindow(QtGui.QMainWindow):
         if self.print_status:
             print "loaded from: ", self.params.path
 
-    def save_settings(self, par_path=None):
+    def save_gsimcli_settings(self, par_path=None):
         # Data / Load
         if self.batch_decades:
             self.params.data = self.DB_lineDecadesPath.text()
@@ -525,21 +531,21 @@ class MyMainWindow(QtGui.QMainWindow):
             print "Done."
 
     def apply_settings(self):
-        self.save_settings(self.temp_params.name)
+        self.save_gsimcli_settings(self.temp_params.name)
 
-    def save_params(self):
-        self.save_settings(self.loaded_params)
+    def save_gsimcli_params(self):
+        self.save_gsimcli_settings(self.loaded_params)
 
-    def save_as_params(self):
+    def save_as_gsimcli_params(self):
         filepath = QtGui.QFileDialog.getSaveFileName(self,
                                  caption="Save parameters file",
                                  dir=os.path.expanduser('~/'),
                                  filter="Parameters (*.par);;All files (*.*)")
         if filepath[0]:
-            self.save_settings(filepath[0])
+            self.save_gsimcli_settings(filepath[0])
             self.actionSave.setEnabled(True)
 
-    def open_params(self):
+    def open_gsimcli_params(self):
         filepath = QtGui.QFileDialog.getOpenFileName(self,
                                  caption="Open parameters file",
                                  dir=os.path.expanduser('~/'),
@@ -547,7 +553,7 @@ class MyMainWindow(QtGui.QMainWindow):
         if filepath[0]:
             self.loaded_params = filepath[0]
             self.params.load(filepath[0])
-            self.load_settings()
+            self.load_gsimcli_settings()
             self.actionSave.setEnabled(True)
 
     def default_varnames(self):
@@ -682,6 +688,12 @@ class MyMainWindow(QtGui.QMainWindow):
                 return False
         return True
 
+    def closeEvent(self, event):
+        self.settings.setValue("main/size", self.size())
+        self.settings.setValue("main/position", self.pos())
+        self.settings.setValue("main/state", self.saveState(1))
+        event.accept()
+
 
 def qlist_to_pylist(qlist):
     items = list()
@@ -712,8 +724,11 @@ def pylist_to_qlist(pylist, qlist):
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
+    app.setOrganizationName("ISEGI-NOVA")
+    app.setOrganizationDomain("www.isegi.unl.pt")
+    app.setApplicationName("GSIMCLI")
     # MainWindow = loadUiWidget("/home/julio/qt/gsimcli.ui")
-    MainWindow = MyMainWindow()
+    MainWindow = GsimcliMainWindow()
     # on exit
     app.aboutToQuit.connect(MainWindow.on_exit)
     MainWindow.show()
