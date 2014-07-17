@@ -68,6 +68,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.DB_buttonDecadesPath.clicked.connect(self.browse_decades)
         self.DB_buttonVariogPath.clicked.connect(self.browse_variog_file)
         self.SO_buttonExePath.clicked.connect(self.browse_exe_file)
+        self.HD_buttonRemoveStations.clicked.connect(self.remove_stations)
+        self.HD_buttonResetStations.clicked.connect(self.reset_stations)
         self.HR_buttonResultsPath.clicked.connect(self.browse_results)
 
         # change pages
@@ -242,6 +244,17 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 
     def disable_print_status(self, toggle):
         self.print_status = toggle
+
+    def remove_stations(self):
+        for station in self.HD_listUserOrder.selectedItems():
+            self.HD_listUserOrder.takeItem(self.HD_listUserOrder.row(station))
+        # update stations order
+        # self.change_station_order()
+        
+    def reset_stations(self):
+        pylist_to_qlist(qlist=self.HD_listUserOrder,
+                        pylist=map(str, self.find_stations_ids().
+                                   stations.items()[0][1]))
 
     def change_station_order(self, index=None):
         st_order = self.HD_comboStationOrder.currentText()
@@ -913,10 +926,12 @@ class GsimcliMainWindow(QtGui.QMainWindow):
                 decades = 1
 
             # use all stations or a user-given list
-            if self.HD_comboStationOrder.currentText() == "User":
-                stations_list = self.HD_lineUserOrder
-            stations_list = self.find_stations_ids()
-            # per nerwork
+            user_order = (self.HD_comboStationOrder.currentText() == "User")
+            if user_order:
+                stations_list = qlist_to_pylist(self.HD_listUserOrder)
+            else:
+                stations_list = self.find_stations_ids()
+            # per network
             if self.batch_networks:
                 count = 0
                 for network in qlist_to_pylist(self.DB_listNetworksPaths):
@@ -930,7 +945,10 @@ class GsimcliMainWindow(QtGui.QMainWindow):
                     if purge and each_map > each_max:
                         each_max = each_map
                     # number of stations
-                    n_stations = len(stations_list.stations[network_id])
+                    if user_order:
+                        n_stations = len(stations_list)
+                    else:
+                        n_stations = len(stations_list.stations[network_id])
                     # sum up
                     count += each_map * n_stations
             # only one network
@@ -940,7 +958,10 @@ class GsimcliMainWindow(QtGui.QMainWindow):
                                  self.SG_spinYYNodes.value() *
                                  self.SG_spinZZNodes.value())
                 # number of stations
-                n_stations = stations_list.total
+                if user_order:
+                    n_stations = len(stations_list)
+                else:
+                    n_stations = stations_list.total
                 count = each_map * n_stations
 
             if purge:
