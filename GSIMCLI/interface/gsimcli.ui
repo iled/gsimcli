@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>584</width>
-    <height>590</height>
+    <width>742</width>
+    <height>660</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -146,7 +146,7 @@
          <enum>QFrame::Raised</enum>
         </property>
         <property name="currentIndex">
-         <number>5</number>
+         <number>1</number>
         </property>
         <widget class="QWidget" name="DataLoad">
          <layout class="QVBoxLayout" name="verticalLayout_8">
@@ -1846,17 +1846,19 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>584</width>
-     <height>25</height>
+     <width>742</width>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
     <property name="title">
      <string>&amp;File</string>
     </property>
-    <addaction name="actionOpen"/>
-    <addaction name="actionSave"/>
-    <addaction name="actionSaveAs"/>
+    <addaction name="actionRestoreLastSession"/>
+    <addaction name="actionOpenSettingsFile"/>
+    <addaction name="separator"/>
+    <addaction name="actionSaveSettings"/>
+    <addaction name="actionExportSettings"/>
     <addaction name="separator"/>
     <addaction name="actionClose"/>
    </widget>
@@ -1893,17 +1895,6 @@
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <action name="actionOpen">
-   <property name="enabled">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>&amp;Open</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+O</string>
-   </property>
-  </action>
   <action name="actionClose">
    <property name="text">
     <string>&amp;Quit</string>
@@ -1937,20 +1928,20 @@
     <enum>QAction::NoSoftKey</enum>
    </property>
   </action>
-  <action name="actionSaveAs">
+  <action name="actionExportSettings">
    <property name="text">
-    <string>Save &amp;As...</string>
+    <string>&amp;Export settings</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+Shift+S</string>
+    <string>Ctrl+E</string>
    </property>
   </action>
-  <action name="actionSave">
+  <action name="actionSaveSettings">
    <property name="enabled">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="text">
-    <string>&amp;Save</string>
+    <string>&amp;Save settings</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+S</string>
@@ -1965,6 +1956,43 @@
    </property>
    <property name="text">
     <string>Print status (console)</string>
+   </property>
+  </action>
+  <action name="actionFrom_last_session">
+   <property name="text">
+    <string>From last &amp;session</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+R</string>
+   </property>
+  </action>
+  <action name="actionFrom_file">
+   <property name="text">
+    <string>From &amp;file</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="actionOpen_parameters">
+   <property name="text">
+    <string>Open parameters</string>
+   </property>
+  </action>
+  <action name="actionRestoreLastSession">
+   <property name="text">
+    <string>&amp;Restore last session</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+R</string>
+   </property>
+  </action>
+  <action name="actionOpenSettingsFile">
+   <property name="text">
+    <string>&amp;Open settings file</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
    </property>
   </action>
  </widget>
