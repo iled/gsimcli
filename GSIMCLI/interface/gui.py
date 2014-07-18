@@ -23,6 +23,8 @@ import tools.homog as hmg
 
 class GsimcliMainWindow(QtGui.QMainWindow):
     def __init__(self, parent=None):
+        # linus?
+        self.linux = sys.platform.startswith('linux')
         # load ui file
         QtGui.QMainWindow.__init__(self, parent)
         loadUi(os.path.join(base, "interface", "gsimcli.ui"), self)
@@ -250,7 +252,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.HD_listUserOrder.takeItem(self.HD_listUserOrder.row(station))
         # update stations order
         # self.change_station_order()
-        
+
     def reset_stations(self):
         pylist_to_qlist(qlist=self.HD_listUserOrder,
                         pylist=map(str, self.find_stations_ids().
@@ -400,13 +402,23 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         save("no_data", self.DL_spinNoData.value())
         save("header", self.header)
         save("data_name", self.DL_lineDataName.text())
-        save("variables", qlist_to_pylist(self.DL_listVarNames))
+        varnames = qlist_to_pylist(self.DL_listVarNames)
+        if self.linux:
+            for i, var in enumerate(varnames):
+                save("variable_" + str(i), var)
+        else:
+            save("variables", varnames)
         self.settings.endGroup()
 
         # Data / Batch
         self.settings.beginGroup("Batch")
         save("batch_networks", self.batch_networks)
-        save("networks_paths", qlist_to_pylist(self.DB_listNetworksPaths))
+        networks = qlist_to_pylist(self.DB_listNetworksPaths)
+        if self.linux:
+            for i, network in enumerate(networks):
+                save("network_" + str(i), network)
+        else:
+            save("networks_paths", networks)
         save("batch_decades", self.batch_decades)
         if self.batch_decades:
             save("decades_path", self.DB_lineDecadesPath.text())
@@ -456,7 +468,12 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         save("station_order", self.HD_comboStationOrder.currentIndex())
         st_order = self.HD_comboStationOrder.currentText().lower()
         if st_order == "user":
-            save("user_order", qlist_to_pylist(self.HD_listUserOrder))
+            user_order = qlist_to_pylist(self.HD_listUserOrder)
+            if self.linux:
+                for i, station in user_order:
+                    save("user_order_" + str(i), station)
+            else:
+                save("user_order", user_order)
         else:
             save("ascending", self.HD_checkAscending.isChecked())
             save("md_last", self.HD_checkMDLast.isChecked())
@@ -563,7 +580,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.settings.endGroup()
         self.apply_settings()
 
-    def load_settings_from_file(self, qsettings):
+    def load_settings_iniformat(self, qsettings):
         def to_bool(u):
             return u in ["true", "True"]
         load = qsettings.value
@@ -579,13 +596,27 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.DL_spinNoData.setValue(float(load("no_data")))
         self.DL_checkHeader.setChecked(to_bool(load("header")))
         self.DL_lineDataName.setText(load("data_name"))
-        pylist_to_qlist(load("variables"), self.DL_listVarNames)
+        if qsettings.contains("variables"):
+            pylist_to_qlist(load("variables"), self.DL_listVarNames)
+        else:
+            varnames = list()
+            # there are 4 keys in the Specifications group besides variables
+            for i in xrange(len(qsettings.childKeys()) - 4):
+                varnames.append(load("variable_" + str(i)))
+            pylist_to_qlist(varnames, self.DL_listVarNames)
         qsettings.endGroup()
 
         # Data / Batch
         qsettings.beginGroup("Batch")
         self.DB_checkBatchNetworks.setChecked(to_bool(load("batch_networks")))
-        pylist_to_qlist(load("networks_paths"), self.DB_listNetworksPaths)
+        if qsettings.contains("networks_paths"):
+            pylist_to_qlist(load("networks_paths"), self.DB_listNetworksPaths)
+        else:
+            networks = list()
+            # there are 5 keys in the Batch group besides networks paths
+            for i in xrange(len(qsettings.childKeys()) - 5):
+                networks.append(load("network_" + str(i)))
+            pylist_to_qlist(networks, self.DB_listNetworksPaths)
         self.DB_checkBatchDecades.setChecked(to_bool(load("batch_decades")))
         if self.batch_decades:
             self.DB_lineDecadesPath.setText(load("decades_path"))
@@ -635,7 +666,14 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.HD_comboStationOrder.setCurrentIndex(int(load("station_order")))
         st_order = self.HD_comboStationOrder.currentText().lower()
         if st_order == "user":
-            pylist_to_qlist(load("user_order"), self.HD_listUserOrder)
+            if qsettings.contains("user_order"):
+                pylist_to_qlist(load("user_order"), self.HD_listUserOrder)
+            else:
+                user_order = list()
+                # there are 6 keys in the Detection group besides user order
+                for i in xrange(len(qsettings.childKeys()) - 6):
+                    user_order.append(load("user_order_" + str(i)))
+                pylist_to_qlist(user_order, self.HD_listUserOrder)
         else:
             self.HD_checkAscending.setChecked(to_bool(load("ascending")))
             self.HD_checkMDLast.setChecked(to_bool(load("md_last")))
@@ -861,7 +899,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 #                         filter="Settings files (*.ini)")
         if filepath[0]:
             self.save_settings()
-            self.default_dir = os.path.dirname(filepath[0])
+            # self.default_dir = os.path.dirname(filepath[0])
             exported = QtCore.QSettings(filepath[0],
                                         QtCore.QSettings.NativeFormat)
             # FIXME: code smell, allKeys may not work well on all platforms
@@ -889,15 +927,18 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 #                                 filter="Settings files (*.ini)")
         if filepath[0]:
             self.loaded_settings = filepath[0]
-            self.default_dir = os.path.dirname(filepath[0])
+            # self.default_dir = os.path.dirname(filepath[0])
             loaded = QtCore.QSettings(filepath[0],
                                       QtCore.QSettings.NativeFormat)
-            # FIXME: code smell, allKeys may not work well on all platforms
-            for key in loaded.allKeys():
-                self.settings.setValue(key, loaded.value(key))
-            # self.load_settings_from_file(loaded)
-            self.load_settings()
+            if self.linux:
+                self.load_settings_iniformat(loaded)
+            else:
+                # FIXME: code smell, allKeys may not work well on all platforms
+                for key in loaded.allKeys():
+                    self.settings.setValue(key, loaded.value(key))
+                self.load_settings()
             self.actionRestoreLastSession.setEnabled(False)
+            self.apply_settings()
 
     def default_varnames(self):
         pylist_to_qlist(["x", "y", "time", "station", "clim"],
