@@ -43,6 +43,11 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.default_dir = default_dir
         else:
             self.default_dir = os.path.expanduser('~/')
+        self.load_recent_settings()
+        if self.recent_settings:
+            self.buttonBox.button(QtGui.QDialogButtonBox.
+                                  RestoreDefaults).setEnabled(True)
+        print self.recent_settings
         self.settings.endGroup()
 
         # set params
@@ -62,8 +67,10 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.wildcard_grid = '*grid*.csv'
 
         # buttons
-        self.buttonBox.button(QtGui.QDialogButtonBox.Apply).clicked.connect(
-                                                        self.apply_settings)
+        self.buttonBox.button(QtGui.QDialogButtonBox.
+                          Apply).clicked.connect(self.apply_settings)
+        self.buttonBox.button(QtGui.QDialogButtonBox.
+                          RestoreDefaults).clicked.connect(self.reset_settings)
         self.DL_buttonDataPath.clicked.connect(self.browse_data_file)
         self.DB_buttonAddNetworks.clicked.connect(self.browse_networks)
         self.DB_buttonRemoveNetworks.clicked.connect(self.remove_networks)
@@ -143,6 +150,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.stackedWidget.setCurrentWidget(self.HomogenisationDetection)
         elif tree_item == "Results":
             self.stackedWidget.setCurrentWidget(self.HomogenisationResults)
+            
+    def set_recent_settings(self):
+        pass
 
     def enable_header(self, toggle):
         self.header = toggle
@@ -383,6 +393,14 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 
     def save_settings(self):
         save = self.settings.setValue
+
+        def _save_lists(key, values):
+            if self.linux:
+                for i, value in enumerate(values):
+                    save(key + "_" + str(i), value)
+            else:
+                save(key, values)
+
         # Main Window
         self.settings.beginGroup("main_window")
         save("size", self.size())
@@ -390,6 +408,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         save("state", self.saveState())
         save("default_dir", self.default_dir)
         save("print_status", self.print_status)
+        _save_lists("recent_settings", self.recent_settings)
         self.settings.endGroup()
 
         self.settings.beginGroup("Data")
@@ -403,22 +422,14 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         save("header", self.header)
         save("data_name", self.DL_lineDataName.text())
         varnames = qlist_to_pylist(self.DL_listVarNames)
-        if self.linux:
-            for i, var in enumerate(varnames):
-                save("variable_" + str(i), var)
-        else:
-            save("variables", varnames)
+        _save_lists("variables", varnames)
         self.settings.endGroup()
 
         # Data / Batch
         self.settings.beginGroup("Batch")
         save("batch_networks", self.batch_networks)
         networks = qlist_to_pylist(self.DB_listNetworksPaths)
-        if self.linux:
-            for i, network in enumerate(networks):
-                save("network_" + str(i), network)
-        else:
-            save("networks_paths", networks)
+        _save_lists("networks_paths", networks)
         save("batch_decades", self.batch_decades)
         if self.batch_decades:
             save("decades_path", self.DB_lineDecadesPath.text())
@@ -469,11 +480,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         st_order = self.HD_comboStationOrder.currentText().lower()
         if st_order == "user":
             user_order = qlist_to_pylist(self.HD_listUserOrder)
-            if self.linux:
-                for i, station in user_order:
-                    save("user_order_" + str(i), station)
-            else:
-                save("user_order", user_order)
+            _save_lists("user_order", user_order)
         else:
             save("ascending", self.HD_checkAscending.isChecked())
             save("md_last", self.HD_checkMDLast.isChecked())
@@ -581,9 +588,21 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.apply_settings()
 
     def load_settings_iniformat(self, qsettings):
+        load = qsettings.value
+
+        def _load_lists(key, target):
+            if qsettings.contains(key):
+                pylist_to_qlist(load(key), target)
+            else:
+                values = list()
+                count = sum(key in child for child in qsettings.childKeys())
+                for i in xrange(count):
+                    values.append(load(key + "_" + str(i)))
+                pylist_to_qlist(values, target)
+
         def to_bool(u):
             return u in ["true", "True"]
-        load = qsettings.value
+
         # Main Window
         qsettings.beginGroup("main_window")
         self.actionPrintStatus.setChecked(to_bool(load("print_status")))
@@ -596,27 +615,13 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.DL_spinNoData.setValue(float(load("no_data")))
         self.DL_checkHeader.setChecked(to_bool(load("header")))
         self.DL_lineDataName.setText(load("data_name"))
-        if qsettings.contains("variables"):
-            pylist_to_qlist(load("variables"), self.DL_listVarNames)
-        else:
-            varnames = list()
-            # there are 4 keys in the Specifications group besides variables
-            for i in xrange(len(qsettings.childKeys()) - 4):
-                varnames.append(load("variable_" + str(i)))
-            pylist_to_qlist(varnames, self.DL_listVarNames)
+        _load_lists("variables", self.DL_listVarNames)
         qsettings.endGroup()
 
         # Data / Batch
         qsettings.beginGroup("Batch")
         self.DB_checkBatchNetworks.setChecked(to_bool(load("batch_networks")))
-        if qsettings.contains("networks_paths"):
-            pylist_to_qlist(load("networks_paths"), self.DB_listNetworksPaths)
-        else:
-            networks = list()
-            # there are 5 keys in the Batch group besides networks paths
-            for i in xrange(len(qsettings.childKeys()) - 5):
-                networks.append(load("network_" + str(i)))
-            pylist_to_qlist(networks, self.DB_listNetworksPaths)
+        _load_lists("networks_paths", self.DB_listNetworksPaths)
         self.DB_checkBatchDecades.setChecked(to_bool(load("batch_decades")))
         if self.batch_decades:
             self.DB_lineDecadesPath.setText(load("decades_path"))
@@ -666,14 +671,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.HD_comboStationOrder.setCurrentIndex(int(load("station_order")))
         st_order = self.HD_comboStationOrder.currentText().lower()
         if st_order == "user":
-            if qsettings.contains("user_order"):
-                pylist_to_qlist(load("user_order"), self.HD_listUserOrder)
-            else:
-                user_order = list()
-                # there are 6 keys in the Detection group besides user order
-                for i in xrange(len(qsettings.childKeys()) - 6):
-                    user_order.append(load("user_order_" + str(i)))
-                pylist_to_qlist(user_order, self.HD_listUserOrder)
+            _load_lists("user_order", self.HD_listUserOrder)
         else:
             self.HD_checkAscending.setChecked(to_bool(load("ascending")))
             self.HD_checkMDLast.setChecked(to_bool(load("md_last")))
@@ -845,37 +843,11 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         if self.print_status:
             print "saved at: ", self.params.path
 
-    def run_gsimcli(self):
-        self.apply_settings()
-        self.params.path = str(self.params.path)
-        self.params.results = str(self.params.results)
-
-        if self.batch_networks:
-            networks_list = qlist_to_pylist(self.DB_listNetworksPaths)
-            # workaround for unicode/bytes issues
-            networks_list = map(str, networks_list)
-            method_classic.batch_networks(par_path=self.params.path,
-                                          networks=networks_list,
-                                          decades=self.batch_decades,
-                                          skip_dss=self.skip_dss,
-                                          print_status=self.print_status)
-        elif self.batch_decades:
-            method_classic.batch_decade(par_path=self.params.path,
-                            variograms_file=str(self.DB_lineVariogPath.text()),
-                            print_status=self.print_status,
-                            skip_dss=self.skip_dss,
-                            network_id=self.DB_lineNetworkID.text())
-        else:
-            method_classic.run_par(par_path=self.params.path,
-                                   skip_dss=self.skip_dss,
-                                   print_status=self.print_status)
-
-        self.statusBar().showMessage("Homogenisation process completed.", 5000)
-        if self.print_status:
-            print "Done."
-
     def apply_settings(self):
         self.save_gsimcli_settings(self.temp_params.name)
+
+    def reset_settings(self):
+        raise NotImplementedError
 
     def save_gsimcli_params(self):
         # DEPRECATED
@@ -906,6 +878,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             for key in self.settings.allKeys():
                 exported.setValue(key, self.settings.value(key))
             exported.sync()
+            self.add_recent_settings(filepath[0])
 
     def open_gsimcli_params(self):
         # DEPRECATED
@@ -937,8 +910,26 @@ class GsimcliMainWindow(QtGui.QMainWindow):
                 for key in loaded.allKeys():
                     self.settings.setValue(key, loaded.value(key))
                 self.load_settings()
+            self.add_recent_settings(filepath[0])
             self.actionRestoreLastSession.setEnabled(False)
             self.apply_settings()
+
+    def add_recent_settings(self, filepath):
+        if filepath not in self.recent_settings:
+            self.recent_settings.insert(0, filepath)
+            if len(self.recent_settings) > 5:
+                self.recent_settings.pop()
+                
+    def load_recent_settings(self):
+        if self.settings.contains("recent_settings"):
+            self.recent_settings = self.settings.value("recent_settings")
+        else:
+            self.recent_settings = list()
+            count = sum("recent_settings" in child for
+                        child in self.settings.childKeys())
+            for i in xrange(count):
+                self.recent_settings.append(
+                            self.settings.value("recent_settings_" + str(i)))
 
     def default_varnames(self):
         pylist_to_qlist(["x", "y", "time", "station", "clim"],
@@ -1080,6 +1071,35 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             if not glob.glob(os.path.join(network, self.wildcard_decade)):
                 return False
         return True
+
+    def run_gsimcli(self):
+        self.apply_settings()
+        self.params.path = str(self.params.path)
+        self.params.results = str(self.params.results)
+
+        if self.batch_networks:
+            networks_list = qlist_to_pylist(self.DB_listNetworksPaths)
+            # workaround for unicode/bytes issues
+            networks_list = map(str, networks_list)
+            method_classic.batch_networks(par_path=self.params.path,
+                                          networks=networks_list,
+                                          decades=self.batch_decades,
+                                          skip_dss=self.skip_dss,
+                                          print_status=self.print_status)
+        elif self.batch_decades:
+            method_classic.batch_decade(par_path=self.params.path,
+                            variograms_file=str(self.DB_lineVariogPath.text()),
+                            print_status=self.print_status,
+                            skip_dss=self.skip_dss,
+                            network_id=self.DB_lineNetworkID.text())
+        else:
+            method_classic.run_par(par_path=self.params.path,
+                                   skip_dss=self.skip_dss,
+                                   print_status=self.print_status)
+
+        self.statusBar().showMessage("Homogenisation process completed.", 5000)
+        if self.print_status:
+            print "Done."
 
     def closeEvent(self, event):
         self.save_settings()

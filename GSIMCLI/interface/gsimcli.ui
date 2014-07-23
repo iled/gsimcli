@@ -1859,8 +1859,17 @@
     <property name="title">
      <string>&amp;File</string>
     </property>
+    <widget class="QMenu" name="menuOpenRecentSettingsFile">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="title">
+      <string>Open recent settings file</string>
+     </property>
+    </widget>
     <addaction name="actionRestoreLastSession"/>
     <addaction name="actionOpenSettingsFile"/>
+    <addaction name="menuOpenRecentSettingsFile"/>
     <addaction name="separator"/>
     <addaction name="actionSaveSettings"/>
     <addaction name="actionExportSettings"/>
@@ -1998,6 +2007,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="actionP">
+   <property name="text">
+    <string>None</string>
    </property>
   </action>
  </widget>
