@@ -2030,6 +2030,9 @@
    </property>
   </action>
   <action name="actionRestoreLastSession">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Restore &amp;last session</string>
    </property>

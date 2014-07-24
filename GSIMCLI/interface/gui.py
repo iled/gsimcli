@@ -40,6 +40,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.move(self.settings.value("position", QtCore.QPoint(50, 50)))
         if self.settings.contains("state"):
             self.restoreState(self.settings.value("state"))
+            self.actionRestoreLastSession.setEnabled(True)
         default_dir = self.settings.value("default_dir")
         if default_dir and os.path.exists(default_dir):
             self.default_dir = default_dir
@@ -111,9 +112,10 @@ class GsimcliMainWindow(QtGui.QMainWindow):
                                                      self.current_network)
 
         # menu
-        self.actionRestoreLastSession.triggered.connect(self.load_settings)
+        self.actionRestoreLastSession.triggered.connect(partial(
+                            self.open_settings, self.settings.fileName()))
         # self.actionOpen.triggered.connect(self.open_gsimcli_params)
-        self.actionOpenSettingsFile.triggered.connect(self.open_settings)
+        self.actionOpenSettingsFile.triggered.connect(self.browse_settings)
         # self.actionSave.triggered.connect(self.save_gsimcli_params)
         self.actionSaveSettings.triggered.connect(self.save_settings)
         # self.actionSaveAs.triggered.connect(self.save_as_gsimcli_params)
@@ -918,7 +920,6 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 #                         filter="Settings files (*.ini)")
         if filepath[0]:
             self.save_settings()
-            # self.default_dir = os.path.dirname(filepath[0])
             exported = QtCore.QSettings(filepath[0],
                                         QtCore.QSettings.NativeFormat)
             # FIXME: code smell, allKeys may not work well on all platforms
@@ -940,27 +941,27 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.default_dir = os.path.dirname(filepath[0])
             self.actionSave.setEnabled(True)
 
-    def open_settings(self, filepath=None):
-        if not filepath:
-            filepath = QtGui.QFileDialog.getOpenFileName(self,
+    def browse_settings(self):
+        filepath = QtGui.QFileDialog.getOpenFileName(self,
                                      caption="Open GSIMCLI settings file",
-                                     dir=self.default_dir)[0]
-#                                    filter="Settings files (*.ini)")
-        if filepath:
-            self.loaded_settings = filepath
-            # self.default_dir = os.path.dirname(filepath[0])
-            loaded = QtCore.QSettings(filepath,
-                                      QtCore.QSettings.NativeFormat)
-            if self.linux:
-                self.load_settings_iniformat(loaded)
-            else:
-                # FIXME: code smell, allKeys may not work well on all platforms
-                for key in loaded.allKeys():
-                    self.settings.setValue(key, loaded.value(key))
-                self.load_settings()
-            self.add_recent_settings(filepath)
+                                     dir=self.default_dir)
+                                #    filter="Settings files (*.ini)")
+        if filepath[0]:
+            self.open_settings(filepath[0])
+            self.add_recent_settings(filepath[0])
             self.actionRestoreLastSession.setEnabled(False)
-            self.apply_settings()
+
+    def open_settings(self, filepath):
+        self.loaded_settings = filepath
+        loaded = QtCore.QSettings(filepath, QtCore.QSettings.NativeFormat)
+        if self.linux:
+            self.load_settings_iniformat(loaded)
+        else:
+            # FIXME: code smell, allKeys may not work well on all platforms
+            for key in loaded.allKeys():
+                self.settings.setValue(key, loaded.value(key))
+            self.load_settings()
+        self.apply_settings()
 
     def default_varnames(self):
         pylist_to_qlist(["x", "y", "time", "station", "clim"],
