@@ -5,6 +5,7 @@ Created on 16/06/2014
 @author: julio
 """
 
+from functools import partial
 import glob
 from PySide import QtCore, QtGui  # , QtUiTools
 import os
@@ -45,8 +46,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.default_dir = os.path.expanduser('~/')
         self.load_recent_settings()
         if self.recent_settings:
-            self.buttonBox.button(QtGui.QDialogButtonBox.
-                                  RestoreDefaults).setEnabled(True)
+            self.menuRecentSettingsFile.setEnabled(True)
+            self.set_recent_settings()
         print self.recent_settings
         self.settings.endGroup()
 
@@ -150,9 +151,15 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.stackedWidget.setCurrentWidget(self.HomogenisationDetection)
         elif tree_item == "Results":
             self.stackedWidget.setCurrentWidget(self.HomogenisationResults)
-            
+
     def set_recent_settings(self):
-        pass
+        self.menuRecentSettingsFile.clear()
+        for i, recent in enumerate(self.recent_settings):
+            item = QtGui.QAction(self.menuRecentSettingsFile)
+            item.setText("&" + str(i + 1) + ": " + recent)
+            item.setToolTip(recent)
+            item.triggered.connect(partial(self.open_settings, recent))
+            self.menuRecentSettingsFile.addAction(item)
 
     def enable_header(self, toggle):
         self.header = toggle
@@ -893,15 +900,16 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.default_dir = os.path.dirname(filepath[0])
             self.actionSave.setEnabled(True)
 
-    def open_settings(self):
-        filepath = QtGui.QFileDialog.getOpenFileName(self,
-                                 caption="Open GSIMCLI settings file",
-                                 dir=self.default_dir)
-#                                 filter="Settings files (*.ini)")
-        if filepath[0]:
-            self.loaded_settings = filepath[0]
+    def open_settings(self, filepath=None):
+        if not filepath:
+            filepath = QtGui.QFileDialog.getOpenFileName(self,
+                                     caption="Open GSIMCLI settings file",
+                                     dir=self.default_dir)[0]
+#                                    filter="Settings files (*.ini)")
+        if filepath:
+            self.loaded_settings = filepath
             # self.default_dir = os.path.dirname(filepath[0])
-            loaded = QtCore.QSettings(filepath[0],
+            loaded = QtCore.QSettings(filepath,
                                       QtCore.QSettings.NativeFormat)
             if self.linux:
                 self.load_settings_iniformat(loaded)
@@ -910,16 +918,17 @@ class GsimcliMainWindow(QtGui.QMainWindow):
                 for key in loaded.allKeys():
                     self.settings.setValue(key, loaded.value(key))
                 self.load_settings()
-            self.add_recent_settings(filepath[0])
+            self.add_recent_settings(filepath)
             self.actionRestoreLastSession.setEnabled(False)
             self.apply_settings()
 
     def add_recent_settings(self, filepath):
         if filepath not in self.recent_settings:
             self.recent_settings.insert(0, filepath)
-            if len(self.recent_settings) > 5:
+            if len(self.recent_settings) > 10:
                 self.recent_settings.pop()
-                
+            self.set_recent_settings()
+
     def load_recent_settings(self):
         if self.settings.contains("recent_settings"):
             self.recent_settings = self.settings.value("recent_settings")
