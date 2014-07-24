@@ -412,8 +412,8 @@ def batch_decade(par_path, variograms_file, print_status=False,
         gscpar.update(fields, values)
         results.append(run_par(gscpar, print_status, skip_dss, cores))
 
-    gsimclipath = os.path.join(outpath, 'gsimcli_results.xls')
-    hmg.merge_output(results, gsimclipath)
+    # results_path = os.path.join(outpath, 'gsimcli_results.xls')
+    hmg.merge_output(results, gscpar.results_file)
 #     ss.xls2costhome(xlspath=gsimclipath, outpath=outpath, nd=gscpar.no_data,
 #                     sheet='All stations', header=False, skip_rows=[1],
 #                     network_id=network_id, status='ho', variable='vv',

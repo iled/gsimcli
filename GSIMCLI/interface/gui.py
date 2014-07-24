@@ -406,9 +406,15 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.default_dir = os.path.dirname(filepath[0])
 
     def browse_results(self):
-        filepath = QtGui.QFileDialog.getExistingDirectory(self,
-                                     caption="Select results directory",
-                                     dir=self.default_dir)
+        if self.batch_decades:
+            filepath = QtGui.QFileDialog.getSaveFileName(self,
+                                         caption="Save batch decades results",
+                                         dir=self.default_dir,
+                                         filter="XLS Spreadsheet (*.xls")[0]
+        else:
+            filepath = QtGui.QFileDialog.getExistingDirectory(self,
+                                         caption="Select results directory",
+                                         dir=self.default_dir)
         if filepath:
             self.HR_lineResultsPath.setText(filepath)
             self.default_dir = filepath
@@ -809,7 +815,13 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         # Homogenisation / Results
         self.HR_checkSaveInter.setChecked(self.params.detect_save)
         self.HR_checkPurgeSims.setChecked(self.params.sim_purge)
-        self.HR_lineResultsPath.setText(self.params.results.decode('utf-8'))
+        # self.HR_lineResultsPath.setText(self.params.results.decode('utf-8'))
+        if hasattr(self.params, "results_file"):
+            results = self.params.results_file
+        else:
+            results = self.params.results
+        self.HR_lineResultsPath.setText(results.decode('utf-8'))
+        # self.HR_lineResultsPath.setText(self.params.results.decode('utf-8'))
 
         self.actionGSIMCLI.setEnabled(True)
 
@@ -881,7 +893,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         # Homogenisation / Results
         self.params.detect_save = self.HR_checkSaveInter.isChecked()
         self.params.sim_purge = self.HR_checkPurgeSims.isChecked()
-        self.params.results = str(self.HR_lineResultsPath.text())
+        self.params.results = str(os.path.dirname(
+                                              self.HR_lineResultsPath.text()))
+        self.params.results_file = str(self.HR_lineResultsPath.text())
 
         self.params.save(par_path)
         self.actionGSIMCLI.setEnabled(True)
