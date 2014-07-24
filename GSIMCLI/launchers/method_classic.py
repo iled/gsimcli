@@ -223,7 +223,7 @@ def gsimcli(stations_file, stations_header, no_data, stations_order,
     return homogenised_file, dnumber_list, fnumber_list
 
 
-def run_par(par_path, print_status=False, skip_dss=False):
+def run_par(par_path, print_status=False, skip_dss=False, cores=None):
     """Run GSIMCLI using the settings included in a parameters file.
 
     Parameters
@@ -235,6 +235,9 @@ def run_par(par_path, print_status=False, skip_dss=False):
     skip_dss : boolean, default False
         Do not run DSS. Choose if the simulated maps are already in place and
         only the homogenisation process is needed.
+    cores : int, optional
+        Maximum number of cores to be used. If None, it will use all available
+        cores.
 
     Returns
     -------
@@ -289,7 +292,7 @@ def run_par(par_path, print_status=False, skip_dss=False):
     results = gsimcli(stations_pset, gscpar.data_header, gscpar.no_data,
                       stations_order, gscpar.detect_method, gscpar.detect_prob,
                       detect_flag, gscpar.detect_save, gscpar.dss_exe, dsspar,
-                      gscpar.results, gscpar.sim_purge, skew,
+                      gscpar.results, gscpar.sim_purge, skew, cores=cores,
                       print_status=print_status, skip_dss=skip_dss)
 
     # FIXME: workaround for merge dependence
@@ -300,7 +303,7 @@ def run_par(par_path, print_status=False, skip_dss=False):
 
 
 def batch_decade(par_path, variograms_file, print_status=False,
-                 skip_dss=False, network_id=None):
+                 skip_dss=False, network_id=None, cores=None):
     """Batch process to run GSIMCLI with data files divided in decades.
 
     Parameters
@@ -316,7 +319,10 @@ def batch_decade(par_path, variograms_file, print_status=False,
         only the homogenisation process is needed.
     network_id : string, optional
         Network ID. If not given, will try to deduce from 'data' field, which
-    should be passed in par_path.
+        should be passed in par_path.
+    cores : int, optional
+        Maximum number of cores to be used. If None, it will use all available
+        cores.
 
     See Also
     --------
@@ -404,7 +410,7 @@ def batch_decade(par_path, variograms_file, print_status=False,
 #         gscpar.update(fields, values, True, ut.filename_indexing
 #                       (new_par, decade[1].ix['decade']))
         gscpar.update(fields, values)
-        results.append(run_par(gscpar, print_status, skip_dss))
+        results.append(run_par(gscpar, print_status, skip_dss, cores))
 
     gsimclipath = os.path.join(outpath, 'gsimcli_results.xls')
     hmg.merge_output(results, gsimclipath)
@@ -415,7 +421,7 @@ def batch_decade(par_path, variograms_file, print_status=False,
 
 
 def batch_networks(par_path, networks, decades=False, print_status=False,
-                   skip_dss=False):
+                   skip_dss=False, cores=None):
     """Batch process to run GSIMCLI along different networks.
 
     Parameters
@@ -435,6 +441,9 @@ def batch_networks(par_path, networks, decades=False, print_status=False,
     skip_dss : boolean, default False
         Do not run DSS. Choose if the simulated maps are already in place and
         only the homogenisation process is needed.
+    cores : int, optional
+        Maximum number of cores to be used. If None, it will use all available
+        cores.
 
     See Also
     --------
@@ -481,9 +490,10 @@ def batch_networks(par_path, networks, decades=False, print_status=False,
         if decades:
             variogram_file = os.path.join(network,
                                           glob.glob('*variog*.csv')[0])
-            batch_decade(gscpar, variogram_file, print_status, skip_dss)
+            batch_decade(gscpar, variogram_file, print_status, skip_dss,
+                         cores=cores)
         else:
-            run_par(par_path, print_status, skip_dss)
+            run_par(par_path, print_status, skip_dss, cores)
 
 
 if __name__ == '__main__':

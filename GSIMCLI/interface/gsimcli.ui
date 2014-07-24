@@ -146,7 +146,7 @@
          <enum>QFrame::Raised</enum>
         </property>
         <property name="currentIndex">
-         <number>6</number>
+         <number>2</number>
         </property>
         <widget class="QWidget" name="DataLoad">
          <layout class="QVBoxLayout" name="verticalLayout_8">
@@ -641,9 +641,6 @@
         </widget>
         <widget class="QWidget" name="SimulationOptions">
          <layout class="QVBoxLayout" name="verticalLayout_11">
-          <property name="spacing">
-           <number>15</number>
-          </property>
           <item>
            <layout class="QVBoxLayout" name="verticalLayout_7">
             <item>
@@ -854,6 +851,40 @@
            </layout>
           </item>
           <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_25">
+            <property name="spacing">
+             <number>15</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="SO_labelCores">
+              <property name="text">
+               <string>Number of CPU cores</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="SO_spinCores">
+              <property name="minimum">
+               <number>1</number>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_12">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item>
            <widget class="QCheckBox" name="SO_checkSkipSim">
             <property name="text">
              <string>Skip simulation and use simulated maps already in place</string>
@@ -874,6 +905,11 @@
            </spacer>
           </item>
          </layout>
+         <zorder>SO_checkSkipSim</zorder>
+         <zorder>SO_labelCores</zorder>
+         <zorder>SO_spinCores</zorder>
+         <zorder>SO_labelCores</zorder>
+         <zorder>verticalSpacer</zorder>
         </widget>
         <widget class="QWidget" name="SimulationVariogram">
          <layout class="QVBoxLayout" name="verticalLayout_13">

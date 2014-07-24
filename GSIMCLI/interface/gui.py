@@ -5,9 +5,10 @@ Created on 16/06/2014
 @author: julio
 """
 
+from PySide import QtCore, QtGui  # , QtUiTools
 from functools import partial
 import glob
-from PySide import QtCore, QtGui  # , QtUiTools
+from multiprocessing import cpu_count
 import os
 import sys
 from tempfile import NamedTemporaryFile
@@ -45,17 +46,13 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         else:
             self.default_dir = os.path.expanduser('~/')
         self.load_recent_settings()
-        if self.recent_settings:
-            self.menuRecentSettingsFile.setEnabled(True)
-            self.set_recent_settings()
-        print self.recent_settings
         self.settings.endGroup()
 
         # set params
         self.params = GsimcliParam()
         self.temp_params = NamedTemporaryFile(delete=False)
         self.loaded_params = None
-        self.skip_dss = self.SO_checkSkipSim.isChecked()
+        self.skip_sim = self.SO_checkSkipSim.isChecked()
         self.print_status = self.actionPrintStatus.isChecked()
         self.batch_decades = self.DB_checkBatchDecades.isChecked()
         self.batch_networks = self.DB_checkBatchNetworks.isChecked()
@@ -124,6 +121,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.actionGSIMCLI.triggered.connect(self.run_gsimcli)
         self.actionClose.triggered.connect(self.close)
 
+        # spin
+        self.set_cpu_cores()
+
         # default
         self.default_varnames()
 
@@ -154,12 +154,46 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 
     def set_recent_settings(self):
         self.menuRecentSettingsFile.clear()
-        for i, recent in enumerate(self.recent_settings):
-            item = QtGui.QAction(self.menuRecentSettingsFile)
-            item.setText("&" + str(i + 1) + ": " + recent)
-            item.setToolTip(recent)
-            item.triggered.connect(partial(self.open_settings, recent))
-            self.menuRecentSettingsFile.addAction(item)
+        self.update_recent_settings()
+        i = 1
+        for recent in self.recent_settings:
+            if os.path.exists(recent):
+                item = QtGui.QAction(self.menuRecentSettingsFile)
+                item.setText("&" + str(i) + ": " + recent)
+                item.setToolTip(recent)
+                item.triggered.connect(partial(self.open_settings, recent))
+                self.menuRecentSettingsFile.addAction(item)
+                i += 1
+
+    def add_recent_settings(self, filepath):
+        if filepath in self.recent_settings:
+            self.recent_settings.remove(filepath)
+        self.recent_settings.insert(0, filepath)
+        self.set_recent_settings()
+
+    def update_recent_settings(self):
+        for recent in list(self.recent_settings):
+            if not os.path.exists(recent):
+                self.recent_settings.remove(recent)
+        if len(self.recent_settings) > 10:
+            self.recent_settings.pop()
+        self.menuRecentSettingsFile.setEnabled(bool(self.recent_settings))
+
+    def load_recent_settings(self):
+        if self.settings.contains("recent_settings"):
+            self.recent_settings = self.settings.value("recent_settings")
+        else:
+            self.recent_settings = list()
+            count = sum("recent_settings" in child for
+                        child in self.settings.childKeys())
+            for i in xrange(count):
+                self.recent_settings.append(
+                            self.settings.value("recent_settings_" + str(i)))
+        self.set_recent_settings()
+
+    def set_cpu_cores(self):
+        self.SO_spinCores.setValue(cpu_count())
+        self.SO_spinCores.setMaximum(cpu_count())
 
     def enable_header(self, toggle):
         self.header = toggle
@@ -247,7 +281,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.estimate_necessary_space()
 
     def enable_skip_dss(self, toggle):
-        self.skip_dss = toggle
+        self.skip_sim = toggle
         self.HR_checkSaveInter.setChecked(toggle)
         self.HR_checkSaveInter.setDisabled(toggle)
         if toggle:
@@ -453,6 +487,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         save("number_simulations", self.SO_spinNumberSims.value())
         save("krigging_type", self.SO_comboKrigType.currentIndex())
         save("max_search_nodes", self.SO_spinMaxSearchNodes.value())
+        save("cpu_cores", self.SO_spinCores.value())
+        save("skip_sim", self.skip_sim)
         self.settings.endGroup()
 
         # Simulation / Grid
@@ -542,6 +578,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.SO_spinNumberSims.setValue(load("number_simulations"))
         self.SO_comboKrigType.setCurrentIndex(load("krigging_type"))
         self.SO_spinMaxSearchNodes.setValue(load("max_search_nodes"))
+        self.SO_spinCores.setValue(load("cpu_cores"))
+        self.SO_checkSkipSim.setChecked(load("skip_sim"))
         self.settings.endGroup()
 
         # Simulation / Grid
@@ -645,6 +683,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.SO_spinNumberSims.setValue(int(load("number_simulations")))
         self.SO_comboKrigType.setCurrentIndex(int(load("krigging_type")))
         self.SO_spinMaxSearchNodes.setValue(int(load("max_search_nodes")))
+        self.SO_spinCores.setValue(int(load("cpu_cores")))
+        self.SO_checkSkipSim.setChecked(to_bool(load("skip_sim")))
         qsettings.endGroup()
 
         # Simulation / Grid
@@ -922,24 +962,6 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.actionRestoreLastSession.setEnabled(False)
             self.apply_settings()
 
-    def add_recent_settings(self, filepath):
-        if filepath not in self.recent_settings:
-            self.recent_settings.insert(0, filepath)
-            if len(self.recent_settings) > 10:
-                self.recent_settings.pop()
-            self.set_recent_settings()
-
-    def load_recent_settings(self):
-        if self.settings.contains("recent_settings"):
-            self.recent_settings = self.settings.value("recent_settings")
-        else:
-            self.recent_settings = list()
-            count = sum("recent_settings" in child for
-                        child in self.settings.childKeys())
-            for i in xrange(count):
-                self.recent_settings.append(
-                            self.settings.value("recent_settings_" + str(i)))
-
     def default_varnames(self):
         pylist_to_qlist(["x", "y", "time", "station", "clim"],
                         self.DL_listVarNames)
@@ -955,7 +977,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 
     def estimate_necessary_space(self):
         # TODO: estimate for other files
-        if self.skip_dss:
+        if self.skip_sim:
             sims_size = 0
         else:
             purge = self.HR_checkPurgeSims.isChecked()
@@ -1085,6 +1107,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.apply_settings()
         self.params.path = str(self.params.path)
         self.params.results = str(self.params.results)
+        cores = self.SO_spinCores.value()
 
         if self.batch_networks:
             networks_list = qlist_to_pylist(self.DB_listNetworksPaths)
@@ -1093,18 +1116,21 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             method_classic.batch_networks(par_path=self.params.path,
                                           networks=networks_list,
                                           decades=self.batch_decades,
-                                          skip_dss=self.skip_dss,
-                                          print_status=self.print_status)
+                                          skip_dss=self.skip_sim,
+                                          print_status=self.print_status,
+                                          cores=cores)
         elif self.batch_decades:
             method_classic.batch_decade(par_path=self.params.path,
                             variograms_file=str(self.DB_lineVariogPath.text()),
                             print_status=self.print_status,
-                            skip_dss=self.skip_dss,
-                            network_id=self.DB_lineNetworkID.text())
+                            skip_dss=self.skip_sim,
+                            network_id=self.DB_lineNetworkID.text(),
+                            cores=cores)
         else:
             method_classic.run_par(par_path=self.params.path,
-                                   skip_dss=self.skip_dss,
-                                   print_status=self.print_status)
+                                   skip_dss=self.skip_sim,
+                                   print_status=self.print_status,
+                                   cores=cores)
 
         self.statusBar().showMessage("Homogenisation process completed.", 5000)
         if self.print_status:
