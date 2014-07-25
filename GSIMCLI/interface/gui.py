@@ -24,7 +24,14 @@ import tools.homog as hmg
 
 
 class GsimcliMainWindow(QtGui.QMainWindow):
+    """Main window for GSIMCLI application. Handle all the necessary logic.
+
+    """
     def __init__(self, parent=None):
+        """Constructor. Initialise some variables, setup settings and handle
+        all signals.
+
+        """
         # linus?
         self.linux = sys.platform.startswith('linux')
         # load ui file
@@ -88,7 +95,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.DL_checkHeader.toggled.connect(self.enable_header)
         self.DB_checkBatchDecades.toggled.connect(self.enable_batch_decades)
         self.DB_checkBatchNetworks.toggled.connect(self.enable_batch_networks)
-        self.SO_checkSkipSim.toggled.connect(self.enable_skip_dss)
+        self.SO_checkSkipSim.toggled.connect(self.enable_skip_sim)
         self.actionPrintStatus.toggled.connect(self.disable_print_status)
         self.HR_checkPurgeSims.toggled.connect(self.enable_purge_sims)
 
@@ -130,6 +137,10 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.default_varnames()
 
     def set_stacked_item(self, current, previous):
+        """Connects the right menu (QTreeWidget) with the panels on the right
+        (QStackedWidget).
+
+        """
         if current.text(0) in ["Data", "Simulation", "Homogenisation"]:
             current.setExpanded(True)
             self.treeWidget.setCurrentItem(current.child(0))
@@ -155,36 +166,54 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.stackedWidget.setCurrentWidget(self.HomogenisationResults)
 
     def set_recent_settings(self):
-        self.menuRecentSettingsFile.clear()
+        """Create the recents settings files menu. Filter non
+        existing files.
+
+        """
+        self.menuRecentSettingsFiles.clear()
         self.update_recent_settings()
         i = 1
         for recent in self.recent_settings:
             if os.path.exists(recent):
-                item = QtGui.QAction(self.menuRecentSettingsFile)
+                item = QtGui.QAction(self.menuRecentSettingsFiles)
                 item.setText("&" + str(i) + ": " + recent)
                 item.setToolTip(recent)
                 item.triggered.connect(partial(self.open_settings, recent))
-                self.menuRecentSettingsFile.addAction(item)
+                self.menuRecentSettingsFiles.addAction(item)
                 i += 1
 
     def add_recent_settings(self, filepath):
+        """Add an item to the recent settings files list. Won't add already
+        listed files.
+
+        """
         if filepath in self.recent_settings:
             self.recent_settings.remove(filepath)
         self.recent_settings.insert(0, filepath)
         self.set_recent_settings()
 
     def update_recent_settings(self):
+        """Update the recent settings file list. Filter non existing files and
+        keep the list under the limit of 10 items. Also, enable/disable the
+        menu depending if the list is empty or not.
+
+        """
         for recent in list(self.recent_settings):
             if not os.path.exists(recent):
                 self.recent_settings.remove(recent)
         if len(self.recent_settings) > 10:
             self.recent_settings.pop()
-        self.menuRecentSettingsFile.setEnabled(bool(self.recent_settings))
+        self.menuRecentSettingsFiles.setEnabled(bool(self.recent_settings))
 
     def load_recent_settings(self):
+        """Extracts recent settings files list from the QSettings file. The
+        loading method depends on the native file format.
+
+        """
         if self.settings.contains("recent_settings"):
             self.recent_settings = self.settings.value("recent_settings")
         else:
+            # for iniformat
             self.recent_settings = list()
             count = sum("recent_settings" in child for
                         child in self.settings.childKeys())
@@ -194,10 +223,17 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.set_recent_settings()
 
     def set_cpu_cores(self):
+        """Set the spinbox related to the CPU cores, setting the default value
+        to the maximum number available.
+
+        """
         self.SO_spinCores.setValue(cpu_count())
         self.SO_spinCores.setMaximum(cpu_count())
 
     def enable_header(self, toggle):
+        """Act when the header checkbox is toggled. Try to set the data name.
+
+        """
         self.header = toggle
         if toggle and self.DL_plainDataPreview.blockCount() > 1:
             self.DL_lineDataName.setText(self.DL_plainDataPreview.toPlainText()
@@ -206,6 +242,10 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.DL_lineDataName.clear()
 
     def enable_decades_group(self, enable):
+        """Toggle all the batch decade related widgets. Connected to the batch
+        decades checkbox.
+
+        """
         self.DB_labelVariogPath.setEnabled(enable)
         self.DB_lineVariogPath.setEnabled(enable)
         self.DB_buttonVariogPath.setEnabled(enable)
@@ -216,11 +256,22 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.DB_lineNetworkID.setEnabled(enable)
 
     def disable_datapath_group(self, disable):
+        """Toggle all the data path related widgets. Connected to the batch
+        decades and network checkboxes.
+
+        """
         self.DL_labelDataPath.setDisabled(disable)
         self.DL_lineDataPath.setDisabled(disable)
         self.DL_buttonDataPath.setDisabled(disable)
 
     def enable_batch_networks(self, toggle):
+        """Toggle all the batch network related widgets, including the menu
+        option for Simulation\Grid. Connected to the batch
+        networks checkbox.
+
+        Update the estimated necessary space.
+
+        """
         self.batch_networks = toggle
         self.DB_labelNetworksPaths.setEnabled(toggle)
         self.DB_buttonAddNetworks.setEnabled(toggle)
@@ -243,6 +294,14 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.estimate_necessary_space()
 
     def enable_batch_decades(self, toggle):
+        """Toggle all the batch decades related widgets, including the menu
+        option for Simulation\Variogram. Connected to the batch
+        decades checkbox.
+
+        Check if each network has a decades directory and try to find a data
+        file. Update the estimated necessary space.
+
+        """
         self.batch_decades = toggle
         # if batching networks, check if each network has a decades directory
         if self.batch_networks and not self.check_decades_dir():
@@ -288,7 +347,13 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             results_label = "Results directory"
         self.HR_labelResultsPath.setText(results_label)
 
-    def enable_skip_dss(self, toggle):
+    def enable_skip_sim(self, toggle):
+        """Toggle widgets related to the skip_sim checkbox: save
+        intermediary files. Connected to the skip_sim checkbox.
+
+        Update the estimated necessary space.
+
+        """
         self.skip_sim = toggle
         self.HR_checkSaveInter.setChecked(toggle)
         self.HR_checkSaveInter.setDisabled(toggle)
@@ -301,23 +366,43 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.estimate_necessary_space()
 
     def enable_purge_sims(self, toggle):
+        """Connected to the purge_sim checkbox.
+
+        Update the estimated necessary space.
+
+        """
         self.estimate_necessary_space()
 
     def disable_print_status(self, toggle):
+        """Connected to the print_status menu action.
+
+        """
         self.print_status = toggle
 
     def remove_stations(self):
+        """Remove selected stations from the users list. Connected to the
+        remove_stations pushbutton.
+
+        """
         for station in self.HD_listUserOrder.selectedItems():
             self.HD_listUserOrder.takeItem(self.HD_listUserOrder.row(station))
         # update stations order
         # self.change_station_order()
 
     def reset_stations(self):
+        """Restore the complete list of stations. Connected to the
+        reset_stations pushbutton.
+
+        """
         pylist_to_qlist(qlist=self.HD_listUserOrder,
                         pylist=map(str, self.find_stations_ids().
                                    stations.items()[0][1]))
 
     def change_station_order(self, index=None):
+        """Handle the different options to the candidate stations order.
+        Connected to the station_order combobox.
+
+        """
         st_order = self.HD_comboStationOrder.currentText()
         order_warning = None
         if st_order == "User":
@@ -345,6 +430,10 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.HD_checkMDLast.setDisabled(disable_checks)
 
     def enable_skewness(self, index):
+        """Toggle the widgets related to the skewness detection method.
+        Connected to the detection method combobox.
+
+        """
         if self.HD_comboDetectionMethod.currentText() == "Skewness":
             enable = True
         else:
@@ -353,6 +442,12 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.HD_spinSkewness.setEnabled(enable)
 
     def browse_data_file(self):
+        """Open the dialog to select an existing data file. Connected to the
+        browse data file pushbutton.
+
+        Update data file preview and header related widgets.
+
+        """
         filepath = QtGui.QFileDialog.getOpenFileName(self,
                                      caption="Select data file",
                                      dir=self.default_dir)
@@ -363,6 +458,13 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.default_dir = os.path.dirname(filepath[0])
 
     def browse_networks(self):
+        """Open the dialog to select existing network directories. Connected to
+        the browse networks pushbutton.
+
+        Use non native dialog in order to allow multiple selection.
+        Update networks and stations lists.
+
+        """
         dialog = QtGui.QFileDialog(self)
         dialog.setFileMode(QtGui.QFileDialog.Directory)
         dialog.setDirectory(self.default_dir)
@@ -379,6 +481,12 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.change_station_order()
 
     def remove_networks(self):
+        """Remove selected networks from the networks list. Connected to the
+        remove_networks pushbutton.
+
+        Update stations list.
+
+        """
         for path in self.DB_listNetworksPaths.selectedItems():
             self.DB_listNetworksPaths.takeItem(
                                            self.DB_listNetworksPaths.row(path))
@@ -386,6 +494,10 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.change_station_order()
 
     def browse_decades(self):
+        """Open the dialog to select an existing decades directory. Connected
+        to the browse decade pushbutton.
+
+        """
         dirpath = QtGui.QFileDialog.getExistingDirectory(self,
                                     caption="Select decades directory",
                                     dir=self.default_dir)
@@ -394,6 +506,10 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.default_dir = dirpath
 
     def browse_variog_file(self):
+        """Open the dialog to select an existing variography file, necessary
+        to batch decades. Connected to the browse variography pushbutton.
+
+        """
         filepath = QtGui.QFileDialog.getOpenFileName(self,
                                      caption="Select variography file",
                                      dir=self.default_dir,
@@ -403,6 +519,10 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.default_dir = os.path.dirname(filepath[0])
 
     def browse_exe_file(self):
+        """Open the dialog to select an existing simulation binary file.
+        Connected to the browse executable file pushbutton.
+
+        """
         filepath = QtGui.QFileDialog.getOpenFileName(self,
                                      caption="Select executable file",
                                      dir=self.default_dir,
@@ -412,6 +532,10 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.default_dir = os.path.dirname(filepath[0])
 
     def browse_results(self):
+        """Open the dialog to select the results directory or the results file,
+        if batch decades is enabled.
+
+        """
         if self.batch_decades:
             filepath = QtGui.QFileDialog.getSaveFileName(self,
                                          caption="Save batch decades results",
@@ -426,6 +550,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.default_dir = filepath
 
     def preview_data_file(self, filepath=None):
+        """Set the QPlainTextEdit to preview the first 10 lines of a data file.
+
+        """
         if not filepath:
             filepath = self.DL_lineDataPath.text()
         try:
@@ -440,6 +567,10 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.DL_plainDataPreview.setPlainText(lines)
 
     def changed_decades_path(self):
+        """Try to extract the network id from a decade path, and try to find a
+        data file in the same directory.
+
+        """
         # guess network_id
         self.DB_lineNetworkID.setText(os.path.basename(os.path.dirname(
                                            self.DB_lineDecadesPath.text())))
@@ -447,6 +578,11 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.preview_data_file(self.find_data_file())
 
     def save_settings(self):
+        """Store all the user options to QSettings.
+
+        Auxiliary function as a workaround to save on linux (iniformat).
+
+        """
         save = self.settings.setValue
 
         def _save_lists(key, values):
@@ -556,6 +692,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.settings.endGroup()
 
     def load_settings(self):
+        """Load and apply all user options from QSettings.
+
+        """
         load = self.settings.value
         # Main Window
         self.settings.beginGroup("main_window")
@@ -647,6 +786,11 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.apply_settings()
 
     def load_settings_iniformat(self, qsettings):
+        """Load and apply all user options from QSettings in iniformat.
+
+        TODO: needs refactoring as an auxiliary function to load_settings.
+
+        """
         load = qsettings.value
 
         def _load_lists(key, target):
@@ -752,6 +896,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         qsettings.endGroup()
 
     def load_gsimcli_settings(self):
+        """Load and apply all user options from already loaded GsimcliParams.
+
+        """
         # Data / Load
         self.DL_lineDataPath.setText(self.params.data)
         self.DL_spinNoData.setValue(self.params.no_data)
@@ -837,6 +984,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             print "loaded from: ", self.params.path
 
     def save_gsimcli_settings(self, par_path=None):
+        """Save GsimcliParams from ui options.
+
+        """
         # Data / Load
         if self.batch_decades:
             self.params.data = self.DB_lineDecadesPath.text()
@@ -913,16 +1063,29 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             print "saved at: ", self.params.path
 
     def apply_settings(self):
+        """Create or update GsimcliParams file. Connected to dialogbuttonbox.
+
+        """
         self.save_gsimcli_settings(self.temp_params.name)
 
     def reset_settings(self):
+        """Reset all the ui settings. Connected to dialogbuttonbox.
+
+        """
         raise NotImplementedError
 
     def save_gsimcli_params(self):
+        """Update the loaded GsimcliParams file.
+
+        """
         # DEPRECATED
         self.save_gsimcli_settings(self.loaded_params)
 
     def save_as_gsimcli_params(self):
+        """Open the dialog to select a new file to save current settings in
+        GsimcliParams format.
+
+        """
         # DEPRECATED
         filepath = QtGui.QFileDialog.getSaveFileName(self,
                                  caption="Save parameters file",
@@ -934,6 +1097,10 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.actionSave.setEnabled(True)
 
     def export_settings(self):
+        """Open dialog to select a new file to save current settings in the
+        native qsettings format.
+
+        """
         filepath = QtGui.QFileDialog.getSaveFileName(self,
                          caption="Export GSIMCLI settings",
                          dir=self.default_dir)
@@ -949,6 +1116,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.add_recent_settings(filepath[0])
 
     def open_gsimcli_params(self):
+        """Open dialog to select an existing GsimcliParams file.
+
+        """
         # DEPRECATED
         filepath = QtGui.QFileDialog.getOpenFileName(self,
                                  caption="Open parameters file",
@@ -962,6 +1132,10 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.actionSave.setEnabled(True)
 
     def browse_settings(self):
+        """Open dialog to select an existing QSettings file. Connected to
+        OpenSettingsFile menu action.
+
+        """
         filepath = QtGui.QFileDialog.getOpenFileName(self,
                                      caption="Open GSIMCLI settings file",
                                      dir=self.default_dir)
@@ -972,6 +1146,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.actionRestoreLastSession.setEnabled(False)
 
     def open_settings(self, filepath):
+        """Load and apply ui settings from a QSettings file.
+
+        """
         self.loaded_settings = filepath
         loaded = QtCore.QSettings(filepath, QtCore.QSettings.NativeFormat)
         if self.linux:
@@ -984,19 +1161,35 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.apply_settings()
 
     def default_varnames(self):
+        """Set default variable names.
+
+        TODO: feature not implemented yet.
+        """
         pylist_to_qlist(["x", "y", "time", "station", "clim"],
                         self.DL_listVarNames)
 
     def on_exit(self):
+        """Act on application exit. Connected to mainwindow.
+
+        """
         os.remove(self.temp_params.name)
 
     def available_space(self):
+        """Find, show and assess available disc space.
+
+        """
         self.free_space = fs.disk_usage(self.HR_lineResultsPath.text()).free
         self.HR_labelAvailableDiskValue.setText(
                                             fs.bytes2human(self.free_space))
         self.compare_space()
 
     def estimate_necessary_space(self):
+        """Estimate the necessary disc space according to the existing ui
+        settings.
+
+        It is only considering the files generated by the simulation process.
+
+        """
         # TODO: estimate for other files
         if self.skip_sim:
             sims_size = 0
@@ -1060,9 +1253,13 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.compare_space()
 
     def compare_space(self):
-        size_warning = None
+        """Compare necessary and available disc spaces. Show warning on ui if
+        there is not enough available space.
+
+        """
         if self.needed_space and self.needed_space < self.free_space:
             style = "QLabel { color : green }"
+            size_warning = None
         elif self.needed_space:
             style = "QLabel { color : red }"
             size_warning = ("Not enough available space in the selected drive."
@@ -1075,6 +1272,10 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.HR_labelEstimatedDiskValue.setStyleSheet(style)
 
     def find_stations_ids(self):
+        """Find the IDs from all stations contained in the data set being
+        processed, whether batch decades or networks are enabled.
+
+        """
         if self.batch_decades:
             secdir = self.wildcard_decade
         else:
@@ -1101,6 +1302,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         return hmg._ntuple_stations(stations_list, total)
 
     def find_data_file(self):
+        """Find a data file in the decade or selected network.
+
+        """
         selected_netw = self.DB_listNetworksPaths.currentItem()
         if self.batch_decades and not self.batch_networks:
             directory = self.DB_lineDecadesPath.text()
@@ -1115,16 +1319,26 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             return hmg.find_pset_file(directory, self.header, nvars=5)
 
     def current_network(self, current, previous):
+        """Control the file preview, if any selected.
+
+        """
         if current:
             self.preview_data_file(self.find_data_file())
 
     def check_decades_dir(self):
+        """Check if there is a decades folder in every network.
+
+        """
         for network in qlist_to_pylist(self.DB_listNetworksPaths):
             if not glob.glob(os.path.join(network, self.wildcard_decade)):
                 return False
         return True
 
     def run_gsimcli(self):
+        """Launch GSIMCLI process according to the existing ui settings.
+        Connected to the GSIMCLI menu action.
+
+        """
         self.apply_settings()
         self.params.path = str(self.params.path)
         self.params.results = str(self.params.results)
@@ -1158,11 +1372,31 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             print "Done."
 
     def closeEvent(self, event):
+        """Event thrown when the MainWindow is closed.
+
+        """
         self.save_settings()
         event.accept()
 
 
 def qlist_to_pylist(qlist):
+    """Convert QListWidget to Python list.
+
+    Parameters
+    ----------
+    qlist : QtGui.QListWidget object
+        Target QListWidget.
+
+    Returns
+    -------
+    items : list
+        List with the items contained in qlist.
+
+    See Also
+    --------
+    pylist_to_qlist : Convert Python list into an existing QListWidget.
+
+    """
     items = list()
     for item_row in xrange(qlist.count()):
         items.append(qlist.item(item_row).text())
@@ -1171,6 +1405,20 @@ def qlist_to_pylist(qlist):
 
 
 def pylist_to_qlist(pylist, qlist):
+    """Convert Python list into an existing QListWidget.
+
+    Parameters
+    ----------
+    pylist : list
+        List to be converted.
+    qlist : QtGui.QListWidget object
+        Existing QListWidget.
+
+    See Also
+    --------
+    qlist_to_pylist : Convert QListWidget to Python list.
+
+    """
     qlist.clear()
     qlist.addItems(pylist)
 

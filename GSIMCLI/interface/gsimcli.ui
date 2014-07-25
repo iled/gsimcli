@@ -146,7 +146,7 @@
          <enum>QFrame::Raised</enum>
         </property>
         <property name="currentIndex">
-         <number>2</number>
+         <number>0</number>
         </property>
         <widget class="QWidget" name="DataLoad">
          <layout class="QVBoxLayout" name="verticalLayout_8">
@@ -906,9 +906,6 @@
           </item>
          </layout>
          <zorder>SO_checkSkipSim</zorder>
-         <zorder>SO_labelCores</zorder>
-         <zorder>SO_spinCores</zorder>
-         <zorder>SO_labelCores</zorder>
          <zorder>verticalSpacer</zorder>
         </widget>
         <widget class="QWidget" name="SimulationVariogram">
@@ -1895,17 +1892,17 @@
     <property name="title">
      <string>&amp;File</string>
     </property>
-    <widget class="QMenu" name="menuRecentSettingsFile">
+    <widget class="QMenu" name="menuRecentSettingsFiles">
      <property name="enabled">
       <bool>false</bool>
      </property>
      <property name="title">
-      <string>&amp;Recent settings file</string>
+      <string>&amp;Recent settings files</string>
      </property>
     </widget>
     <addaction name="actionRestoreLastSession"/>
     <addaction name="actionOpenSettingsFile"/>
-    <addaction name="menuRecentSettingsFile"/>
+    <addaction name="menuRecentSettingsFiles"/>
     <addaction name="separator"/>
     <addaction name="actionSaveSettings"/>
     <addaction name="actionExportSettings"/>
