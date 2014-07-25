@@ -281,6 +281,12 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.preview_data_file(self.find_data_file())
         # calc space
         self.estimate_necessary_space()
+        # toggle results path label
+        if toggle:
+            results_label = "Results file"
+        else:
+            results_label = "Results directory"
+        self.HR_labelResultsPath.setText(results_label)
 
     def enable_skip_dss(self, toggle):
         self.skip_sim = toggle
