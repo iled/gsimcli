@@ -42,6 +42,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         # settings
         QtCore.QSettings.setDefaultFormat(QtCore.QSettings.NativeFormat)
         self.settings = QtCore.QSettings()
+        self.settings_ext = os.path.splitext(self.settings.fileName())[1]
+        # self.settings.clear()
         self.settings.beginGroup("main_window")
         self.resize(self.settings.value("size", QtCore.QSize(584, 592)))
         self.move(self.settings.value("position", QtCore.QPoint(50, 50)))
@@ -1103,17 +1105,21 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         """
         filepath = QtGui.QFileDialog.getSaveFileName(self,
                          caption="Export GSIMCLI settings",
-                         dir=self.default_dir)
-#                         filter="Settings files (*.ini)")
+                         dir=self.default_dir,
+                         filter="Settings files (*{0})".
+                         format(self.settings_ext))
         if filepath[0]:
+            filepath = filepath[0] + self.settings_ext
             self.save_settings()
-            exported = QtCore.QSettings(filepath[0],
+            print filepath
+            exported = QtCore.QSettings(filepath,
                                         QtCore.QSettings.NativeFormat)
             # FIXME: code smell, allKeys may not work well on all platforms
             for key in self.settings.allKeys():
                 exported.setValue(key, self.settings.value(key))
             exported.sync()
-            self.add_recent_settings(filepath[0])
+            self.add_recent_settings(filepath)
+            self.default_dir = os.path.dirname(filepath[0])
 
     def open_gsimcli_params(self):
         """Open dialog to select an existing GsimcliParams file.
@@ -1138,12 +1144,14 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         """
         filepath = QtGui.QFileDialog.getOpenFileName(self,
                                      caption="Open GSIMCLI settings file",
-                                     dir=self.default_dir)
-                                #    filter="Settings files (*.ini)")
+                                     dir=self.default_dir,
+                                     filter="Settings files (*{0})".
+                                     format(self.settings_ext))
         if filepath[0]:
             self.open_settings(filepath[0])
             self.add_recent_settings(filepath[0])
             self.actionRestoreLastSession.setEnabled(False)
+            self.default_dir = os.path.dirname(filepath[0])
 
     def open_settings(self, filepath):
         """Load and apply ui settings from a QSettings file.
@@ -1257,9 +1265,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         there is not enough available space.
 
         """
+        size_warning = None
         if self.needed_space and self.needed_space < self.free_space:
             style = "QLabel { color : green }"
-            size_warning = None
         elif self.needed_space:
             style = "QLabel { color : red }"
             size_warning = ("Not enough available space in the selected drive."
