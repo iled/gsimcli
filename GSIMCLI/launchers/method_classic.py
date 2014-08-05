@@ -469,25 +469,28 @@ def batch_networks(par_path, networks, decades=False, print_status=False,
     """
     gscpar = pgc.GsimcliParam(par_path)
     results_dir = str(gscpar.results)
+    results_file = os.path.basename(gscpar.results_file)
 
     for network in networks:
+        network_id = os.path.basename(network)
         if print_status:
-            print "Processing network: ", os.path.basename(network)
+            print "Processing network: ", network_id
         os.chdir(network)
         specfile = os.path.join(network, glob.glob('*grid*.csv')[0])
-        network_results = os.path.join(results_dir, os.path.basename(network))
+        network_results = os.path.join(results_dir, network_id)
         if not os.path.isdir(network_results):
             os.mkdir(network_results)
+        results_this_network = ut.filename_indexing(results_file, network_id)
         grid = hmg.read_specfile(specfile)
         fields = ['XX_nodes_number', 'XX_minimum', 'XX_spacing',
                  'YY_nodes_number', 'YY_minimum', 'YY_spacing',
-                 'ZZ_nodes_number', 'ZZ_spacing', 'results']
+                 'ZZ_nodes_number', 'ZZ_spacing', 'results', 'results_file']
         values = [grid.xnodes, grid.xmin, grid.xsize,
                   grid.ynodes, grid.ymin, grid.ysize,
-                  str(10), str(1), network_results]
+                  str(10), str(1), network_results, results_this_network]
 
         gscpar.update(fields, values, True, ut.filename_indexing
-                      (par_path, os.path.basename(network)))
+                      (par_path, network_id))
 
         if decades:
             variogram_file = os.path.join(network,

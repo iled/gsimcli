@@ -1120,7 +1120,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
                          filter="Settings files (*{0})".
                          format(self.settings_ext))
         if filepath[0]:
-            filepath = filepath[0] + self.settings_ext
+            filepath = os.path.splitext(filepath[0])[0] + self.settings_ext
             self.save_settings()
             print filepath
             exported = QtCore.QSettings(filepath,
@@ -1279,7 +1279,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         size_warning = None
         if self.needed_space and self.needed_space < self.free_space:
             style = "QLabel { color : green }"
-        elif self.needed_space:
+        elif self.needed_space and self.free_space:
             style = "QLabel { color : red }"
             size_warning = ("Not enough available space in the selected drive."
                             "\nChoose another drive or enable 'Purge simulated"
