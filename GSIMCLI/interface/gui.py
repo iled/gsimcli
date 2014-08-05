@@ -45,7 +45,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.settings_ext = os.path.splitext(self.settings.fileName())[1]
         # self.settings.clear()
         self.settings.beginGroup("main_window")
-        self.resize(self.settings.value("size", QtCore.QSize(584, 592)))
+        self.resize(self.settings.value("size", QtCore.QSize(742, 660)))
         self.move(self.settings.value("position", QtCore.QPoint(50, 50)))
         if self.settings.contains("state"):
             self.restoreState(self.settings.value("state"))
@@ -284,7 +284,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         tree_item.setDisabled(toggle)
         if toggle:
             tool_tip = ("Batch mode for networks is enabled, grids are "
-                                 "specified in each network grid file.")
+                        "specified in each network grid file.")
         else:
             tool_tip = None
         tree_item.setToolTip(0, tool_tip)
@@ -293,6 +293,14 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         if not self.batch_decades:
             self.disable_datapath_group(toggle)
 
+        # toogle results file tooltip
+        if toggle:
+            results_tip = "A suffix will be appended per network."
+        else:
+            results_tip = None
+        self.HR_lineResultsName.setToolTip(results_tip)
+
+        # calc space
         self.estimate_necessary_space()
 
     def enable_batch_decades(self, toggle):
@@ -322,7 +330,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         tree_item.setDisabled(toggle)
         if toggle:
             tool_tip = ("Batch mode for decades is enabled, variograms "
-                                 "are specified in variography files.")
+                        "are specified in variography files.")
             self.previous_znodes = self.SG_spinZZNodes.value()
             znodes = 10
         else:
@@ -342,12 +350,6 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.preview_data_file(self.find_data_file())
         # calc space
         self.estimate_necessary_space()
-        # toggle results path label
-        if toggle:
-            results_label = "Results file"
-        else:
-            results_label = "Results directory"
-        self.HR_labelResultsPath.setText(results_label)
 
     def enable_skip_sim(self, toggle):
         """Toggle widgets related to the skip_sim checkbox: save
@@ -419,7 +421,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
                 disable_checks = True
                 pylist_to_qlist(qlist=self.HD_listUserOrder,
                     pylist=map(str, self.find_stations_ids().
-                                    stations.items()[0][1]))
+                               stations.items()[0][1]))
         elif st_order == "Random":
             enable_user = False
             disable_checks = True
@@ -538,15 +540,20 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         if batch decades is enabled.
 
         """
-        if self.batch_decades:
-            filepath = QtGui.QFileDialog.getSaveFileName(self,
-                                         caption="Save batch decades results",
-                                         dir=self.default_dir,
-                                         filter="XLS Spreadsheet (*.xls")[0]
-        else:
+        if self.batch_networks:
             filepath = QtGui.QFileDialog.getExistingDirectory(self,
                                          caption="Select results directory",
                                          dir=self.default_dir)
+        else:
+            fullpath = QtGui.QFileDialog.getSaveFileName(self,
+                                         caption="Select results file",
+                                         dir=self.default_dir,
+                                         filter="XLS Spreadsheet (*.xls")[0]
+
+            filepath, filename = os.path.split(fullpath)
+            if filename:
+                filename = os.path.splitext(filename)[0] + ".xls"
+                self.HR_lineResultsName.setText(filename)
         if filepath:
             self.HR_lineResultsPath.setText(filepath)
             self.default_dir = filepath
@@ -689,6 +696,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         save("detect_save", self.HR_checkSaveInter.isChecked())
         save("sim_purge", self.HR_checkPurgeSims.isChecked())
         save("results_path", self.HR_lineResultsPath.text())
+        save("results_name", self.HR_lineResultsName.text())
         self.settings.endGroup()
 
         self.settings.endGroup()
@@ -782,6 +790,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.HR_checkSaveInter.setChecked(load("detect_save"))
         self.HR_checkPurgeSims.setChecked(load("sim_purge"))
         self.HR_lineResultsPath.setText(load("results_path"))
+        self.HR_lineResultsName.setText(load("results_name"))
         self.settings.endGroup()
 
         self.settings.endGroup()
@@ -893,6 +902,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.HR_checkSaveInter.setChecked(to_bool(load("detect_save")))
         self.HR_checkPurgeSims.setChecked(to_bool(load("sim_purge")))
         self.HR_lineResultsPath.setText(load("results_path"))
+        self.HR_lineResultsName.setText(load("results_name"))
         qsettings.endGroup()
 
         qsettings.endGroup()
@@ -970,13 +980,14 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         # Homogenisation / Results
         self.HR_checkSaveInter.setChecked(self.params.detect_save)
         self.HR_checkPurgeSims.setChecked(self.params.sim_purge)
-        # self.HR_lineResultsPath.setText(self.params.results.decode('utf-8'))
         if hasattr(self.params, "results_file"):
-            results = self.params.results_file
-        else:
-            results = self.params.results
-        self.HR_lineResultsPath.setText(results.decode('utf-8'))
-        # self.HR_lineResultsPath.setText(self.params.results.decode('utf-8'))
+            self.HR_lineResultsName.setText(
+                                    self.params.results_file.decode('utf-8'))
+#             results = self.params.results_file
+#         else:
+#             results = self.params.results
+#         self.HR_lineResultsPath.setText(results.decode('utf-8'))
+        self.HR_lineResultsPath.setText(self.params.results.decode('utf-8'))
 
         self.actionGSIMCLI.setEnabled(True)
 
@@ -1051,9 +1062,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         # Homogenisation / Results
         self.params.detect_save = self.HR_checkSaveInter.isChecked()
         self.params.sim_purge = self.HR_checkPurgeSims.isChecked()
-        self.params.results = str(os.path.dirname(
-                                              self.HR_lineResultsPath.text()))
-        self.params.results_file = str(self.HR_lineResultsPath.text())
+        self.params.results = self.HR_lineResultsPath.text().encode('utf-8')
+        self.params.results_file = self.HR_lineResultsName.text(
+                                                            ).encode('utf-8')
 
         self.params.save(par_path)
         self.actionGSIMCLI.setEnabled(True)
@@ -1186,7 +1197,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         """Find, show and assess available disc space.
 
         """
-        self.free_space = fs.disk_usage(self.HR_lineResultsPath.text()).free
+        self.free_space = fs.disk_usage(self.HR_lineResultsPath.text().encode('utf-8')).free
         self.HR_labelAvailableDiskValue.setText(
                                             fs.bytes2human(self.free_space))
         self.compare_space()

@@ -146,7 +146,7 @@
          <enum>QFrame::Raised</enum>
         </property>
         <property name="currentIndex">
-         <number>0</number>
+         <number>6</number>
         </property>
         <widget class="QWidget" name="DataLoad">
          <layout class="QVBoxLayout" name="verticalLayout_8">
@@ -1788,14 +1788,37 @@
             <item>
              <widget class="QLabel" name="HR_labelResultsPath">
               <property name="text">
-               <string>Results directory</string>
+               <string>Results file</string>
               </property>
              </widget>
             </item>
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_17">
               <item>
-               <widget class="QLineEdit" name="HR_lineResultsPath"/>
+               <widget class="QLineEdit" name="HR_lineResultsPath">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>2</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="placeholderText">
+                 <string>Results directory</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="HR_lineResultsName">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>1</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="placeholderText">
+                 <string>Results file name</string>
+                </property>
+               </widget>
               </item>
               <item>
                <widget class="QPushButton" name="HR_buttonResultsPath">
@@ -1817,6 +1840,9 @@
              <bool>false</bool>
             </property>
             <layout class="QFormLayout" name="formLayout">
+             <property name="fieldGrowthPolicy">
+              <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+             </property>
              <property name="margin">
               <number>6</number>
              </property>
