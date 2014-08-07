@@ -12,6 +12,7 @@ from multiprocessing import cpu_count
 import os
 import sys
 from tempfile import NamedTemporaryFile
+import time
 
 base = os.path.dirname(os.path.dirname(__file__))
 sys.path.append(base)
@@ -57,6 +58,12 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.default_dir = os.path.expanduser('~/')
         self.load_recent_settings()
         self.settings.endGroup()
+
+        # worker
+        self.gsimcli_worker = Homogenising()
+        self.gsimcli_worker.update_progress.connect(self.set_progress)
+        self.gsimcli_worker.time_elapsed.connect(self.set_time)
+        self.gsimcli_worker.finished.connect(self.finish_gsimcli)
 
         # set params
         self.params = GsimcliParam()
@@ -110,6 +117,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         # hidden
         self.SV_labelBatchDecades.setVisible(False)
         self.HD_groupUserOrder.setVisible(False)
+        self.groupProgress.setVisible(False)
+        self.groupStatusInfo.setVisible(False)
+        self.groupTime.setVisible(False)
 
         # line edits
         self.DL_lineDataPath.textChanged.connect(self.preview_data_file)
@@ -129,7 +139,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.actionSaveSettings.triggered.connect(self.save_settings)
         # self.actionSaveAs.triggered.connect(self.save_as_gsimcli_params)
         self.actionExportSettings.triggered.connect(self.export_settings)
-        self.actionGSIMCLI.triggered.connect(self.run_gsimcli)
+        self.actionGSIMCLI.triggered.connect(self.start_gsimcli)
         self.actionClose.triggered.connect(self.close)
 
         # spin
@@ -1197,7 +1207,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         """Find, show and assess available disc space.
 
         """
-        self.free_space = fs.disk_usage(self.HR_lineResultsPath.text().encode('utf-8')).free
+        self.free_space = fs.disk_usage(self.HR_lineResultsPath.text().
+                                        encode('utf-8')).free
         self.HR_labelAvailableDiskValue.setText(
                                             fs.bytes2human(self.free_space))
         self.compare_space()
@@ -1396,6 +1407,84 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         """
         self.save_settings()
         event.accept()
+
+    def set_progress(self, progress):
+        """Set the progress of the homogenisation process.
+
+        """
+        self.progressBar.setValue(progress)
+
+    def set_time(self, time):
+        """Set the elapsed time of the homogenisation process.
+
+        """
+        self.labelTime.setText(str(time))
+
+    def start_gsimcli(self):
+        """Start the homogenisation process, updating its status.
+        Connected to the GSIMCLI menu action.
+
+        """
+        self.labelStatus.setText("Running...")
+        self.groupStatusInfo.setVisible(True)
+        self.groupProgress.setVisible(True)
+        self.groupTime.setVisible(True)
+        self.actionGSIMCLI.setEnabled(False)
+        self.start_time = time.time()
+        self.gsimcli_worker.start()
+
+    def finish_gsimcli(self):
+        """Handles the end of the homogenisation process.
+        Connected to the worker thread.
+
+        """
+        self.labelStatus.setText("Finished")
+        self.groupStatusInfo.setVisible(False)
+        self.groupProgress.setVisible(False)
+        self.actionGSIMCLI.setEnabled(True)
+        self.finish_time = time.time()
+
+
+class Homogenising(QtCore.QThread):
+    """Worker class to handle the thread related to the homogenisation process.
+
+    """
+    # signal that will be emitted during the processing
+    update_progress = QtCore.Signal(int)
+    time_elapsed = QtCore.Signal(int)
+
+    def __init__(self):
+        QtCore.QThread.__init__(self)
+        self.timer = Timer(self)
+        self.timer.time_elapsed.connect(self.time_elapsed.emit)
+
+    def run(self):
+        self.timer.start(time.time())
+        for i in range(1, 101):
+            # emit the signal to be received on the UI
+            self.update_progress.emit(i)
+            time.sleep(0.05)
+
+
+class Timer(QtCore.QThread):
+    """Timer thread for elapsed time.
+
+    """
+    time_elapsed = QtCore.Signal(int)
+
+    def __init__(self, parent=None):
+        super(Timer, self).__init__(parent)
+        self.time_start = None
+
+    def start(self, time_start):
+        self.time_start = time_start
+
+        return super(Timer, self).start()
+
+    def run(self):
+        while self.parent().isRunning():
+            self.time_elapsed.emit(time.time() - self.time_start)
+            time.sleep(1)
 
 
 def qlist_to_pylist(qlist):
