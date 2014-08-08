@@ -60,10 +60,11 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.settings.endGroup()
 
         # worker
-        self.gsimcli_worker = Homogenising()
+        self.gsimcli_worker = Homogenising(self)
         self.gsimcli_worker.update_progress.connect(self.set_progress)
         self.gsimcli_worker.time_elapsed.connect(self.set_time)
         self.gsimcli_worker.finished.connect(self.finish_gsimcli)
+        # self.gsimcli_worker.go_run.connect(self.run_gsimcli)
 
         # set params
         self.params = GsimcliParam()
@@ -139,7 +140,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.actionSaveSettings.triggered.connect(self.save_settings)
         # self.actionSaveAs.triggered.connect(self.save_as_gsimcli_params)
         self.actionExportSettings.triggered.connect(self.export_settings)
-        self.actionGSIMCLI.triggered.connect(self.start_gsimcli)
+        # self.actionGSIMCLI.triggered.connect(self.start_gsimcli)
+        self.actionGSIMCLI.triggered.connect(self.run_gsimcli)
         self.actionClose.triggered.connect(self.close)
 
         # spin
@@ -444,8 +446,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.HD_checkMDLast.setDisabled(disable_checks)
 
     def enable_skewness(self, index):
-        """Toggle the widgets related to the skewness detection method.
-        Connected to the detection method combobox.
+        """Toggle the widgets related to the skewness correction method.
+        Connected to the correction method combobox.
 
         """
         if self.HD_comboDetectionMethod.currentText() == "Skewness":
@@ -696,7 +698,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         else:
             save("ascending", self.HD_checkAscending.isChecked())
             save("md_last", self.HD_checkMDLast.isChecked())
-        save("detect_method", self.HD_comboDetectionMethod.currentIndex())
+        save("correct_method", self.HD_comboDetectionMethod.currentIndex())
         save("skewness", self.HD_spinSkewness.value())
         save("detect_prob", self.HD_spinProb.value())
         self.settings.endGroup()
@@ -790,7 +792,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         else:
             self.HD_checkAscending.setChecked(load("ascending"))
             self.HD_checkMDLast.setChecked(load("md_last"))
-        self.HD_comboDetectionMethod.setCurrentIndex(load("detect_method"))
+        self.HD_comboDetectionMethod.setCurrentIndex(load("correct_method"))
         self.HD_spinSkewness.setValue(load("skewness"))
         self.HD_spinProb.setValue(load("detect_prob"))
         self.settings.endGroup()
@@ -902,7 +904,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.HD_checkAscending.setChecked(to_bool(load("ascending")))
             self.HD_checkMDLast.setChecked(to_bool(load("md_last")))
         self.HD_comboDetectionMethod.setCurrentIndex(
-                                                 int(load("detect_method")))
+                                                 int(load("correct_method")))
         self.HD_spinSkewness.setValue(float(load("skewness")))
         self.HD_spinProb.setValue(float(load("detect_prob")))
         qsettings.endGroup()
@@ -981,9 +983,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.HD_checkAscending.setChecked(self.params.ascending)
             self.HD_checkMDLast.setChecked(self.params.md_last)
         self.HD_comboDetectionMethod.setCurrentIndex(
-             self.HD_comboDetectionMethod.findText(self.params.detect_method,
+             self.HD_comboDetectionMethod.findText(self.params.correct_method,
                                                    QtCore.Qt.MatchContains))
-        if self.params.detect_method == "skewness":
+        if self.params.correct_method == "skewness":
             self.HD_spinSkewness.setValue(self.params.skewness)
         self.HD_spinProb.setValue(self.params.detect_prob)
 
@@ -1063,9 +1065,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         else:
             self.params.ascending = self.HD_checkAscending.isChecked()
             self.params.md_last = self.HD_checkMDLast.isChecked()
-        self.params.detect_method = (self.HD_comboDetectionMethod.
+        self.params.correct_method = (self.HD_comboDetectionMethod.
                                      currentText().lower())
-        if self.params.detect_method == "skewness":
+        if self.params.correct_method == "skewness":
             self.params.skewness = self.HD_spinSkewness.value()
         self.params.detect_prob = self.HD_spinProb.value()
 
@@ -1452,18 +1454,22 @@ class Homogenising(QtCore.QThread):
     # signal that will be emitted during the processing
     update_progress = QtCore.Signal(int)
     time_elapsed = QtCore.Signal(int)
+    go_run = QtCore.Signal()
 
-    def __init__(self):
+    def __init__(self, gui):
         QtCore.QThread.__init__(self)
         self.timer = Timer(self)
         self.timer.time_elapsed.connect(self.time_elapsed.emit)
+        self.gui = gui
 
     def run(self):
         self.timer.start(time.time())
-        for i in range(1, 101):
-            # emit the signal to be received on the UI
-            self.update_progress.emit(i)
-            time.sleep(0.05)
+        self.go_run.emit()
+        # self.gui.run_gsimcli()
+#         for i in range(1, 101):
+#             # emit the signal to be received on the UI
+#             self.update_progress.emit(i)
+#             time.sleep(0.05)
 
 
 class Timer(QtCore.QThread):

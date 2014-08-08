@@ -48,7 +48,7 @@
           <enum>QFrame::Raised</enum>
          </property>
          <property name="currentIndex">
-          <number>6</number>
+          <number>5</number>
          </property>
          <widget class="QWidget" name="DataLoad">
           <layout class="QVBoxLayout" name="verticalLayout_8">
@@ -1483,7 +1483,7 @@
                 </sizepolicy>
                </property>
                <property name="text">
-                <string>Detection method</string>
+                <string>Correction method</string>
                </property>
               </widget>
              </item>
@@ -1514,6 +1514,11 @@
                <item>
                 <property name="text">
                  <string>Skewness</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Percentile</string>
                 </property>
                </item>
               </widget>
