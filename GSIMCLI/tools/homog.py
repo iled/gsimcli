@@ -48,19 +48,23 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
     obs_file : PointSet object or string
         Instance of PointSet type containing the observed values at the
         candidate station, or string with the full path to the PointSet file.
-    method : {'mean', 'median', 'skewness'} string, default 'mean'
-        Method for the inhomogeneities detection:
-            - mean: compare observed values with the mean of simulated values;
-            - median: compare observed values with the median of simulated
+    method : {'mean', 'median', 'skewness', 'percentile'} string, default
+        'mean'
+        Method for the inhomogeneities correction:
+            - mean: replace detected irregularities with the mean of simulated
                 values;
-            - skewness: use the sample skewness to decide whether it compare
-                observed values with the mean or the median of simulated
-                values.
+            - median: replace detected irregularities with the median of
+                simulated values;
+            - skewness: use the sample skewness to decide whether detected
+                irregularities will be replaced by the mean or by the median of
+                simulated values.
+            - percentile : replace detected irregularities with the percentile
+                `100 * (1 - p)`, which is the same value used in the detection.
     prob : float, default 0.95
         Probability value to build the detection interval centred in the local
         PDF.
     skewness: float, optional
-        Samples skewness threshold, used if `method == 'skewness'`.
+        Samples skewness threshold, used if `method == 'skewness'`, e.g., 1.5.
     flag : boolean, default True
         DEPRECATED
     save : boolean, default False
@@ -116,8 +120,15 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
         lmean = True
         lmed = True
         lskew = True
+    elif method == 'percentile':
+        lmean = False
+        lmed = False
+        lskew = False
     else:
         raise ValueError('Method {} invalid or incomplete.'.format(method))
+
+    # FIXME: lmean must always be True in order to fill missing data
+    lmean = True
 
     if isinstance(obs_file, gr.PointSet):
         obs = obs_file
@@ -136,8 +147,10 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
     if 'Flag' in obs.varnames:
             obs.varnames.remove('Flag')
             obs.nvars -= 1
+    # calculate the no-data's and replace them with NaN
     nodatas = obs.values['clim'].isin([obs.nodata]).sum()
     obs.values = obs.values.replace(obs.nodata, np.nan)
+    # replace NaN's with the mean values
     meanvalues = pd.Series(vline_stats.values['mean'].values, name='clim',
                            index=obs.values.index)
     obs.values.update(meanvalues, overwrite=False)
@@ -157,15 +170,21 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
     homogenised = gr.PointSet(obs.name + '_homogenised', obs.nodata, obs.nvars,
                               list(obs.varnames), obs.values.copy())
 
-    if method == 'skewness' and skewness:
-        fixvalues = np.where(vline_stats.values['skewness'] > 1.5,
+    if method == 'mean':
+        fixvalues = vline_stats.values['mean'].values
+    elif method == 'median':
+        fixvalues = vline_stats.values['median'].values
+    elif method == 'skewness' and skewness:
+        fixvalues = np.where(vline_stats.values['skewness'] > skewness,
                              vline_stats.values['median'],
                              vline_stats.values['mean'])
-    else:
-        fixvalues = vline_stats.values['mean']
+    elif method == 'percentile':
+        fixvalues = np.where(obs.values['clim'] > vline_stats.values['rperc'],
+                             vline_stats.values['rperc'],
+                             vline_stats.values['lperc'])
 
     homogenised.values['clim'] = obs.values['clim'].where(~hom_where,
-                                                          fixvalues.values)
+                                                          fixvalues)
     if flag:
         flag_col = obs.values['clim'].where(hom_where, obs.nodata)
         homogenised.nvars += 1
@@ -227,7 +246,7 @@ def fill_station(pset_file, values, time_min, time_max, time_step=1,
     filled = np.zeros((timeserie.shape[0], pset.values.shape[1]))
     for i, itime in enumerate(timeserie):
         if (j < len(pset.values['time']) and
-            itime == pset.values['time'].iloc[j]):
+                itime == pset.values['time'].iloc[j]):
             filled[i, :] = pset.values.iloc[j, :]
             j += 1
         else:
@@ -853,7 +872,7 @@ def read_specfile(file_path):
     grid.rename(columns=lambda x: x.lower(), inplace=True)
     # check specs
     specs = ['xnodes', 'ynodes', 'xmin', 'ymin', 'xmax', 'ymax',
-             'xsize','ysize']
+             'xsize', 'ysize']
     if not all([spec in specs for spec in grid.columns]):
         raise ValueError('Missing or invalid grid specifications file')
     return grid

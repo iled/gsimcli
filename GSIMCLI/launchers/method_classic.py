@@ -39,7 +39,7 @@ import tools.utils as ut
 
 
 def gsimcli(stations_file, stations_header, no_data, stations_order,
-            detect_method, detect_prob, detect_flag, detect_save, exe_path,
+            correct_method, detect_prob, detect_flag, detect_save, exe_path,
             par_file, outfolder, purge_sims, detect_skew=None, cores=None,
             dbgfile=None, print_status=False, skip_dss=False):
     """Main routine to run GSIMCLI homogenisation procedure in a set of
@@ -55,14 +55,18 @@ def gsimcli(stations_file, stations_header, no_data, stations_order,
         Missing data value.
     stations_order : array_like
         Stations' ID's in the order that they will be homogenised.
-    detect_method : {'mean', 'median', 'skewness'} string, default 'mean'
-        Method for the inhomogeneities detection:
-            - mean: compare observed values with the mean of simulated values;
-            - median: compare observed values with the median of simulated
+    correct_method : {'mean', 'median', 'skewness', 'percentile'} string,
+        default 'mean'
+        Method for the inhomogeneities correction:
+            - mean: replace detected irregularities with the mean of simulated
                 values;
-            - skewness: use the sample skewness to decide whether it compare
-                observed values with the mean or the median of simulated
-                values.
+            - median: replace detected irregularities with the median of
+                simulated values;
+            - skewness: use the sample skewness to decide whether detected
+                irregularities will be replaced by the mean or by the median of
+                simulated values.
+            - percentile : replace detected irregularities with the percentile
+                `100 * (1 - p)`, which is the same value used in the detection.
     detect_prob : float
         Probability value to build the detection interval centred in the local
         PDF.
@@ -81,7 +85,7 @@ def gsimcli(stations_file, stations_header, no_data, stations_order,
     purge_sims : boolean
         Remove all simulated maps in the end.
     detect_skew : float, optional
-        Samples skewness threshold, used if `detect_method == 'skewness'`.
+        Samples skewness threshold, used if `correct_method == 'skewness'`.
     cores : int, optional
         Maximum number of cores to be used. If None, it will use all available
         cores.
@@ -190,7 +194,7 @@ def gsimcli(stations_file, stations_header, no_data, stations_order,
         if print_status:
             print 'Detecting inhomogeneities...'
         homogenisation = hmg.detect(grids=sim_maps, obs_file=candidate,
-                                 method=detect_method, prob=detect_prob,
+                                 method=correct_method, prob=detect_prob,
                                  flag=detect_flag, save=detect_save,
                                  outfile=intermediary_files, header=True,
                                  skewness=detect_skew)
@@ -281,7 +285,7 @@ def run_par(par_path, print_status=False, skip_dss=False, cores=None):
                        md_last=gscpar.md_last))
 
     detect_flag = True
-    if gscpar.detect_method.lower() == 'skewness':
+    if gscpar.correct_method.lower() == 'skewness':
         skew = gscpar.skewness
     else:
         skew = None
@@ -290,10 +294,11 @@ def run_par(par_path, print_status=False, skip_dss=False, cores=None):
         print 'Candidates order: ', ', '.join(map(str, stations_order))
         print 'Set up complete. Running GSIMCLI...'
     results = gsimcli(stations_pset, gscpar.data_header, gscpar.no_data,
-                      stations_order, gscpar.detect_method, gscpar.detect_prob,
-                      detect_flag, gscpar.detect_save, gscpar.dss_exe, dsspar,
-                      gscpar.results, gscpar.sim_purge, skew, cores=cores,
-                      print_status=print_status, skip_dss=skip_dss)
+                      stations_order, gscpar.correct_method,
+                      gscpar.detect_prob, detect_flag, gscpar.detect_save,
+                      gscpar.dss_exe, dsspar, gscpar.results, gscpar.sim_purge,
+                      skew, cores=cores, print_status=print_status,
+                      skip_dss=skip_dss)
 
     # FIXME: workaround for merge dependence
     results = list(results)
@@ -385,7 +390,7 @@ def batch_decade(par_path, variograms_file, print_status=False,
 
         pset = gr.PointSet(psetpath=data_file, header=gscpar.data_header)
         if ('nugget_norm' in variograms.columns and
-            'psill_norm' in variograms.columns):
+                'psill_norm' in variograms.columns):
             nugget = decade[1].ix['nugget_norm']
             psill = decade[1].ix['psill_norm']
         else:

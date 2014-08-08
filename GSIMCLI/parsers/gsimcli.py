@@ -36,18 +36,20 @@ class GsimcliParam(ParametersFile):
                 - 'sorted' sorts all stations in ascending or descending order;
                 - 'variance' sorts all stations by greater or lower variance;
                 - 'network deviation' sorts all stations in ascending  or
-                descending order according to the difference between the
-                station average and the network average;
+                    descending order according to the difference between the
+                    station average and the network average;
                 - 'user' the user specifies which stations and their order.
         ascending: sort in ascending order ('y'/'n')
         md_last: put missing data at the end of sorted stations ('y'/'n')
         st_user: stations IDs in order if st_order == 'user' (e.g., '3, 10, 2')
-        detect_method: detection method (comparison between upper and lower
-                       percentiles and the simulated values):
-                        - 'mean' compares with the mean
-                        - 'median' compares with the median
+        correct_method: method for the inhomogeneities correction:
+                        - 'mean' replaces with the mean
+                        - 'median' replaces with the median
                         - 'skewness' use the sample skewness to decide whether
-                                     it compares with the mean or the median
+                            it replaces with the mean or the median
+                        - percentile : replace detected irregularities with the
+                            percentile `100 * (1 - p)`, which is the same value
+                            used in the detection.
         skewness: samples skewness threshold, used if detecm == 'skewness'
         detect_prob: probability to build an interval centred in the local pdf
 
@@ -98,7 +100,7 @@ class GsimcliParam(ParametersFile):
               - consider every dss parameters as optional?
         """
         par_set = 'GSIMCLI'
-        text = ['data', 'st_order', 'detect_method', 'results', 'dss_exe']
+        text = ['data', 'st_order', 'correct_method', 'results', 'dss_exe']
         real_n = ['detect_prob', 'no_data']
         boolean = ['data_header', 'detect_save', 'sim_purge']
         opt_text = ['dss_par', 'name', 'variables', 'krig_type', 'model',
@@ -111,7 +113,7 @@ class GsimcliParam(ParametersFile):
         opt_boolean = ['ascending', 'md_last']
         order = ['data', 'no_data', 'data_header', 'name',
                  'variables', 'st_order', 'ascending', 'md_last', 'st_user',
-                 'detect_method', 'skewness', 'detect_prob', 'detect_save',
+                 'correct_method', 'skewness', 'detect_prob', 'detect_save',
                  'sim_purge', 'results', 'results_file', 'dss_par', 'dss_exe',
                  'number_simulations', 'krig_type', 'model', 'nugget', 'sill',
                  'ranges', 'angles', 'max_search_nodes',

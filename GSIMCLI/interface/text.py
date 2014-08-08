@@ -332,7 +332,7 @@ def main():
         # candidate stations order
         stations_order = ask_stations_method(stations_pset, stations_h)
         # inhomogeneities detection settings
-        detect_method = raw_input('Detection method (mean/median): ').lower()
+        correct_method = raw_input('Detection method (mean/median): ').lower()
         detect_prob = float(raw_input('Probability for detection interval: '))
         detect_flag = True
         # results
@@ -350,7 +350,7 @@ def main():
         # let's go!
         print 'Set up complete. Running GSIMCLI...'
         mc.gsimcli(stations_pset, stations_h, no_data, stations_order,
-                   detect_method, detect_prob, detect_flag, detect_save,
+                   correct_method, detect_prob, detect_flag, detect_save,
                    exe_path, parfile, outfolder)
     elif i == str(5):
         pass
