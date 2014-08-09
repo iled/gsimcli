@@ -60,10 +60,10 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.settings.endGroup()
 
         # worker
-        self.gsimcli_worker = Homogenising(self)
-        self.gsimcli_worker.update_progress.connect(self.set_progress)
-        self.gsimcli_worker.time_elapsed.connect(self.set_time)
-        self.gsimcli_worker.finished.connect(self.finish_gsimcli)
+#         self.gsimcli_worker = Homogenising(self)
+#         self.gsimcli_worker.update_progress.connect(self.set_progress)
+#         self.gsimcli_worker.time_elapsed.connect(self.set_time)
+#         self.gsimcli_worker.finished.connect(self.finish_gsimcli)
         # self.gsimcli_worker.go_run.connect(self.run_gsimcli)
 
         # set params
@@ -140,8 +140,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.actionSaveSettings.triggered.connect(self.save_settings)
         # self.actionSaveAs.triggered.connect(self.save_as_gsimcli_params)
         self.actionExportSettings.triggered.connect(self.export_settings)
-        # self.actionGSIMCLI.triggered.connect(self.start_gsimcli)
-        self.actionGSIMCLI.triggered.connect(self.run_gsimcli)
+        self.actionGSIMCLI.triggered.connect(self.start_gsimcli)
+        # self.actionGSIMCLI.triggered.connect(self.run_gsimcli)
         self.actionClose.triggered.connect(self.close)
 
         # spin
@@ -1134,7 +1134,6 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         if filepath[0]:
             filepath = os.path.splitext(filepath[0])[0] + self.settings_ext
             self.save_settings()
-            print filepath
             exported = QtCore.QSettings(filepath,
                                         QtCore.QSettings.NativeFormat)
             # FIXME: code smell, allKeys may not work well on all platforms
@@ -1433,7 +1432,29 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.groupTime.setVisible(True)
         self.actionGSIMCLI.setEnabled(False)
         self.start_time = time.time()
-        self.gsimcli_worker.start()
+        # self.gsimcli_worker.start()
+        self.apply_settings()
+        self.params.path = str(self.params.path)
+        self.params.results = str(self.params.results)
+        # new thread
+        self.thread = QtCore.QThread()
+        # new worker object
+        self.worker = Worker(self)
+        self.worker.time_elapsed.connect(self.set_time)
+        self.worker.update_progress.connect(self.set_progress)
+        self.worker.finished.connect(self.finish_gsimcli)
+        # move object to thread
+        self.worker.moveToThread(self.thread)
+        # connect the thread's started signal to the processing slot in the worker
+        self.thread.started.connect(self.worker.run)
+        # clean-up, quit thread, mark worker and thread for deletion
+        self.worker.finished.connect(self.thread.quit)
+        self.thread.finished.connect(self.worker.timer.quit)
+        self.worker.finished.connect(self.worker.deleteLater)
+        self.thread.finished.connect(self.worker.timer.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
+        # go!
+        self.thread.start()
 
     def finish_gsimcli(self):
         """Handles the end of the homogenisation process.
@@ -1472,6 +1493,55 @@ class Homogenising(QtCore.QThread):
 #             time.sleep(0.05)
 
 
+class Worker(QtCore.QObject):
+    """Worker class
+
+    """
+    # signals that will be emitted during the processing
+    update_progress = QtCore.Signal(int)
+    time_elapsed = QtCore.Signal(int)
+    finished = QtCore.Signal()
+
+    def __init__(self, parent):
+        QtCore.QObject.__init__(self)
+        self.gui = parent
+        self.timer = Timer(self)
+        self.timer.time_elapsed.connect(self.time_elapsed.emit)
+        self.is_running = False
+
+    def run(self):
+        self.is_running = True
+        self.timer.start(time.time())
+        cores = self.gui.SO_spinCores.value()
+
+        if self.gui.batch_networks:
+            networks_list = qlist_to_pylist(self.gui.DB_listNetworksPaths)
+            # workaround for unicode/bytes issues
+            networks_list = map(str, networks_list)
+            method_classic.batch_networks(par_path=self.gui.params.path,
+                                          networks=networks_list,
+                                          decades=self.gui.batch_decades,
+                                          skip_dss=self.gui.skip_sim,
+                                          print_status=self.gui.print_status,
+                                          cores=cores)
+        elif self.gui.batch_decades:
+            method_classic.batch_decade(par_path=self.gui.params.path,
+                        variograms_file=str(self.gui.DB_lineVariogPath.text()),
+                        print_status=self.gui.print_status,
+                        skip_dss=self.gui.skip_sim,
+                        network_id=self.gui.DB_lineNetworkID.text(),
+                        cores=cores)
+        else:
+            method_classic.run_par(par_path=self.gui.params.path,
+                                   skip_dss=self.gui.skip_sim,
+                                   print_status=self.gui.print_status,
+                                   cores=cores)
+
+        self.is_running = False
+        self.finished.emit()
+        print "worker done"
+
+
 class Timer(QtCore.QThread):
     """Timer thread for elapsed time.
 
@@ -1488,9 +1558,11 @@ class Timer(QtCore.QThread):
         return super(Timer, self).start()
 
     def run(self):
-        while self.parent().isRunning():
+        print "tic"
+        while True:
             self.time_elapsed.emit(time.time() - self.time_start)
             time.sleep(1)
+        print "tac"
 
 
 def qlist_to_pylist(qlist):
