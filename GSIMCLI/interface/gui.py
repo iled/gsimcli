@@ -59,13 +59,6 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.load_recent_settings()
         self.settings.endGroup()
 
-        # worker
-#         self.gsimcli_worker = Homogenising(self)
-#         self.gsimcli_worker.update_progress.connect(self.set_progress)
-#         self.gsimcli_worker.time_elapsed.connect(self.set_time)
-#         self.gsimcli_worker.finished.connect(self.finish_gsimcli)
-        # self.gsimcli_worker.go_run.connect(self.run_gsimcli)
-
         # set params
         self.params = GsimcliParam()
         self.temp_params = NamedTemporaryFile(delete=False)
@@ -1439,13 +1432,13 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         # new thread
         self.thread = QtCore.QThread()
         # new worker object
-        self.worker = Worker(self)
+        self.worker = Homogenising(self)
         self.worker.time_elapsed.connect(self.set_time)
         self.worker.update_progress.connect(self.set_progress)
         self.worker.finished.connect(self.finish_gsimcli)
         # move object to thread
         self.worker.moveToThread(self.thread)
-        # connect the thread's started signal to the processing slot in the worker
+        # connect the thread's started signal to the worker's processing slot
         self.thread.started.connect(self.worker.run)
         # clean-up, quit thread, mark worker and thread for deletion
         self.worker.finished.connect(self.thread.quit)
@@ -1468,33 +1461,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.finish_time = time.time()
 
 
-class Homogenising(QtCore.QThread):
-    """Worker class to handle the thread related to the homogenisation process.
-
-    """
-    # signal that will be emitted during the processing
-    update_progress = QtCore.Signal(int)
-    time_elapsed = QtCore.Signal(int)
-    go_run = QtCore.Signal()
-
-    def __init__(self, gui):
-        QtCore.QThread.__init__(self)
-        self.timer = Timer(self)
-        self.timer.time_elapsed.connect(self.time_elapsed.emit)
-        self.gui = gui
-
-    def run(self):
-        self.timer.start(time.time())
-        self.go_run.emit()
-        # self.gui.run_gsimcli()
-#         for i in range(1, 101):
-#             # emit the signal to be received on the UI
-#             self.update_progress.emit(i)
-#             time.sleep(0.05)
-
-
-class Worker(QtCore.QObject):
-    """Worker class
+class Homogenising(QtCore.QObject):
+    """Homogenising class to handle the thread related to the homogenisation process.
 
     """
     # signals that will be emitted during the processing
@@ -1538,8 +1506,9 @@ class Worker(QtCore.QObject):
                                    cores=cores)
 
         self.is_running = False
+        # this second is a workaround for the timer QThread removal
+        time.sleep(1)
         self.finished.emit()
-        print "worker done"
 
 
 class Timer(QtCore.QThread):
@@ -1551,6 +1520,7 @@ class Timer(QtCore.QThread):
     def __init__(self, parent=None):
         super(Timer, self).__init__(parent)
         self.time_start = None
+        self.parent = parent
 
     def start(self, time_start):
         self.time_start = time_start
@@ -1558,11 +1528,9 @@ class Timer(QtCore.QThread):
         return super(Timer, self).start()
 
     def run(self):
-        print "tic"
-        while True:
+        while self.parent.is_running:
             self.time_elapsed.emit(time.time() - self.time_start)
             time.sleep(1)
-        print "tac"
 
 
 def qlist_to_pylist(qlist):
