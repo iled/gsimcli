@@ -20,6 +20,7 @@ import ntpath
 import os
 import shutil
 import sys
+import time
 
 import multiprocessing as mp
 import parsers.dss as pdss
@@ -157,6 +158,8 @@ class DssEnvironment(object):
 
         """
         os.chdir(os.path.dirname(self.par_path))
+        # workaround for delay issue on NT systems
+        time.sleep(1)
         shutil.rmtree(self.tempdir)
 
     def reset_par_path(self):
@@ -209,7 +212,7 @@ def _execute(command):
     # Poll process for new output until finished
     while True:
         nextline = process.stdout.readline()
-        if nextline == '' and process.poll() != None:
+        if nextline == '' and process.poll() is not None:
             break
         sys.stdout.write(nextline)
         sys.stdout.flush()
@@ -327,7 +330,7 @@ def mp_exec(dss_path, par_path, output, simnum, totalsim=None, dbg=None,
         cores = mp.cpu_count()
     if print_mp_status:
         print 'Running {} in {} cores'.format(os.path.basename(dss_path),
-                                                cores)
+                                              cores)
 
     runs = list()
     dssenv = DssEnvironment(dss_path, par_path, output, simnum)

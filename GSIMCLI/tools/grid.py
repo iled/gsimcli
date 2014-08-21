@@ -11,6 +11,7 @@ Created on 12 de Out de 2013
 
 import os
 from scipy.stats import skew
+import time
 
 import numpy as np
 import pandas as pd
@@ -476,10 +477,12 @@ class GridFiles(object):
         self.nfiles = 0
 
     def purge(self):
-        """Remove all files from the filesystem permanently.
+        """Remove all simulated map files from the filesystem permanently.
 
         """
         self.dump()
+        # workaround for delay issue on NT systems
+        time.sleep(1)
         for grid in self.files:
             os.remove(grid.name)
 
@@ -668,7 +671,7 @@ class GridFiles(object):
                     coefvarline[j] = arr.std() / arr.mean() * 100
             if lperc:
                 percline[j] = np.percentile(arr, [(100 - p * 100) / 2,
-                                                    100 - (100 - p * 100) / 2])
+                                                  100 - (100 - p * 100) / 2])
             if save:
                 arrpset = PointSet('realizations at location ({}, {}, {})'.
                                    format(loc[0], loc[1], j * self.cellz +
