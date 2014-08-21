@@ -48,9 +48,10 @@ class GsimcliParam(ParametersFile):
                         - 'skewness' use the sample skewness to decide whether
                             it replaces with the mean or the median
                         - percentile : replace detected irregularities with the
-                            percentile `100 * (1 - p)`, which is the same value
-                            used in the detection.
-        skewness: samples skewness threshold, used if detecm == 'skewness'
+                            percentile `100 * (1 - p)`, for a given p.
+        skewness: samples skewness threshold, used if
+            correct_method == 'skewness'
+        percentile: p value used if correct_method == 'percentile'
         detect_prob: probability to build an interval centred in the local pdf
 
         --- RESULTS ---
@@ -109,14 +110,15 @@ class GsimcliParam(ParametersFile):
                    'angles', 'XX_nodes_number', 'XX_minimum', 'XX_spacing',
                    'YY_nodes_number', 'YY_minimum', 'YY_spacing',
                    'ZZ_nodes_number', 'ZZ_minimum', 'ZZ_spacing']
-        opt_real = ['skewness', 'nugget', 'sill', 'ranges']
+        opt_real = ['skewness', 'percentile', 'nugget', 'sill', 'ranges']
         opt_boolean = ['ascending', 'md_last']
         order = ['data', 'no_data', 'data_header', 'name',
                  'variables', 'st_order', 'ascending', 'md_last', 'st_user',
-                 'correct_method', 'skewness', 'detect_prob', 'detect_save',
-                 'sim_purge', 'results', 'results_file', 'dss_par', 'dss_exe',
-                 'number_simulations', 'krig_type', 'model', 'nugget', 'sill',
-                 'ranges', 'angles', 'max_search_nodes',
+                 'correct_method', 'skewness', 'percentile', 'detect_prob',
+                 'detect_save', 'sim_purge', 'results', 'results_file',
+                 'dss_par', 'dss_exe', 'number_simulations', 'krig_type',
+                 'model', 'nugget', 'sill', 'ranges', 'angles',
+                 'max_search_nodes',
                  'XX_nodes_number', 'XX_minimum', 'XX_spacing',
                  'YY_nodes_number', 'YY_minimum', 'YY_spacing',
                  'ZZ_nodes_number', 'ZZ_minimum', 'ZZ_spacing']

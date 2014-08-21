@@ -40,8 +40,9 @@ import tools.utils as ut
 
 def gsimcli(stations_file, stations_header, no_data, stations_order,
             correct_method, detect_prob, detect_flag, detect_save, exe_path,
-            par_file, outfolder, purge_sims, detect_skew=None, cores=None,
-            dbgfile=None, print_status=False, skip_dss=False):
+            par_file, outfolder, purge_sims, correct_skew=None,
+            correct_percentile=None, cores=None, dbgfile=None,
+            print_status=False, skip_dss=False):
     """Main routine to run GSIMCLI homogenisation procedure in a set of
     stations.
 
@@ -84,8 +85,10 @@ def gsimcli(stations_file, stations_header, no_data, stations_order,
         Directory to save the results.
     purge_sims : boolean
         Remove all simulated maps in the end.
-    detect_skew : float, optional
+    correct_skew : float, optional
         Samples skewness threshold, used if `correct_method == 'skewness'`.
+    correct_percentile: float, optional
+        p value used if correct_method == 'percentile'.
     cores : int, optional
         Maximum number of cores to be used. If None, it will use all available
         cores.
@@ -197,7 +200,8 @@ def gsimcli(stations_file, stations_header, no_data, stations_order,
                                  method=correct_method, prob=detect_prob,
                                  flag=detect_flag, save=detect_save,
                                  outfile=intermediary_files, header=True,
-                                 skewness=detect_skew)
+                                 skewness=correct_skew,
+                                 percentile=correct_percentile)
         homogenised, detected_number, filled_number = homogenisation
         if print_status:
             print 'Inhomogeneities detected: {}'.format(detected_number)
@@ -285,10 +289,12 @@ def run_par(par_path, print_status=False, skip_dss=False, cores=None):
                        md_last=gscpar.md_last))
 
     detect_flag = True
+    skew = None
+    perc = None
     if gscpar.correct_method.lower() == 'skewness':
         skew = gscpar.skewness
-    else:
-        skew = None
+    elif gscpar.correct_method.lower() == 'percentile':
+        perc = gscpar.percentile
 
     if print_status:
         print 'Candidates order: ', ', '.join(map(str, stations_order))
@@ -297,7 +303,7 @@ def run_par(par_path, print_status=False, skip_dss=False, cores=None):
                       stations_order, gscpar.correct_method,
                       gscpar.detect_prob, detect_flag, gscpar.detect_save,
                       gscpar.dss_exe, dsspar, gscpar.results, gscpar.sim_purge,
-                      skew, cores=cores, print_status=print_status,
+                      skew, perc, cores=cores, print_status=print_status,
                       skip_dss=skip_dss)
 
     # FIXME: workaround for merge dependence

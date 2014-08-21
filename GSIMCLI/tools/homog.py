@@ -25,7 +25,7 @@ _ntuple_stations = namedtuple('Stations', 'stations total')
 
 
 def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
-           flag=True, save=False, outfile=None, header=True):
+           percentile=None, flag=True, save=False, outfile=None, header=True):
     """Try to detect and homogenise irregularities in data series, following
     the geostatistical simulation approach:
 
@@ -59,12 +59,14 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
                 irregularities will be replaced by the mean or by the median of
                 simulated values.
             - percentile : replace detected irregularities with the percentile
-                `100 * (1 - p)`, which is the same value used in the detection.
+                `100 * (1 - p)`, for a given p.
     prob : float, default 0.95
         Probability value to build the detection interval centred in the local
         PDF.
     skewness: float, optional
         Samples skewness threshold, used if `method == 'skewness'`, e.g., 1.5.
+    percentile: float, optional
+        p value used if correct_method == 'percentile'.
     flag : boolean, default True
         DEPRECATED
     save : boolean, default False
@@ -179,9 +181,17 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
                              vline_stats.values['median'],
                              vline_stats.values['mean'])
     elif method == 'percentile':
+        # allow a different percentile value for the detection and for the
+        # correction
+        if percentile != prob:
+            vline_perc = grids.stats_vline(obs_xy, lperc=True, p=percentile,
+                                           save=False)
+        else:
+            vline_perc = vline_stats
+
         fixvalues = np.where(obs.values['clim'] > vline_stats.values['rperc'],
-                             vline_stats.values['rperc'],
-                             vline_stats.values['lperc'])
+                             vline_perc.values['rperc'],
+                             vline_perc.values['lperc'])
 
     homogenised.values['clim'] = obs.values['clim'].where(~hom_where,
                                                           fixvalues)
