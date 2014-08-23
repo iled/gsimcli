@@ -22,6 +22,7 @@ from external_libs.pyside_dynamic import loadUi
 from launchers import method_classic
 from parsers.gsimcli import GsimcliParam
 import tools.homog as hmg
+from tools.utils import seconds_convert
 
 
 class GsimcliMainWindow(QtGui.QMainWindow):
@@ -1484,11 +1485,11 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 
         self.progressBar.setValue(progress)
 
-    def set_time(self, time):
+    def set_time(self, seconds):
         """Set the elapsed time of the homogenisation process.
 
         """
-        self.labelTime.setText(str(time))
+        self.labelTime.setText(seconds_convert(seconds))
 
     def start_gsimcli(self):
         """Start the homogenisation process, updating its status.

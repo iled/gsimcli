@@ -6,6 +6,7 @@ Created on 6 de Nov de 2013
 
 @author: julio
 """
+import datetime
 import os
 
 
@@ -177,3 +178,39 @@ def yes_no(yn):
         return True
     else:
         return False
+
+
+def seconds_convert(seconds):
+    """Convert seconds to months, days and HH:MM:ss.
+
+    Parameters
+    ----------
+    seconds : int
+        Number of seconds.
+
+    Returns
+    -------
+    string
+        A formatted string with the result of the conversion.
+
+    """
+    months, seconds = divmod(seconds, 2592000)
+    days, seconds = divmod(seconds, 86400)
+    # months
+    if months > 1:
+        m_str = "{} months ".format(months)
+    elif months > 0:
+        m_str = "{} month ".format(months)
+    else:
+        m_str = ""
+    # days
+    if days > 1:
+        d_str = "{} days ".format(days)
+    elif days > 0:
+        d_str = "{} day ".format(days)
+    else:
+        d_str = ""
+    # HH:MM:ss
+    h_str = str(datetime.timedelta(seconds=seconds))
+
+    return m_str + d_str + h_str
