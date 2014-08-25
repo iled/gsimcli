@@ -125,6 +125,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.DL_lineDataPath.textChanged.connect(self.preview_data_file)
         self.DB_lineDecadesPath.textChanged.connect(self.changed_decades_path)
         self.HR_lineResultsPath.textChanged.connect(self.available_space)
+        self.HR_lineResultsName.textChanged.connect(self.check_results_ext)
 
         # lists
         self.DB_listNetworksPaths.currentItemChanged.connect(
@@ -1431,6 +1432,17 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             if not glob.glob(os.path.join(network, self.wildcard_decade)):
                 return False
         return True
+
+    def check_results_ext(self, text):
+        """Make sure the results file has the necessary file extension (.xls).
+
+        """
+        if text:
+            filename = self.HR_lineResultsName.text()
+            if os.path.splitext(filename)[1].lower() != ".xls":
+                filename = os.path.splitext(filename)[0] + ".xls"
+            self.HR_lineResultsName.setText(filename)
+            self.HR_lineResultsName.setCursorPosition(len(filename) - 4)
 
     def run_gsimcli(self):
         """Launch GSIMCLI process according to the existing ui settings.
