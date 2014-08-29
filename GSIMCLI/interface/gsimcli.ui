@@ -88,7 +88,7 @@
                 <bool>false</bool>
                </property>
                <property name="text">
-                <string>Data files directory</string>
+                <string>Data file location</string>
                </property>
               </widget>
              </item>
