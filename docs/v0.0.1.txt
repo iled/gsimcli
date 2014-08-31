@@ -1,0 +1,7 @@
+.. _whatsnew_001:
+
+v.0.0.1 (August 2014)
+---------------------
+
+This the first released version. It includes all the
+development since the project's beginning.

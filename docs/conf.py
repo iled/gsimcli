@@ -340,9 +340,9 @@ epub_exclude_files = ['search.html']
 # epub_use_index = True
 
 # extlinks alias
-extlinks = {'issue': ('https://github.com/pydata/pandas/issues/%s',
+extlinks = {'issue': ('https://github.com/iled/gsimcli/issues/%s',
                       'GH'),
-            'wiki': ('https://github.com/pydata/pandas/wiki/%s',
+            'wiki': ('https://github.com/iled/gsimcli/wiki/%s',
                      'wiki ')}
 
 class Mock(object):
