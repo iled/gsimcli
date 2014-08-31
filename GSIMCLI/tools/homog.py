@@ -34,7 +34,7 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
     (real) value of the candidate station. In practice, the local PDF's are
     provided by the histograms of simulated maps. Thus, this rule implies that
     if the observed (real) value lies below or above the predefined
-    percentiles of the histogram of a given instant in time then it is not
+    percentiles of the histogram, of a given instant in time, then it is not
     considered homogeneous. If irregularities are detected in a candidate
     series, the time series can be adjusted by replacing the inhomogeneous
     records with the mean, or median, of the PDF(s) calculated at the candidate
@@ -59,7 +59,7 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
                 irregularities will be replaced by the mean or by the median of
                 simulated values.
             - percentile : replace detected irregularities with the percentile
-                `100 * (1 - p)`, for a given p.
+                `100 * (1 - p)`, for a given `p`.
     prob : float, default 0.95
         Probability value to build the detection interval centred in the local
         PDF.

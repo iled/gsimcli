@@ -949,6 +949,12 @@
                  <verstretch>0</verstretch>
                 </sizepolicy>
                </property>
+               <property name="maximum">
+                <double>1.000000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.010000000000000</double>
+               </property>
               </widget>
              </item>
              <item>
@@ -982,6 +988,12 @@
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
+               </property>
+               <property name="maximum">
+                <double>1.000000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.010000000000000</double>
                </property>
               </widget>
              </item>
@@ -1505,7 +1517,7 @@
                 <double>0.999900000000000</double>
                </property>
                <property name="singleStep">
-                <double>0.000100000000000</double>
+                <double>0.005000000000000</double>
                </property>
                <property name="value">
                 <double>0.950000000000000</double>
@@ -1620,6 +1632,12 @@
                 <property name="enabled">
                  <bool>true</bool>
                 </property>
+                <property name="singleStep">
+                 <double>0.010000000000000</double>
+                </property>
+                <property name="value">
+                 <double>1.500000000000000</double>
+                </property>
                </widget>
               </item>
               <item>
@@ -1675,7 +1693,7 @@
                  <double>0.999900000000000</double>
                 </property>
                 <property name="singleStep">
-                 <double>0.000100000000000</double>
+                 <double>0.005000000000000</double>
                 </property>
                 <property name="value">
                  <double>0.950000000000000</double>
@@ -1769,7 +1787,7 @@
              <item>
               <widget class="QLabel" name="HR_labelResultsPath">
                <property name="text">
-                <string>Results file</string>
+                <string>Results file and directory</string>
                </property>
               </widget>
              </item>
@@ -1844,7 +1862,7 @@
               <item row="1" column="0">
                <widget class="QLabel" name="HR_labelAvailableDisk">
                 <property name="text">
-                 <string>Available disk space</string>
+                 <string>Available disk space:</string>
                 </property>
                </widget>
               </item>

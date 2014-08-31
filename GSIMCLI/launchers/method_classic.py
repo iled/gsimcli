@@ -367,7 +367,7 @@ def batch_decade(par_path, variograms_file, print_status=False,
             - other columns will be ignored
 
     The directory containing the decadal data files, which should be passed in
-    the field 'data' of par_path, must have data files containing, as least,
+    the field 'data' of par_path, must have data files containing, at least,
     the first year of each decade in their file names.
 
     """
