@@ -1,6 +1,6 @@
 # gsimcli:
-**G**eostatistical **sim**ulation for the homogenisation and interpolation of
-**cli**mate data
+Geostatistical SIMulation for the homogenisation and interpolation of
+CLImate data
 
 ## What is it
 
@@ -13,7 +13,7 @@ modules are intended to serve as useful libraries for other projects.
 ## Development
 
 In a first stage, **gsimcli** will be implemented using **Direct Sequential
-Simulation** (DSS)[1]. Method description and application have already been
+Simulation** (DSS) [1]. Method description and application have already been
 published [2].
 
 It is planned to develop an implementation using Direct Sequential Simulation
@@ -29,7 +29,7 @@ PTDC/GEO-MET/4026/2012. See [approval and funding notice]
 
 ## Documentation
 
-The Sphinx documentation is hosted at readthedocs.org:
+The documentation is hosted at readthedocs.org:
 http://gsimcli.readthedocs.org
 
 Browse and post issues and contributions [here]
@@ -37,6 +37,7 @@ Browse and post issues and contributions [here]
 
 ## Dependencies
 
+- [Python](http://www.python.org): 2.7
 - [NumPy](http://www.numpy.org): 1.8 or higher
 - [pandas](http://pandas.pydata.org) 0.13.0 or higher
 - [DSS](https://sites.google.com/site/cmrpsoftware/geoms) only the binary
@@ -48,10 +49,10 @@ GPLv3
 
 ## References
 
-[1]: Soares, Amílcar. “Direct Sequential Simulation and Cosimulation.”
-Mathematical Geology 33, no. 8 (2001): 911–926.
+[1]: Soares, Amílcar. *Direct Sequential Simulation and Cosimulation.*
+Mathematical Geology 33, no. 8 (2001): 911-926.
 http://link.springer.com/article/10.1023/A:1012246006212.
 
-[2]: Costa, AC, and A Soares. “Homogenization of Climate Data: Review and New
-Perspectives Using Geostatistics.” Mathematical Geosciences 41, no. 3 (November
-28, 2009): 291–305. doi:10.1007/s11004-008-9203-3.
+[2]: Costa, AC, and A Soares. *Homogenization of Climate Data: Review and New
+Perspectives Using Geostatistics.* Mathematical Geosciences 41, no. 3 (November
+28, 2009): 291-305. doi:10.1007/s11004-008-9203-3.
