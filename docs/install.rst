@@ -9,7 +9,8 @@ Currently there is no stand-alone installer.
 Python version support
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Only Python 2.7 was tested. It should be easy to upgrade to Python 3.2+.
+Only Python 2.7 was tested. It should be easy to port to Python 3.2+ if all
+dependencies are already available to that same version.
 
 Dependencies
 ~~~~~~~~~~~~
@@ -18,12 +19,12 @@ Dependencies
   * `pandas <http://pandas.pydata.org>`__: 0.13.0 or higher
   * `DSS <https://sites.google.com/site/cmrpsoftware/geoms>`__: only the binary
   * `Wine <https://www.winehq.org>`__: only for \*nix systems
-  
+
 .. note::
 
    pandas has a list of dependencies, some mandatory, other recommended and
-   some other just optional. Although, you are highly encouraged to install
-   them as they may be necessary in GSIMCLI.
+   some other just optional. Although, you are highly encouraged to install all
+   of them as they may be necessary in GSIMCLI.
    
-   On the other hand, if you installed Python through a packaged distribution,
-   changes are that you already have those libraries.
+   Although, if you installed Python through a packaged distribution,
+   chances are that you already have those libraries.
