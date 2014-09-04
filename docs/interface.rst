@@ -4,6 +4,14 @@ interface package
 Submodules
 ----------
 
+interface.gui module
+--------------------
+
+.. automodule:: interface.gui
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 interface.text module
 ---------------------
 
