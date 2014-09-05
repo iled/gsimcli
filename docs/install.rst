@@ -4,7 +4,8 @@
 Installation
 ************
 
-Currently there is no stand-alone installer.
+Currently there is no stand-alone installer. You have to run gsimcli as a
+Python script, launching the file **interface/gui.py**.
 
 Python version support
 ~~~~~~~~~~~~~~~~~~~~~~
