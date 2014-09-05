@@ -143,6 +143,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.actionGSIMCLI.triggered.connect(self.start_gsimcli)
         # self.actionGSIMCLI.triggered.connect(self.run_gsimcli)
         self.actionClose.triggered.connect(self.close)
+        self.actionOnlineDocs.triggered.connect(self.online_docs)
         self.actionAbout.triggered.connect(self.about)
 
         # spin
@@ -165,12 +166,14 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         sys.stdout = sys.__stdout__
 
     def about(self):
-        """The About box.
-
-        """
+        """The About box. """
         title = "About gsimcli"
         about = "".join(file('about.html').readlines())
         self.aboutbox = QtGui.QMessageBox.about(self, title, about)
+
+    def online_docs(self):
+        """Redirect to the online documentation at readthedocs.org"""
+        QtGui.QDesktopServices.openUrl("http://gsimcli.readthedocs.org")
 
     def output_status(self, text):
         """Write text in the status block.

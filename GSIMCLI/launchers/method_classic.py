@@ -115,6 +115,8 @@ def gsimcli(stations_file, stations_header, no_data, stations_order,
         station.
 
     """
+    global is_alive
+    
     if not cores or cores > mp.cpu_count():
         cores = mp.cpu_count()
     if print_status:

@@ -2227,7 +2227,7 @@
      <x>0</x>
      <y>0</y>
      <width>742</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -2269,6 +2269,8 @@
     <property name="title">
      <string>&amp;Help</string>
     </property>
+    <addaction name="actionOnlineDocs"/>
+    <addaction name="separator"/>
     <addaction name="actionAbout"/>
    </widget>
    <widget class="QMenu" name="menuRun">
@@ -2390,6 +2392,11 @@
   <action name="actionP">
    <property name="text">
     <string>None</string>
+   </property>
+  </action>
+  <action name="actionOnlineDocs">
+   <property name="text">
+    <string>Online &amp;documentation</string>
    </property>
   </action>
  </widget>
