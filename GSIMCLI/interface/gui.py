@@ -143,6 +143,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.actionGSIMCLI.triggered.connect(self.start_gsimcli)
         # self.actionGSIMCLI.triggered.connect(self.run_gsimcli)
         self.actionClose.triggered.connect(self.close)
+        self.actionAbout.triggered.connect(self.about)
 
         # spin
         self.set_cpu_cores()
@@ -162,6 +163,14 @@ class GsimcliMainWindow(QtGui.QMainWindow):
     def __del__(self):
         # Restore sys.stdout
         sys.stdout = sys.__stdout__
+
+    def about(self):
+        """The About box.
+
+        """
+        title = "About gsimcli"
+        about = "".join(file('about.html').readlines())
+        self.aboutbox = QtGui.QMessageBox.about(self, title, about)
 
     def output_status(self, text):
         """Write text in the status block.
