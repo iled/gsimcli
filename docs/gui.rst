@@ -1,6 +1,5 @@
 .. _gui:
 
-###############################
 Graphical user interface manual
 ###############################
 
@@ -18,16 +17,15 @@ common structures seen in other programs.
     :backlinks: top
 
 
-********
 Overview
 ********
 
-The main window is divided into four sections, as shown in the picture
+The main window is divided into four sections, as shown in the figure
 `below <fig_overview_>`_:
 
 * on top (depending on the operating system) there is the **main menu**;
 * all the homogenisation process **settings** are accessed on the left menu;
-* below that, on the bottom left corner, there is the **status box**;
+* below the left menu, on the bottom left corner, there is the **status box**;
 * the remaining area on the right is where the settings are shown.
 
 .. _fig_overview:
@@ -37,17 +35,16 @@ The main window is divided into four sections, as shown in the picture
    
    Overview of the graphical user interface
    
-Plus, there are two auxiliary buttons:
+There are two auxiliary buttons on the main window:
 
 * **Apply** will save the current settings.
 * **Restore Defaults** will change all settings to the default values (not
   implemented yet).
 
-*********
 Main menu
 *********
 
-The main menu include a few other subsections. When available, the actions
+The main menu includes a few other subsections. When available, the actions
 listed in the main menu may be followed by a keyboard shortcut, as illustrated
 in the :ref:`fig_menu`.
 
@@ -56,9 +53,9 @@ in the :ref:`fig_menu`.
 .. figure:: ../images/gui-menu.png
    :alt: Main menu example
    
-   Main menu screenshot
+   Main menu example
    
-   It shows the File_ menu options and their keyboard shortcuts.
+   It shows the `File`_ menu options and their keyboard shortcuts.
 
 File
 ====
@@ -74,13 +71,13 @@ Open settings file
 ------------------
 
 Load all the settings saved into a configuration file. The file extension
-depends on your operating system and should be automatically detected.
+depends on your operating system and it should be automatically detected.
 
 Recent settings files
 ---------------------
 
-List the last 10 configuration files which were opened or saved and will
-load all the settings saved into the selected file.
+List the last 10 configuration files which were opened or saved and it will
+load all the settings saved in the selected file.
 
 Save settings
 -------------
@@ -88,7 +85,7 @@ Save settings
 Save the current settings into the configuration file previously loaded.
 
 .. warning:: it will not overwrite the settings file previously loaded, for
-    that purpose you should use `Export settings`_. That behaviour is expected
+    that purpose you should use `Export settings`_. This behaviour is expected
     to change in a future version.
 
 Export settings
@@ -136,13 +133,12 @@ This is a link to the online documentation, which should open in your browser.
 About
 -----
 
-Some information about the application..
+Some information about the application.
 
-********
 Settings
 ********
 
-This GUI basically serves the purpose to prepare and launch the GSIMCLI
+This GUI basically serves the purpose of preparing and launching the GSIMCLI
 homogenisation process. This process depends on several settings which are
 user adjustable.
 
@@ -157,8 +153,8 @@ In this group you set up the data to be homogenised.
 Load
 ----
 
-Options to load a single data file and set the specifications of that file
-format (or of multiple files with the same specifications).
+Options to load a single data file and set the specifications of the chosen
+file (or of multiple files with the same format).
 
 .. _fig_dataload:
 
@@ -167,23 +163,24 @@ format (or of multiple files with the same specifications).
    
    Example of the **Data/Load** settings pane
    
-   In this example, a single data file was loaded, and it have 7 header lines,
+   In this example, a single data file was loaded, and it has 7 header lines,
    as seen in the preview area. The data set name was automatically detected
-   from the first header line and the variables order is being adjusted.
+   from the first header line and the variables order is being adjusted
+   (*drag and drop*).
 
 Data file location
 ^^^^^^^^^^^^^^^^^^
 
-Browse a single file containing. This option is automatically disabled if
-`Batch`_ is enabled.
+Browse a single file containing the data set. This option is automatically
+disabled if `Batch`_ is enabled.
 
 .. _header:
 
 Header
 ^^^^^^
 
-Enable if every data file have the header lines as the standard specified in
-the `GSLIB format`_.
+Enable if every data file has header lines as the standard specified in the
+`GSLIB format`_.
 
 File preview
 ^^^^^^^^^^^^
@@ -204,8 +201,8 @@ editable.
 Variables
 ^^^^^^^^^
 
-Select the correct variables order, which should match the structure on the
-given data files. You can adjust their order through drag and drop. There
+Select the correct variables order, which should match the structure of the
+given data files. You can adjust their order through *drag and drop*. There
 are five default variables that your data file should include:
 
 :x: value for the X-coordinate.
@@ -238,9 +235,9 @@ queue list.
    
    Example of the **Data/Batch** settings pane
    
-   In this example, 3 networks were selected and the order in which they are
-   going to be homogenised is being changed (the network *rede000005* will be
-   the last one).
+   In this example, three networks were selected and the order in which they
+   are going to be homogenised is being changed (the network *rede000005* will
+   be the last one).
    
    The options below :ref:`batch_decades` are grayed out because
    :ref:`batch_networks` is enabled.
@@ -251,8 +248,8 @@ queue list.
 Batch networks
 ^^^^^^^^^^^^^^
 
-This option allow you to select multiple networks to homogenise. Each
-network data set must follow a specific format and have a main folder with
+This option allows you to select multiple networks to homogenise. Each
+network data set must follow a specific format and must have a main folder with
 a (meaningful) identification name/number, which contains:
 
 * a file with the grid properties, this file name must be of the type
@@ -275,7 +272,7 @@ The file with the grid properties must follow these specifications:
     - **znodes:** number of nodes in Z-axis
     - **xsize:** node size in X-axis
     - **ysize:** node size in Y-axis
-    - other columns will be ignored.
+    - other columns will be ignored
 
 After enabling this option, the buttons to add and remove networks become
 available.
@@ -285,12 +282,12 @@ networks to be homogenised. You can select multiple folders (networks) at
 the same time by pressing *CTRL* (PC) or *CMD* (Mac) while selecting them.
 
 After adding networks to the queue list, you can remove one or multiple
-networks from the list: just select them and press the button
+networks from the list by selecting them and pressing the button
 **Remove selected**. Also, if you select one of the networks in that list, one
 of its data files will be previewed in the `File preview`_ area.
 
 It is also possible to change the order in which the networks will be
-processed by drag and dropping from the list, as seen in the
+processed by *drag and dropping* from the list, as seen in the
 :ref:`fig_databatch`.
 
 .. note:: when :ref:`batch_networks` is enabled, the settings menu to set up
@@ -367,7 +364,7 @@ Simulation
 
 The gsimcli homogenisation process is based on a geostatistical stochastic
 simulation method. It is necessary to specify several options related to that
-part of the process, however, we provide you with a set of default values.
+part of the process, however, a set of default values are provided in the GUI.
 Also, the less relevant [to the homogenisation process] simulation parameters
 are conveniently hidden and placed in a section for `Advanced`_ settings.
 
@@ -394,7 +391,7 @@ Executable file
 The simulation (Direct Sequential Simulation -- DSS) binary file. As of
 **version 0.0.1**, only the 2001 version is supported. You can get the
 binary from the `CMRP Software`_ site. Download the file *GeoMS.zip*
-and extract the binary *dss.exe*.
+and extract the binary *dssim.exe*.
 
 Number of simulations
 ^^^^^^^^^^^^^^^^^^^^^
@@ -402,7 +399,7 @@ Number of simulations
 The number of simulations per candidate station. A brief study demonstrated
 that a higher number leads to better results, as it will produce a smoother
 local distribution. A low number (below 100) will produce a distribution
-with *artifacts*, while a too high number will require too much CPU time.
+with *artifacts*, while a number too high will require too much CPU time.
 We advise you to run the process with a few hundreds (e.g., 500)
 realisations per candidate station.
 
@@ -435,14 +432,14 @@ different process at the same time.
 
 In this program, such technology can be used to speed up the overall
 process. Specifically, you can opt to run multiple simulations at the same
-time if your computer have that capability, instead of running one at a
+time if your computer has that capability, instead of running one at a
 time.
 
 The program will detect the number of cores installed and select that value
-by default. In the :ref:`fig_simopt` the program detected the maximum number of
-2, which corresponds, in this case, to a CPU with two processor cores.
+by default. In the :ref:`fig_simopt`, the program detected the maximum number
+of 2, which corresponds, in this case, to a CPU with two processor cores.
 
-.. note:: The supported DSS version is not parallelised. The multi-threading
+.. note:: The parallelised DSS version is not supported. The multi-threading
     is attained through a script that will prepare and launch a number of
     copies of the DSS binary equal to the given number of CPU cores, which, in
     fact, may be more efficient than the parallelised version, because only
@@ -526,21 +523,23 @@ of irregularities and then their correction.
 
 In gsimcli method, the simulation plays an import role in the detection of
 irregularities, but there are a few more parameters that can be adjusted,
-regarding the way the simulation is embedded in the homogenisation process.
+regarding on the way the simulation is embedded in the homogenisation process.
 
 Detection and correction
 ------------------------
 
 A breakpoint is identified whenever the interval of a specified probability
-p (e.g., 0.95), centred in the local PDF, does not contain the observed
+`p` (e.g., 0.95), centred in the local PDF, does not contain the observed
 (real) value of the candidate station. In practice, the local PDF's are
 provided by the histograms of simulated maps. Thus, this rule implies that
 if the observed (real) value lies below or above the predefined
 percentiles of the histogram, of a given instant in time, then it is not
-considered homogeneous. If irregularities are detected in a candidate
-series, the time series can be adjusted by replacing the inhomogeneous
-records with the mean, or median, of the PDF(s) calculated at the candidate
-station’s location for the inhomogeneous period(s) [COSTA2009]_.
+considered homogeneous.
+
+If irregularities are detected in a candidate series, the time series can be
+adjusted by replacing the inhomogeneous records with the mean, or median, of
+the PDF(s) calculated at the candidate station’s location for the inhomogeneous
+period(s) [COSTA2009]_.
 
 .. _fig_homdet:
 
@@ -581,12 +580,12 @@ Ascending order
 You also can specify if this sorting is done in ascending or descending
 order. For instance, for the **Variance** sorting method, if you disable
 **Ascending order**, it will sort all stations by greater variance (which is
-the default).
+the default option).
 
 Missing data last
 ^^^^^^^^^^^^^^^^^
 
-If a station have no data in the time period being processed, you can opt to
+If a station has no data in the time period being processed, you can opt to
 homogenise that station in the first place, or only after the remaining
 candidate stations.
 
@@ -615,7 +614,7 @@ The method for the inhomogeneities correction:
 Results
 -------
 
-The homogenisation process ends with it results being saved into a spreadsheet
+The homogenisation process ends with its results being saved into a spreadsheet
 file. Also, there are other files generated in the process which the user can
 opt to save or purge them when they are no longer needed.
 
@@ -668,10 +667,10 @@ Hard drive requirements
 
 In this area is shown the necessary and the available disk space.
 
-The required disk space is estimated and is considering only the simulated
-map files (the remaining files do not have a significant size). This value
-will be calculated (and updated) as soon as all the other settings are set
-up (you may have to press the **Apply** button to update this value).
+The required disk space is estimated and considers only the simulated map files
+(the remaining files do not have a significant size). This value will be
+calculated (and updated) as soon as all the other settings are set up (you may
+have to press the **Apply** button to update this value).
 
 The available disk space is shown after the results directory is selected.
 
@@ -681,16 +680,14 @@ disabling that option would increase the necessary disk space to more than 30
 GB.
 
 
-************
 Bibliography
 ************
 
-.. [COSTA2009] Costa, A., & Soares, A. (2009). Homogenization of climate data review
-   and new perspectives using geostatistics. Mathematical Geosciences, 41(3),
-   291–305. doi:10.1007/s11004-008-9203-3
+.. [COSTA2009] Costa, A., & Soares, A. (2009). Homogenization of climate data
+    review and new perspectives using geostatistics. Mathematical Geosciences,
+    41(3), 291–305. doi:10.1007/s11004-008-9203-3
 
 
-**********
 References
 **********
 

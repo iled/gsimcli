@@ -7,14 +7,14 @@ CLImate data
 **gsimcli** is a proposed method to homogenise climate data using
 geostatistical stochastic simulation methods.
 
-It is presented here as a *work on progress* Python project. Some of its
+It is presented here as a *work in progress* Python project. Some of its
 modules are intended to serve as useful libraries for other projects.
 
 ## Development
 
 In a first stage, **gsimcli** will be implemented using **Direct Sequential
-Simulation** (DSS) [1]. Method description and application have already been
-published [2].
+Simulation** (DSS) [1]. The method description and its application have already
+been published [2].
 
 It is planned to develop an implementation using Direct Sequential Simulation
 with **local distributions**.
