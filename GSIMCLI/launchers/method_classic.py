@@ -116,7 +116,7 @@ def gsimcli(stations_file, stations_header, no_data, stations_order,
 
     """
     global is_alive
-    
+
     if not cores or cores > mp.cpu_count():
         cores = mp.cpu_count()
     if print_status:
@@ -372,6 +372,10 @@ def batch_decade(par_path, variograms_file, print_status=False,
     the field 'data' of par_path, must have data files containing, at least,
     the first year of each decade in their file names.
 
+    The variogram is assumed to be isotropic in the horizontal direction and
+    with range 1 in the vertical (time) direction. It will default its angles
+    to (0, 0, 0).
+
     """
     if isinstance(par_path, pgc.GsimcliParam):
         gscpar = par_path
@@ -448,6 +452,8 @@ def batch_decade(par_path, variograms_file, print_status=False,
 def batch_networks(par_path, networks, decades=False, print_status=False,
                    skip_dss=False, cores=None):
     """Batch process to run GSIMCLI along different networks.
+    
+    WARNING: it is only working for decades=True
 
     Parameters
     ----------

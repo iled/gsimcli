@@ -10,9 +10,8 @@ Welcome to gsimcli's documentation!
 
 gsimcli is a method and a software package to homogenise climate data.
 
-`PDF Version <gsimcli.pdf>`__
-
-**Date**: |today| **Version**: |version|
+:Date: |today|
+:Version: |version|
 
 Contents:
 =========

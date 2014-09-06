@@ -4,7 +4,7 @@
 Release Notes
 *************
 
-This is the list of changes to pandas between each release. For full details,
+This is the list of changes to gsimcli between each release. For full details,
 see the commit logs at http://github.com/iled/gsimcli
 
 **What is it**
@@ -22,20 +22,20 @@ gsimcli 0.0.1
 
 **Release date:** (not yet released)
 
-New features
-~~~~~~~~~~~~
+.. New features
+.. ~~~~~~~~~~~~
 
-API Changes
-~~~~~~~~~~~
+.. API Changes
+.. ~~~~~~~~~~~
 
-Experimental Features
-~~~~~~~~~~~~~~~~~~~~~
+.. Experimental Features
+.. ~~~~~~~~~~~~~~~~~~~~~
 
-Improvements to existing features
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. Improvements to existing features
+.. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Bug Fixes
-~~~~~~~~~
+.. Bug Fixes
+.. ~~~~~~~~~
 
-Internal Refactoring
-~~~~~~~~~~~~~~~~~~~~
+.. Internal Refactoring
+.. ~~~~~~~~~~~~~~~~~~~~

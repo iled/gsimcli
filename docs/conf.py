@@ -253,7 +253,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'gsimcli', u'gsimcli Documentation',
-   u'gsimcli', 'gsimcli', 'One line description of project.',
+   u'gsimcli', 'gsimcli', 'geostatistical climate data homogenisation.',
    'Miscellaneous'),
 ]
 
@@ -366,6 +366,6 @@ class Mock(object):
         else:
             return Mock()
 
-MOCK_MODULES = ['numpy', 'pandas', 'scipy', 'nose', 'scipy.stats']
+MOCK_MODULES = ['numpy', 'pandas', 'scipy', 'nose', 'scipy.stats', 'PySide']
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = Mock()

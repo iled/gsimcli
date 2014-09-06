@@ -5,7 +5,6 @@ Graphical user interface manual
 ###############################
 
 :Date: |today|
-:Version: |version|
 
 This document aims to get you used to the gsimcli's graphical user interface
 (GUI).
@@ -23,22 +22,43 @@ common structures seen in other programs.
 Overview
 ********
 
-The main window is divided into four sections, as shown in picture below:
+The main window is divided into four sections, as shown in the picture
+`below <fig_overview_>`_:
 
-* on top there is the **main menu**;
+* on top (depending on the operating system) there is the **main menu**;
 * all the homogenisation process **settings** are accessed on the left menu;
 * below that, on the bottom left corner, there is the **status box**;
 * the remaining area on the right is where the settings are shown.
 
-.. image: _static/gui_overview.png
+.. _fig_overview:
 
+.. figure:: ../images/gui-overview.png
+   :alt: GUI overview
+   
+   Overview of the graphical user interface
+   
+Plus, there are two auxiliary buttons:
+
+* **Apply** will save the current settings.
+* **Restore Defaults** will change all settings to the default values (not
+  implemented yet).
 
 *********
 Main menu
 *********
 
 The main menu include a few other subsections. When available, the actions
-listed in the main menu may be followed by a keyboard shortcut.
+listed in the main menu may be followed by a keyboard shortcut, as illustrated
+in the :ref:`fig_menu`.
+
+.. _fig_menu:
+
+.. figure:: ../images/gui-menu.png
+   :alt: Main menu example
+   
+   Main menu screenshot
+   
+   It shows the File_ menu options and their keyboard shortcuts.
 
 File
 ====
@@ -108,10 +128,15 @@ progress will be stated in the status box.
 Help
 ====
 
+Online documentation
+--------------------
+
+This is a link to the online documentation, which should open in your browser.
+
 About
 -----
 
-Some information about the application.
+Some information about the application..
 
 ********
 Settings
@@ -132,6 +157,20 @@ In this group you set up the data to be homogenised.
 Load
 ----
 
+Options to load a single data file and set the specifications of that file
+format (or of multiple files with the same specifications).
+
+.. _fig_dataload:
+
+.. figure:: ../images/gui-data-load.png
+   :alt: Example of the Data/Load settings pane
+   
+   Example of the **Data/Load** settings pane
+   
+   In this example, a single data file was loaded, and it have 7 header lines,
+   as seen in the preview area. The data set name was automatically detected
+   from the first header line and the variables order is being adjusted.
+
 Data file location
 ^^^^^^^^^^^^^^^^^^
 
@@ -150,7 +189,7 @@ File preview
 ^^^^^^^^^^^^
 
 Show the first 10 lines of the loaded file. It is useful to double check
-the header existence and the variables order.
+the existence of header lines and the variables order.
 
 When processing multiple networks, it will try to locate one of the data
 files of the selected network and display its first 10 lines.
@@ -159,7 +198,8 @@ Name
 ^^^^
 
 The data set name. If `header`_ is enabled, it will automatically
-extract the first line of the data file into this field.
+extract the first line of the data file into this field, but it will remain
+editable.
 
 Variables
 ^^^^^^^^^
@@ -174,10 +214,9 @@ are five default variables that your data file should include:
 :station: the station ID number.
 :clim: value for the climate variable.
 
-The example below shows the preview of a loaded data file and the matching
-(drag and drop) of the variable corresponding to the station ID.
-
-.. image: _static/gui_variables.png
+The `previous example <fig_dataload_>`_ shows the preview of a loaded data file
+and the matching (*drag and drop*) of the variable corresponding to the station
+ID.
 
 No data
 ^^^^^^^
@@ -191,6 +230,21 @@ Depending on the size of the data set and on the selected settings, the
 homogenisation process may take a few hours or even several days. These batch
 options allow you to prepare different networks and leave them to run as on a
 queue list.
+
+.. _fig_databatch:
+
+.. figure:: ../images/gui-data-batch.png
+   :alt: Example of the Data/Batch settings pane
+   
+   Example of the **Data/Batch** settings pane
+   
+   In this example, 3 networks were selected and the order in which they are
+   going to be homogenised is being changed (the network *rede000005* will be
+   the last one).
+   
+   The options below :ref:`batch_decades` are grayed out because
+   :ref:`batch_networks` is enabled.
+
 
 .. _batch_networks:
 
@@ -232,14 +286,20 @@ the same time by pressing *CTRL* (PC) or *CMD* (Mac) while selecting them.
 
 After adding networks to the queue list, you can remove one or multiple
 networks from the list: just select them and press the button
-**Remove selected**.
+**Remove selected**. Also, if you select one of the networks in that list, one
+of its data files will be previewed in the `File preview`_ area.
 
 It is also possible to change the order in which the networks will be
-processed by drag and dropping from the list.
+processed by drag and dropping from the list, as seen in the
+:ref:`fig_databatch`.
 
 .. note:: when :ref:`batch_networks` is enabled, the settings menu to set up
     the simulation `Grid`_ automatically becomes unavailable, you have to
     specify the grid through a spreadsheet file.
+    
+.. warning:: it is only working if :ref:`batch_decades` is also enabled. For
+    that reason, the grid is assumed to have 10 nodes of size 1 in the Z-axis
+    (10 years). 
 
 .. _batch_decades:    
 
@@ -276,6 +336,10 @@ The variograms file must follow these specifications:
     - **sill_norm:** variance-normalised total sill
     - other columns will be ignored
 
+.. note:: The variogram is assumed to be isotropic in the horizontal direction
+    and with range 1 (one unit) in the vertical (time) direction. It will
+    default its angles to (0, 0, 0).
+
 After enabling this option, the related areas become available, except if
 :ref:`batch_networks` is also enabled, in which case it is not necessary to
 specify anything else.
@@ -290,6 +354,13 @@ If not processing multiple networks, the following fields must be filled:
 .. note:: when :ref:`batch_decades` is enabled, the settings' menu to set up
     the `Variogram`_ automatically becomes unavailable, you have to specify
     the variogram through a spreadsheet file.
+    
+Save
+----
+
+This section is about the specifications of the resulting homogenised data set,
+but is not implemented yet. Please see the section `Results`_ which contains
+some options regarding the homogenisation process resulting files.
 
 Simulation
 ==========
@@ -302,6 +373,13 @@ are conveniently hidden and placed in a section for `Advanced`_ settings.
 
 Options
 -------
+
+.. _fig_simopt:
+
+.. figure:: ../images/gui-sim-opt.png
+   :alt: Example of the Simulation/Options settings pane
+   
+   Example of the **Simulation/Options** settings pane
 
 Parameters file
 ^^^^^^^^^^^^^^^
@@ -361,11 +439,14 @@ time if your computer have that capability, instead of running one at a
 time.
 
 The program will detect the number of cores installed and select that value
-by default.
+by default. In the :ref:`fig_simopt` the program detected the maximum number of
+2, which corresponds, in this case, to a CPU with two processor cores.
 
 .. note:: The supported DSS version is not parallelised. The multi-threading
     is attained through a script that will prepare and launch a number of
-    copies of the DSS binary equal to the given number of CPU cores.
+    copies of the DSS binary equal to the given number of CPU cores, which, in
+    fact, may be more efficient than the parallelised version, because only
+    some specific parts of the algorithm will run in parallel mode.
 
 .. _skip:
 
@@ -388,8 +469,24 @@ Here you specify the simulation grid:
   are squared).
 * Origin coordinates: the position (in units of distance) of the first cell.
 
+.. note:: The Z-axis corresponds to time.
+
 This section will be automatically disabled when :ref:`batch_networks` is
 enabled.
+
+.. _fig_simgrid:
+
+.. figure:: ../images/gui-sim-grid.png
+   :alt: Example of the Simulation/Grid settings pane
+   
+   Example of the **Simulation/Grid** settings pane
+   
+   In this example, the data set is displayed in a regular grid of
+   :math:`170 \times 250 = 42500` nodes, covering a total area of
+   :math:`42500 \times 500 \times 500 = 10625 \times 10^6` units of area. That
+   time series spans the decade of 1980 to 1989 (10 nodes of size 1 in the
+   Z-axis).
+   
 
 Variogram
 ---------
@@ -405,6 +502,16 @@ variogram model:
 
 This section will be automatically disabled when :ref:`batch_decades` is
 enabled.
+
+.. _fig_simvar:
+
+.. figure:: ../images/gui-sim-var.png
+   :alt: Example of the Simulation/Variogram settings pane
+   
+   Example of the **Simulation/Variogram** settings pane
+   
+   This corresponds to an isotropic variogram, assuming no continuity in the
+   temporal axis (which makes sense for annual data sets).
 
 Advanced
 --------
@@ -435,6 +542,13 @@ series, the time series can be adjusted by replacing the inhomogeneous
 records with the mean, or median, of the PDF(s) calculated at the candidate
 station’s location for the inhomogeneous period(s) [COSTA2009]_.
 
+.. _fig_homdet:
+
+.. figure:: ../images/gui-hom-det.png
+   :alt: Example of the Homogenisation/Detection and correction settings pane
+   
+   Example of the **Homogenisation/Detection and correction** settings pane
+
 Candidates order
 ^^^^^^^^^^^^^^^^
 
@@ -453,9 +567,10 @@ The available options to sort the candidate stations are:
   order.
 
 If you select **User**, the stations' IDs will be automatically detected
-and listed. Then, you can reorder them by drag and drop, remove any that is
+and listed. Then, you can reorder them by *drag and drop*, remove any that is
 not to be homogenised by pressing **Remove selected**, or reset the list
-to its original state by pressing **Reset stations**.
+to its original state by pressing **Reset stations** (see the
+`example above <fig_homdet_>`_).
 
 .. note:: That stations list will only appear if you have enabled
     :ref:`batch_networks` and only one network have been added.
@@ -494,7 +609,8 @@ The method for the inhomogeneities correction:
   skewness threshold.
 * Percentile : replace detected irregularities with the percentile
   ``100 * (1 - p)``, for a given ``p``. If selected, a new field will
-  appear to you to define the value of ``p``.
+  appear to you to define the value of ``p`` (see the
+  `example above <fig_homdet_>`_).
 
 Results
 -------
@@ -502,6 +618,13 @@ Results
 The homogenisation process ends with it results being saved into a spreadsheet
 file. Also, there are other files generated in the process which the user can
 opt to save or purge them when they are no longer needed.
+
+.. _fig_homres:
+
+.. figure:: ../images/gui-hom-res.png
+   :alt: Example of the Homogenisation/Results settings pane
+   
+   Example of the **Homogenisation/Results** settings pane
 
 Save intermediary files
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -548,12 +671,14 @@ In this area is shown the necessary and the available disk space.
 The required disk space is estimated and is considering only the simulated
 map files (the remaining files do not have a significant size). This value
 will be calculated (and updated) as soon as all the other settings are set
-up.
+up (you may have to press the **Apply** button to update this value).
 
 The available disk space is shown after the results directory is selected.
 
 In case of insufficient available disk space, please try to enable the
-option to :ref:`purge`.
+option to :ref:`purge`. For instance, in the `given example <fig_homres_>`_,
+disabling that option would increase the necessary disk space to more than 30
+GB.
 
 
 ************

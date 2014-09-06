@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 Created on 16/06/2014
@@ -228,7 +229,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.stackedWidget.setCurrentWidget(self.SimulationGrid)
         elif tree_item == "Advanced":
             self.stackedWidget.setCurrentWidget(self.SimulationAdvanced)
-        elif tree_item == "Detection":
+        elif tree_item == "Detection and correction":
             self.stackedWidget.setCurrentWidget(self.HomogenisationDetection)
         elif tree_item == "Results":
             self.stackedWidget.setCurrentWidget(self.HomogenisationResults)
