@@ -382,8 +382,8 @@ Parameters file
 ^^^^^^^^^^^^^^^
 
 The simulation parameters file, in its original format. As of
-**version 0.0.1**, that file will be automatically generated, and this
-this field is disabled.
+**version 0.0.1**, that file will be automatically generated, and this field is
+disabled.
 
 Executable file
 ^^^^^^^^^^^^^^^
@@ -421,7 +421,17 @@ a better spatial correlation in the simulated maps but it will demand an
 unnecessary higher computational effort. We found that a value above 16
 would not bring enough benefits to justify the increasing CPU time.
 
-.. todo: more details
+The remaining parameters related to the search method are defined by default,
+as we tested them and found these values to be a good starting point. Those
+parameters are:
+
+* **Search strategy:** data nodes (do not search for real and simulated data
+  separately).
+* **Grid search method:** spiral search (search for the nearest nodes according
+  to a spiral pattern).
+* **Search radius:** equal to the given grid dimensions.
+* **Number of samples**, **Samples per octant**, and **Search angles**, are
+  irrelevant for the data nodes search strategy.
 
 Number of CPU cores
 ^^^^^^^^^^^^^^^^^^^
@@ -539,7 +549,8 @@ considered homogeneous.
 If irregularities are detected in a candidate series, the time series can be
 adjusted by replacing the inhomogeneous records with the mean, or median, of
 the PDF(s) calculated at the candidate station’s location for the inhomogeneous
-period(s) [COSTA2009]_.
+period(s) [COSTA2009]_ (with time, different methods of correction may be
+introduced).
 
 .. _fig_homdet:
 
@@ -547,6 +558,7 @@ period(s) [COSTA2009]_.
    :alt: Example of the Homogenisation/Detection and correction settings pane
    
    Example of the **Homogenisation/Detection and correction** settings pane
+   
 
 Candidates order
 ^^^^^^^^^^^^^^^^
@@ -604,12 +616,19 @@ The method for the inhomogeneities correction:
   values.
 * Skewness: use the sample skewness to decide whether detected
   irregularities will be replaced by the mean or by the median of simulated
-  values. If selected, a new field will appear to you to define the
+  values. If selected, a new field will appear for you to define the
   skewness threshold.
-* Percentile : replace detected irregularities with the percentile
-  ``100 * (1 - p)``, for a given ``p``. If selected, a new field will
-  appear to you to define the value of ``p`` (see the
+* Percentile : depending on the irregularities being located in the lower or
+  upper tail, they will be replaced with the percentile ``(1-p)/2`` or
+  ``1-(1-p)/2``, respectively, for a given ``p`` (the
+  `picture below <fig_pdfperc_>`_ shows an example). If selected, a new field
+  will appear for you to define the value of ``p`` (see the interface
   `example above <fig_homdet_>`_).
+
+.. _fig_pdfperc:
+
+.. figure:: ../images/pdf_xkcd.png
+    :alt: Example of a PDF for the variable *wet day count*
 
 Results
 -------
