@@ -439,6 +439,9 @@ def batch_decade(par_path, variograms_file, print_status=False,
         gscpar.update(fields, values)
         results.append(run_par(gscpar, print_status, skip_dss, cores))
 
+    # workaround for batch_network not working without batch_decade, thus not
+    # updating the data path
+    gscpar.data = ""
     # results_path = os.path.join(outpath, 'gsimcli_results.xls')
     # try to merge paths or use the second
     results_path = os.path.join(outpath, gscpar.results_file)
@@ -452,7 +455,7 @@ def batch_decade(par_path, variograms_file, print_status=False,
 def batch_networks(par_path, networks, decades=False, print_status=False,
                    skip_dss=False, cores=None):
     """Batch process to run GSIMCLI along different networks.
-    
+
     WARNING: it is only working for decades=True
 
     Parameters

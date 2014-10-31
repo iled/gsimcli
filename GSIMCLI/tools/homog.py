@@ -578,10 +578,10 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
         File type and contents format:
             - gsimcli: CSV file with columns YEAR | MONTH | ID_DATA | ID_FLAG
             - normal: CSV file, all the variables in the file are written in
-                their existing order
+              their existing order
             - gslib: GSLIB standard with header, useful for visualisation
             - cost-home: COST-HOME format, prepare results to the benchmark
-                process
+              process
     lvars : array_like of int, optional
         Only save certain columns.
     header : boolean, default True
