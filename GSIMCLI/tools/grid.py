@@ -351,7 +351,7 @@ class GridArr(object):
 
 class GridFiles(object):
     """This class keeps track of all the files containing simulation results,
-    i.e., Direct Sequential Simulation (DSS) realizations.
+    i.e., Direct Sequential Simulation (DSS) realisations.
 
     All PointSet files must have the same properties.
 
@@ -468,6 +468,13 @@ class GridFiles(object):
                 raise IOError('File {} not found.'.
                               format(os.path.basename(another)))
 
+    def reset_read(self):
+        """Reset the  pointer that reads each file to the beginning.
+
+        """
+        for grid in self.files:
+            grid.seek(os.SEEK_SET)
+
     def dump(self):
         """Close all files.
 
@@ -488,10 +495,10 @@ class GridFiles(object):
 
     def stats(self, lmean=False, lmed=False, lvar=False, lstd=False,
               lcoefvar=False, lperc=False, p=0.95):
-        """Calculate some statistics among every realization.
+        """Calculate some statistics among every realisation.
 
         Each statistic is calculated node-wise along the complete number of
-        realizations.
+        realisations.
 
         Parameters
         ----------
@@ -583,11 +590,11 @@ class GridFiles(object):
     def stats_vline(self, loc, lmean=False, lmed=False, lskew=False,
                     lvar=False, lstd=False, lcoefvar=False, lperc=False,
                     p=0.95, save=False):
-        """Calculate some statistics among every realization, but only along
-        the given vertical line.
+        """Calculate some statistics among every realisation, but only along
+        a given vertical line.
 
         Each statistic is calculated node-wise along the complete number of
-        realizations.
+        realisations.
 
         Parameters
         ----------
@@ -610,13 +617,13 @@ class GridFiles(object):
         p : number, default 0.95
             Probability value.
         save : boolean, default False
-            Write the calculated statistics in PointSet format to a file named
-            'sim values at (x, y, z).prn'.
+            Write the points used to calculate the chosen statistics in
+            PointSet format to a file named 'sim values at (x, y, z).prn'.
 
         Returns
         -------
-        statspset : list of PointSet
-            List of PointSet instances containing the calculated statistics.
+        statspset : PointSet
+            PointSet instance containing the calculated statistics.
 
         .. TODO: checkar stats variance com geoms
 
@@ -650,7 +657,15 @@ class GridFiles(object):
                 if skip:
                     skip_lines(grid, self.header)
                 skip_lines(grid, int(z - z0 - 1))
-                arr[i] = grid.readline()
+                try:
+                    a = grid.readline()
+                    arr[i] = float(a)
+                except:
+                    pass
+
+#            tolerance = 1
+#            self.tolerance_area(tolerance)
+
             z0 = z
             skip = False
             if lmean:
@@ -673,7 +688,7 @@ class GridFiles(object):
                 percline[j] = np.percentile(arr, [(100 - p * 100) / 2,
                                                   100 - (100 - p * 100) / 2])
             if save:
-                arrpset = PointSet('realizations at location ({}, {}, {})'.
+                arrpset = PointSet('realisations at location ({}, {}, {})'.
                                    format(loc[0], loc[1], j * self.cellz +
                                           self.zi), self.nodata, 3,
                                    ['x', 'y', 'value'],
@@ -735,6 +750,39 @@ class GridFiles(object):
 
         statspset.flush_varnames()
         return statspset
+
+    def tolerance_area(self, p, tolerance):
+        """INCOMPLETE -- work in progress
+        Find the nodes located in a squared area in each grid and retrieve
+        their values.
+
+        That area is a square centred on a node p, and of side equal to
+        twice the tolerance plus one (`2 * tolerance + 1`).
+
+        Parameters
+        ----------
+        p : int
+            Line number of a node in the grid, corresponding to the node in
+            which the square is centred on.
+        tolerance : int
+            Number of nodes, around the node p, that define the squared area.
+
+        Returns
+        -------
+        found : ndarray
+            The values of the nodes found in the squared area.
+
+        """
+        arr = np.zeros(self.nfiles)
+        z0 = 0  # FIXME
+        for i, grid in enumerate(self.files):
+            # check if each file has a header and if it needs to be skipped
+            if not grid.tell() and self.header:
+                skip_lines(grid, self.header)
+            skip_lines(grid, int(p - z0 - 1))
+            arr[i] = grid.readline()
+
+        return arr
 
 
 def coord_to_grid(coord, cells_size, first):

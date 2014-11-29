@@ -184,6 +184,7 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
         # allow a different percentile value for the detection and for the
         # correction
         if percentile != prob:
+            grids.reset_read()
             vline_perc = grids.stats_vline(obs_xy, lperc=True, p=percentile,
                                            save=False)
         else:
