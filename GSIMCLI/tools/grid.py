@@ -590,6 +590,160 @@ class GridFiles(object):
     def stats_vline(self, loc, lmean=False, lmed=False, lskew=False,
                     lvar=False, lstd=False, lcoefvar=False, lperc=False,
                     p=0.95, save=False):
+        """Calculate some statistics among every realization, but only along
+        the given vertical line.
+        Each statistic is calculated node-wise along the complete number of
+        realizations.
+
+        Parameters
+        ----------
+        loc : array_like
+            Location of the vertical line [x, y].
+        lmean : boolean, default False
+            Calculate the mean.
+        lmed : boolean, default False
+            Calculate the median.
+        lskew : boolean, default False
+            Calculate skewness.
+        lvar : boolean, default False
+            Calculate the variance.
+        lstd : boolean, default False
+            Calculate the standard deviation.
+        lcoefvar : boolean, default False
+            Calculate the coefficient of variation.
+        lperc : boolean, default False
+            Calculate the percentile `100 * (1 - p)`.
+        p : number, default 0.95
+            Probability value.
+        save : boolean, default False
+            Write the calculated statistics in PointSet format to a file named
+            'sim values at (x, y, z).prn'.
+
+        Returns
+        -------
+        statspset : list of PointSet
+            List of PointSet instances containing the calculated statistics.
+
+        .. TODO: checkar stats variance com geoms
+
+        """
+        if lmean:
+            meanline = np.zeros(self.dz)
+        if lmed:
+            medline = np.zeros(self.dz)
+        if lskew:
+            skewline = np.zeros(self.dz)
+        if lvar:
+            varline = np.zeros(self.dz)
+        if lstd:
+            stdline = np.zeros(self.dz)
+        if lcoefvar:
+            coefvarline = np.zeros(self.dz)
+        if lperc:
+            percline = np.zeros((self.dz, 2))
+
+        arr = np.zeros(self.nfiles)
+        skip = True
+
+        z0 = 0
+        loc = coord_to_grid(loc, [self.cellx, self.celly, self.cellz],
+                            [self.xi, self.yi, self.zi])[:2]
+        z_list = (loc[0] + self.dx * (loc[1] - 1) + self.dx * self.dy * z
+                  for z in xrange(self.dz))
+
+        for j, z in enumerate(z_list):
+            for i, grid in enumerate(self.files):
+                if skip:
+                    skip_lines(grid, self.header)
+                skip_lines(grid, int(z - z0 - 1))
+                arr[i] = grid.readline()
+            z0 = z
+            skip = False
+            if lmean:
+                meanline[j] = arr.mean()
+            if lmed:
+                medline[j] = np.median(arr)
+                # TODO: comparar com bottleneck.median()
+            if lskew:
+                skewline[j] = skew(arr)
+            if lvar:
+                varline[j] = np.nanvar(arr, ddof=1)
+            if lstd:
+                stdline[j] = arr.std()
+            if lcoefvar:
+                if lstd and lmean:
+                    coefvarline[j] = stdline[z] / meanline[z] * 100
+                else:
+                    coefvarline[j] = arr.std() / arr.mean() * 100
+            if lperc:
+                percline[j] = np.percentile(arr, [(100 - p * 100) / 2,
+                                                  100 - (100 - p * 100) / 2])
+            if save:
+                arrpset = PointSet('realizations at location ({}, {}, {})'.
+                                   format(loc[0], loc[1], j * self.cellz +
+                                          self.zi), self.nodata, 3,
+                                   ['x', 'y', 'value'],
+                                   values=np.zeros((self.nfiles, 3)))
+                arrout = os.path.join(os.path.dirname(self.files[0].name),
+                                      'sim values at ({}, {}, {}).prn'.
+                                      format(loc[0], loc[1], j * self.cellz
+                                             + self.zi))
+                arrpset.values.iloc[:, 2] = arr
+                arrpset.values.iloc[:, :2] = np.repeat(np.array(loc)
+                                                       [np.newaxis, :],
+                                                       self.nfiles, axis=0)
+                arrpset.save(arrout, header=True)
+
+        ncols = sum((lmean, lmed, lvar, lstd, lcoefvar, lskew))
+
+        if lperc:
+            ncols += 2
+        statspset = PointSet(name='vertical line stats at (x,y) = ({},{})'.
+                             format(loc[0], loc[1]), nodata=self.nodata,
+                             nvars=3 + ncols, varnames=['x', 'y', 'z'],
+                             values=np.zeros((self.dz, 3 + ncols)))
+        statspset.values.iloc[:, :3] = (np.column_stack
+                                        (((np.repeat(np.array(loc)
+                                                     [np.newaxis, :], self.dz,
+                                                     axis=0)),
+                                          np.arange(self.zi, self.zi +
+                                                    self.cellz * self.dz))))
+        j = 3
+        if lmean:
+            statspset.varnames.append('mean')
+            statspset.values.iloc[:, j] = meanline
+            j += 1
+        if lmed:
+            statspset.varnames.append('median')
+            statspset.values.iloc[:, j] = medline
+            j += 1
+        if lskew:
+            statspset.varnames.append('skewness')
+            statspset.values.iloc[:, j] = skewline
+            j += 1
+        if lvar:
+            statspset.varnames.append('variance')
+            statspset.values.iloc[:, j] = varline
+            j += 1
+        if lstd:
+            statspset.varnames.append('std')
+            statspset.values.iloc[:, j] = stdline
+            j += 1
+        if lcoefvar:
+            statspset.varnames.append('coefvar')
+            statspset.values.iloc[:, j] = coefvarline
+            j += 1
+        if lperc:
+            statspset.varnames.append('lperc')
+            statspset.varnames.append('rperc')
+            statspset.values.iloc[:, -2:] = percline
+
+        statspset.flush_varnames()
+        return statspset
+
+    def stats_area(self, loc, lmean=False, lmed=False, lskew=False,
+                   lvar=False, lstd=False, lcoefvar=False, lperc=False,
+                   p=0.95, save=False):
         """Calculate some statistics among every realisation, but only along
         a given vertical line.
 
@@ -647,8 +801,10 @@ class GridFiles(object):
         skip = True
 
         z0 = 0
+        # convert the coordinates of the first point to grid nodes
         loc = coord_to_grid(loc, [self.cellx, self.celly, self.cellz],
                     [self.xi, self.yi, self.zi])[:2]
+        # compute the lines number for each point in the vertical line
         z_list = (loc[0] + self.dx * (loc[1] - 1) + self.dx * self.dy * z
                   for z in xrange(self.dz))
 
@@ -777,7 +933,7 @@ class GridFiles(object):
         z0 = 0  # FIXME
         for i, grid in enumerate(self.files):
             # check if each file has a header and if it needs to be skipped
-            if not grid.tell() and self.header:
+            if self.header and not grid.tell():
                 skip_lines(grid, self.header)
             skip_lines(grid, int(p - z0 - 1))
             arr[i] = grid.readline()
@@ -970,6 +1126,43 @@ def has_header(path):
     checklist.append(len(first_values.split()) == nvars)
 
     return all(checklist)
+
+
+def circle(xc, yc, r):
+    """Compute a circle in a grid, centred in the point (xc, yc) and with
+    radius equal to r. Return the coordinates of the nodes which are inside
+    the circle.
+
+    Parameteres
+    -----------
+    xc : int
+        First coordinate (in nodes) of the circle centre.
+    yc : int
+        Second coordinate (in nodes) of the circle centre.
+    r : int
+        Circle radius (in nodes).
+
+    Returns
+    -------
+    ndarray
+        Matrix with the first coordinates of the nodes which are inside the
+        circle.
+    ndarray
+        Matrix with the second coordinates of the nodes which are inside the
+        circle.
+
+    """
+    # squared grid of the circle centre neighbourhood
+    xx, yy = np.mgrid[xc - r:xc + r + 1, yc - r:yc + r + 1].astype('float32')
+    # eliminate negative values
+    xx[xx < 0] = np.nan
+    yy[yy < 0] = np.nan
+    # squared distance
+    circle = (xx - xc) ** 2 + (yy - yc) ** 2
+    # retrieve the points inside the circle
+    inside = circle <= r ** 2
+
+    return xx[inside].astype('int'), yy[inside].astype('int')
 
 
 def _wrap1():
