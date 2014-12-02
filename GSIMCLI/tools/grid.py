@@ -212,7 +212,7 @@ class GridArr(object):
 
     Notes
     -----
-    According to GSLIB standard, a grid file has the following format
+    According to the GSLIB standard, a grid file has the following format
         - descriptive name
         - number of variables
         - variables names, one per line
@@ -741,7 +741,7 @@ class GridFiles(object):
         statspset.flush_varnames()
         return statspset
 
-    def stats_area(self, loc, lmean=False, lmed=False, lskew=False,
+    def stats_area(self, loc, tol=0, lmean=False, lmed=False, lskew=False,
                    lvar=False, lstd=False, lcoefvar=False, lperc=False,
                    p=0.95, save=False):
         """Calculate some statistics among every realisation, but only along
@@ -754,6 +754,8 @@ class GridFiles(object):
         ----------
         loc : array_like
             Location of the vertical line [x, y].
+        tol : number, default 0
+            Tolerance radius used to search for neighbour nodes.
         lmean : boolean, default False
             Calculate the mean.
         lmed : boolean, default False
@@ -804,11 +806,17 @@ class GridFiles(object):
         # convert the coordinates of the first point to grid nodes
         loc = coord_to_grid(loc, [self.cellx, self.celly, self.cellz],
                     [self.xi, self.yi, self.zi])[:2]
-        # compute the lines number for each point in the vertical line
-        z_list = (loc[0] + self.dx * (loc[1] - 1) + self.dx * self.dy * z
-                  for z in xrange(self.dz))
+        # find the nodes coordinates within a circle centred in the first point
+        neighbours_nodes = circle(loc[0], loc[1], tol)
+        # compute the lines number for each point in the neighbourhood, across
+        # each grid layer. this yields a N*M matrix, with N equal to the number
+        # of neighbour nodes, and M equal to the number of layers in the grid.
+        neighbours_lines = [line_zmirror(node, [self.dx, self.dy, self.dz])
+                            for node in neighbours_nodes]
+        # sort the lines in ascending order
+        neighbours_lines = np.sort(neighbours_lines, axis=0)
 
-        for j, z in enumerate(z_list):
+        for j, z in enumerate(neighbours_lines):
             for i, grid in enumerate(self.files):
                 if skip:
                     skip_lines(grid, self.header)
@@ -975,6 +983,54 @@ def coord_to_grid(coord, cells_size, first):
 
     grid_coord = np.around((coord - first) / cells_size + 1).astype('int')
     return grid_coord
+
+
+def grid_to_line(coord, dims):
+    """Convert the coordinates of a point in a grid into the number of the line
+    where it is located in the a grid file which follows the GSLIB standard.
+
+    The header lines are not considered.
+
+    Parameters
+    ----------
+    coord : array_like
+        Coordinates to convert (x, y, z).
+    dims : array_like
+        Number of nodes in the grid, in each direction (x, y). The third
+        dimension is not needed.
+
+    Returns
+    -------
+    int
+        Number of the line where the given point is located, given that the
+        grid file is in the GSLIB standard.
+
+    """
+    return (coord[0] + dims[0] * (coord[1] - 1) +
+            dims[0] * dims[1] * (coord[2] - 1))
+
+
+def line_zmirror(loc, dims):
+    """Compute the lines numbers corresponding to the vertical line starting
+    in a given point.
+
+    Parameters
+    ----------
+    loc : array_like
+        Grid coordinates of the starting point (x, y). The third dimension is
+        not needed.
+    dims : array_like
+        Number of nodes in the grid, in each direction (x, y, z).
+
+    Returns
+    -------
+    list
+        List of the number of the lines below the given point, in a vertical
+        line.
+
+    """
+    return [grid_to_line([loc[0], loc[1], z], dims)
+            for z in xrange(1, dims[2] + 1)]
 
 
 def loadcheck(s, header):
@@ -1145,11 +1201,8 @@ def circle(xc, yc, r):
     Returns
     -------
     ndarray
-        Matrix with the first coordinates of the nodes which are inside the
-        circle.
-    ndarray
-        Matrix with the second coordinates of the nodes which are inside the
-        circle.
+        2D Matrix with the first and second coordinates of the nodes which are
+        inside the circle.
 
     """
     # squared grid of the circle centre neighbourhood
@@ -1162,7 +1215,7 @@ def circle(xc, yc, r):
     # retrieve the points inside the circle
     inside = circle <= r ** 2
 
-    return xx[inside].astype('int'), yy[inside].astype('int')
+    return np.column_stack((xx[inside], yy[inside])).astype('int')
 
 
 def _wrap1():
