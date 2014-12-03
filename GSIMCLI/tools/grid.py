@@ -621,8 +621,8 @@ class GridFiles(object):
 
         Returns
         -------
-        statspset : list of PointSet
-            List of PointSet instances containing the calculated statistics.
+        statspset : PointSet
+            PointSet instance containing the calculated statistics.
 
         .. TODO: checkar stats variance com geoms
 
@@ -744,11 +744,9 @@ class GridFiles(object):
     def stats_area(self, loc, tol=0, lmean=False, lmed=False, lskew=False,
                    lvar=False, lstd=False, lcoefvar=False, lperc=False,
                    p=0.95, save=False):
-        """Calculate some statistics among every realisation, but only along
-        a given vertical line.
-
-        Each statistic is calculated node-wise along the complete number of
-        realisations.
+        """Calculate some statistics among every realisation, considering a
+        circular (and horizontal) area of radius `tol` around the point located
+        at `loc`.
 
         Parameters
         ----------
@@ -774,7 +772,7 @@ class GridFiles(object):
             Probability value.
         save : boolean, default False
             Write the points used to calculate the chosen statistics in
-            PointSet format to a file named 'sim values at (x, y, z).prn'.
+            PointSet format to a file named 'sim values at (x, y, line).prn'.
 
         Returns
         -------
@@ -799,67 +797,69 @@ class GridFiles(object):
         if lperc:
             percline = np.zeros((self.dz, 2))
 
-        arr = np.zeros(self.nfiles)
-        skip = True
-
-        z0 = 0
         # convert the coordinates of the first point to grid nodes
         loc = coord_to_grid(loc, [self.cellx, self.celly, self.cellz],
                     [self.xi, self.yi, self.zi])[:2]
         # find the nodes coordinates within a circle centred in the first point
         neighbours_nodes = circle(loc[0], loc[1], tol)
-        # compute the lines number for each point in the neighbourhood, across
+        # compute the lines numbers for each point in the neighbourhood, across
         # each grid layer. this yields a N*M matrix, with N equal to the number
         # of neighbour nodes, and M equal to the number of layers in the grid.
         neighbours_lines = [line_zmirror(node, [self.dx, self.dy, self.dz])
                             for node in neighbours_nodes]
         # sort the lines in ascending order
         neighbours_lines = np.sort(neighbours_lines, axis=0)
+        # create an array to store the neighbour nodes in each grid file
+        nnodes = neighbours_lines.shape[0]
+        arr = np.zeros(self.nfiles * nnodes)
 
-        for j, z in enumerate(neighbours_lines):
-            for i, grid in enumerate(self.files):
-                if skip:
+        skip = True
+        curr_line = np.zeros(self.nfiles)
+
+        for layer in xrange(neighbours_lines.shape[1]):
+            for j, grid in enumerate(self.files):
+                # skip header lines only once per grid file
+                if skip and self.header:
                     skip_lines(grid, self.header)
-                skip_lines(grid, int(z - z0 - 1))
-                try:
+                for i, line in enumerate(neighbours_lines[:, layer]):
+                    # advance to the next line with a neighbour node
+                    skip_lines(grid, int(line - curr_line[j] - 1))
+                    # read the line and store its value
                     a = grid.readline()
-                    arr[i] = float(a)
-                except:
-                    pass
+                    arr[i + j * nnodes] = float(a)
 
-#            tolerance = 1
-#            self.tolerance_area(tolerance)
+                curr_line[j] = line
+                skip = False
 
-            z0 = z
-            skip = False
+            # compute the required statistics
             if lmean:
-                meanline[j] = arr.mean()
+                meanline[layer] = arr.mean()
             if lmed:
-                medline[j] = np.median(arr)
+                medline[layer] = np.median(arr)
                 # TODO: comparar com bottleneck.median()
             if lskew:
-                skewline[j] = skew(arr)
+                skewline[layer] = skew(arr)
             if lvar:
-                varline[j] = np.nanvar(arr, ddof=1)
+                varline[layer] = np.nanvar(arr, ddof=1)
             if lstd:
-                stdline[j] = arr.std()
+                stdline[layer] = arr.std()
             if lcoefvar:
                 if lstd and lmean:
-                    coefvarline[j] = stdline[z] / meanline[z] * 100
+                    coefvarline[layer] = stdline[line] / meanline[line] * 100
                 else:
-                    coefvarline[j] = arr.std() / arr.mean() * 100
+                    coefvarline[layer] = arr.std() / arr.mean() * 100
             if lperc:
-                percline[j] = np.percentile(arr, [(100 - p * 100) / 2,
-                                                  100 - (100 - p * 100) / 2])
+                percline[layer] = np.percentile(arr, [(100 - p * 100) / 2,
+                                              100 - (100 - p * 100) / 2])
             if save:
                 arrpset = PointSet('realisations at location ({}, {}, {})'.
-                                   format(loc[0], loc[1], j * self.cellz +
+                                   format(loc[0], loc[1], layer * self.cellz +
                                           self.zi), self.nodata, 3,
                                    ['x', 'y', 'value'],
                                    values=np.zeros((self.nfiles, 3)))
                 arrout = os.path.join(os.path.dirname(self.files[0].name),
                                       'sim values at ({}, {}, {}).prn'.
-                                   format(loc[0], loc[1], j * self.cellz
+                                   format(loc[0], loc[1], layer * self.cellz
                                           + self.zi))
                 arrpset.values.iloc[:, 2] = arr
                 arrpset.values.iloc[:, :2] = np.repeat(np.array(loc)
@@ -914,39 +914,6 @@ class GridFiles(object):
 
         statspset.flush_varnames()
         return statspset
-
-    def tolerance_area(self, p, tolerance):
-        """INCOMPLETE -- work in progress
-        Find the nodes located in a squared area in each grid and retrieve
-        their values.
-
-        That area is a square centred on a node p, and of side equal to
-        twice the tolerance plus one (`2 * tolerance + 1`).
-
-        Parameters
-        ----------
-        p : int
-            Line number of a node in the grid, corresponding to the node in
-            which the square is centred on.
-        tolerance : int
-            Number of nodes, around the node p, that define the squared area.
-
-        Returns
-        -------
-        found : ndarray
-            The values of the nodes found in the squared area.
-
-        """
-        arr = np.zeros(self.nfiles)
-        z0 = 0  # FIXME
-        for i, grid in enumerate(self.files):
-            # check if each file has a header and if it needs to be skipped
-            if self.header and not grid.tell():
-                skip_lines(grid, self.header)
-            skip_lines(grid, int(p - z0 - 1))
-            arr[i] = grid.readline()
-
-        return arr
 
 
 def coord_to_grid(coord, cells_size, first):
@@ -1239,35 +1206,43 @@ def _wrap1():
 def _wrap2():
     # print 'loading grids'
     grids = GridFiles()
-    grids.load(fstpar, 10, [50, 50, 10], [0, 0, 0], [1, 1, 1], -999.9, 0)
-    vstats = grids.stats_vline((5, 5), lmean=True, lvar=True, lperc=True,
+    grids.load(fstpar, nsims, griddims, fstcoord, nodesize, -999.9, 0)
+    vstats = grids.stats_vline(pointloc, lmean=True, lvar=True, lperc=True,
                                p=0.95)
+#     vstats = grids.stats_area(pointloc, tol=0, lmean=True, lvar=True, lperc=True,
+#                                p=0.95)
+    # vstats.save(os.path.join(outpath, 'statsmap2.out'), 'var')
     grids.dump()
     return vstats
 
 
 if __name__ == '__main__':
-    # import timeit
-    fstpar = '/home/julio/Testes/test/test.out'
-    outpath = '/home/julio/Testes/test'
-    psetpath = '/home/julio/Testes/test/wells10.prn'
+    import timeit
+    fstpar = '/home/julio/Testes/cost-home/rede000010_work/1990-1999/1990-1999_dss_map_st0_sim.out'
+    outpath = '/home/julio/Testes/cost-home/rede000010_work/test'
+    psetpath = '/home/julio/Testes/cost-home/rede000010_work/1990-1999/1990-1999_candidate_0.prn'
+    nsims = 10
+    pointloc = [1815109.147, 7190958.185]
+    griddims = [81, 122, 10]
+    fstcoord = [1770000, 7094000, 1990]
+    nodesize = [1000, 1000, 1]
 
-    """ timer
-    print 'calculating grid stats + drill'
-    print(timeit.timeit("_wrap1()", setup="from __main__ import _wrap1",
-                        number=100))
+    # """ timer
+#     print 'calculating grid stats + drill'
+#     print(timeit.timeit("_wrap1()", setup="from __main__ import _wrap1",
+#                         number=100))
     print 'calculating vline stats'
     print(timeit.timeit("_wrap2()", setup="from __main__ import _wrap2",
                         number=100))
     # """
 
-    snirh = '/home/julio/Testes/snirh500_dssim_narrow/snirh.prn'
-    bench = '/Users/julio/Desktop/testes/cost-home/rede000005/1900_1909.txt'
-
-    # """
-    pset = PointSet()
-    # pset.load(snirh, header=False)
-    pset.load(bench, header=True)
+#     snirh = '/home/julio/Testes/snirh500_dssim_narrow/snirh.prn'
+#     bench = '/Users/julio/Desktop/testes/cost-home/rede000005/1900_1909.txt'
+#
+#     # """
+#     pset = PointSet()
+#     # pset.load(snirh, header=False)
+#     pset.load(bench, header=True)
     # pset.save(os.path.join(outpath, 'psetout.prn'))
     # """
     # pset.to_costhome()
