@@ -109,9 +109,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         # combo boxes
         self.HD_comboStationOrder.currentIndexChanged.connect(
                                                   self.change_station_order)
-        self.HD_comboDetectionMethod.currentIndexChanged.connect(
+        self.HC_comboDetectionMethod.currentIndexChanged.connect(
                                                          self.enable_skewness)
-        self.HD_comboDetectionMethod.currentIndexChanged.connect(
+        self.HC_comboDetectionMethod.currentIndexChanged.connect(
                                                      self.enable_percentile)
 
         # hidden
@@ -120,8 +120,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.groupProgress.setVisible(False)
         self.groupStatusInfo.setVisible(False)
         self.groupTime.setVisible(False)
-        self.HD_groupSkewness.setVisible(False)
-        self.HD_groupPercentile.setVisible(False)
+        self.HC_groupSkewness.setVisible(False)
+        self.HC_groupPercentile.setVisible(False)
 
         # line edits
         self.DL_lineDataPath.textChanged.connect(self.preview_data_file)
@@ -230,8 +230,10 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.stackedWidget.setCurrentWidget(self.SimulationGrid)
         elif tree_item == "Advanced":
             self.stackedWidget.setCurrentWidget(self.SimulationAdvanced)
-        elif tree_item == "Detection and correction":
+        elif tree_item == "Detection":
             self.stackedWidget.setCurrentWidget(self.HomogenisationDetection)
+        elif tree_item == "Correction":
+            self.stackedWidget.setCurrentWidget(self.HomogenisationCorrection)
         elif tree_item == "Results":
             self.stackedWidget.setCurrentWidget(self.HomogenisationResults)
 
@@ -510,22 +512,22 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         Connected to the correction method combobox.
 
         """
-        if self.HD_comboDetectionMethod.currentText() == "Skewness":
+        if self.HC_comboDetectionMethod.currentText() == "Skewness":
             enable = True
         else:
             enable = False
-        self.HD_groupSkewness.setVisible(enable)
+        self.HC_groupSkewness.setVisible(enable)
 
     def enable_percentile(self, index):
         """Toggle the widgets related to the percentile correction method.
         Connected to the correction method combobox.
 
         """
-        if self.HD_comboDetectionMethod.currentText() == "Percentile":
+        if self.HC_comboDetectionMethod.currentText() == "Percentile":
             enable = True
         else:
             enable = False
-        self.HD_groupPercentile.setVisible(enable)
+        self.HC_groupPercentile.setVisible(enable)
 
     def browse_data_file(self):
         """Open the dialog to select an existing data file. Connected to the
@@ -768,9 +770,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         else:
             save("ascending", self.HD_checkAscending.isChecked())
             save("md_last", self.HD_checkMDLast.isChecked())
-        save("correct_method", self.HD_comboDetectionMethod.currentIndex())
-        save("skewness", self.HD_spinSkewness.value())
-        save("percentile", self.HD_spinPercentile.value())
+        save("correct_method", self.HC_comboDetectionMethod.currentIndex())
+        save("skewness", self.HC_spinSkewness.value())
+        save("percentile", self.HC_spinPercentile.value())
         save("detect_prob", self.HD_spinProb.value())
         self.settings.endGroup()
 
@@ -863,9 +865,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         else:
             self.HD_checkAscending.setChecked(load("ascending"))
             self.HD_checkMDLast.setChecked(load("md_last"))
-        self.HD_comboDetectionMethod.setCurrentIndex(load("correct_method"))
-        self.HD_spinSkewness.setValue(load("skewness"))
-        self.HD_spinPercentile.setValue(load("percentile"))
+        self.HC_comboDetectionMethod.setCurrentIndex(load("correct_method"))
+        self.HC_spinSkewness.setValue(load("skewness"))
+        self.HC_spinPercentile.setValue(load("percentile"))
         self.HD_spinProb.setValue(load("detect_prob"))
         self.settings.endGroup()
 
@@ -975,10 +977,10 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         else:
             self.HD_checkAscending.setChecked(to_bool(load("ascending")))
             self.HD_checkMDLast.setChecked(to_bool(load("md_last")))
-        self.HD_comboDetectionMethod.setCurrentIndex(
+        self.HC_comboDetectionMethod.setCurrentIndex(
                                                  int(load("correct_method")))
-        self.HD_spinSkewness.setValue(float(load("skewness")))
-        self.HD_spinPercentile.setValue(float(load("percentile")))
+        self.HC_spinSkewness.setValue(float(load("skewness")))
+        self.HC_spinPercentile.setValue(float(load("percentile")))
         self.HD_spinProb.setValue(float(load("detect_prob")))
         qsettings.endGroup()
 
@@ -1055,13 +1057,13 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         else:
             self.HD_checkAscending.setChecked(self.params.ascending)
             self.HD_checkMDLast.setChecked(self.params.md_last)
-        self.HD_comboDetectionMethod.setCurrentIndex(
-             self.HD_comboDetectionMethod.findText(self.params.correct_method,
+        self.HC_comboDetectionMethod.setCurrentIndex(
+             self.HC_comboDetectionMethod.findText(self.params.correct_method,
                                                    QtCore.Qt.MatchContains))
         if self.params.correct_method == "skewness":
-            self.HD_spinSkewness.setValue(self.params.skewness)
+            self.HC_spinSkewness.setValue(self.params.skewness)
         elif self.params.correct_method == "percentile":
-            self.HD_spinPercentile.setValue(self.params.percentile)
+            self.HC_spinPercentile.setValue(self.params.percentile)
         self.HD_spinProb.setValue(self.params.detect_prob)
 
         # Homogenisation / Results
@@ -1140,12 +1142,12 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         else:
             self.params.ascending = self.HD_checkAscending.isChecked()
             self.params.md_last = self.HD_checkMDLast.isChecked()
-        self.params.correct_method = (self.HD_comboDetectionMethod.
+        self.params.correct_method = (self.HC_comboDetectionMethod.
                                      currentText().lower())
         if self.params.correct_method == "skewness":
-            self.params.skewness = self.HD_spinSkewness.value()
+            self.params.skewness = self.HC_spinSkewness.value()
         elif self.params.correct_method == "percentile":
-            self.params.percentile = self.HD_spinPercentile.value()
+            self.params.percentile = self.HC_spinPercentile.value()
         self.params.detect_prob = self.HD_spinProb.value()
 
         # Homogenisation / Results

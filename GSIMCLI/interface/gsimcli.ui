@@ -1292,7 +1292,7 @@
           </layout>
          </widget>
          <widget class="QWidget" name="HomogenisationDetection">
-          <layout class="QVBoxLayout" name="verticalLayout_16">
+          <layout class="QVBoxLayout" name="verticalLayout_26">
            <property name="spacing">
             <number>15</number>
            </property>
@@ -1308,7 +1308,7 @@
                 </font>
                </property>
                <property name="text">
-                <string>Irregularities detection and correction</string>
+                <string>Irregularities detection</string>
                </property>
               </widget>
              </item>
@@ -1491,6 +1491,90 @@
             </widget>
            </item>
            <item>
+            <widget class="QCheckBox" name="HD_checkTolerance">
+             <property name="text">
+              <string>Use a tolerance radius around the station to compute each local PDF</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QWidget" name="HD_groupTolerance" native="true">
+             <layout class="QHBoxLayout" name="horizontalLayout_27">
+              <property name="margin">
+               <number>0</number>
+              </property>
+              <item>
+               <widget class="QLabel" name="HD_labelTolerance">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="text">
+                 <string>Tolerance radius</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QDoubleSpinBox" name="HD_spinTolerance">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+                <property name="decimals">
+                 <number>0</number>
+                </property>
+                <property name="maximum">
+                 <double>9999.000000000000000</double>
+                </property>
+                <property name="singleStep">
+                 <double>1.000000000000000</double>
+                </property>
+                <property name="value">
+                 <double>1.000000000000000</double>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="HD_radioToleranceNodes">
+                <property name="text">
+                 <string>Number of nodes</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="HD_radioToleranceDistance">
+                <property name="text">
+                 <string>Units of distance</string>
+                </property>
+                <property name="checkable">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_16">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
             <layout class="QHBoxLayout" name="horizontalLayout_13">
              <item>
               <widget class="QLabel" name="HD_labelProb">
@@ -1540,9 +1624,54 @@
             </layout>
            </item>
            <item>
+            <spacer name="verticalSpacer_6">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>90</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QWidget" name="HomogenisationCorrection">
+          <layout class="QVBoxLayout" name="verticalLayout_27">
+           <property name="spacing">
+            <number>15</number>
+           </property>
+           <item>
+            <layout class="QVBoxLayout" name="verticalLayout_16">
+             <item>
+              <widget class="QLabel" name="label_62">
+               <property name="font">
+                <font>
+                 <pointsize>14</pointsize>
+                 <weight>50</weight>
+                 <bold>false</bold>
+                </font>
+               </property>
+               <property name="text">
+                <string>Irregularities correction</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="Line" name="line_9">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
             <layout class="QHBoxLayout" name="horizontalLayout_22">
              <item>
-              <widget class="QLabel" name="HD_labelDetectionMethod">
+              <widget class="QLabel" name="HC_labelDetectionMethod">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                  <horstretch>0</horstretch>
@@ -1555,7 +1684,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QComboBox" name="HD_comboDetectionMethod">
+              <widget class="QComboBox" name="HC_comboDetectionMethod">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                  <horstretch>0</horstretch>
@@ -1606,13 +1735,13 @@
             </layout>
            </item>
            <item>
-            <widget class="QWidget" name="HD_groupSkewness" native="true">
+            <widget class="QWidget" name="HC_groupSkewness" native="true">
              <layout class="QHBoxLayout" name="horizontalLayout_23">
               <property name="margin">
                <number>0</number>
               </property>
               <item>
-               <widget class="QLabel" name="HD_labelSkewness">
+               <widget class="QLabel" name="HC_labelSkewness">
                 <property name="enabled">
                  <bool>true</bool>
                 </property>
@@ -1628,7 +1757,7 @@
                </widget>
               </item>
               <item>
-               <widget class="QDoubleSpinBox" name="HD_spinSkewness">
+               <widget class="QDoubleSpinBox" name="HC_spinSkewness">
                 <property name="enabled">
                  <bool>true</bool>
                 </property>
@@ -1657,13 +1786,13 @@
             </widget>
            </item>
            <item>
-            <widget class="QWidget" name="HD_groupPercentile" native="true">
+            <widget class="QWidget" name="HC_groupPercentile" native="true">
              <layout class="QHBoxLayout" name="horizontalLayout_26">
               <property name="margin">
                <number>0</number>
               </property>
               <item>
-               <widget class="QLabel" name="HD_labelPercentile">
+               <widget class="QLabel" name="HC_labelPercentile">
                 <property name="enabled">
                  <bool>true</bool>
                 </property>
@@ -1679,7 +1808,7 @@
                </widget>
               </item>
               <item>
-               <widget class="QDoubleSpinBox" name="HD_spinPercentile">
+               <widget class="QDoubleSpinBox" name="HC_spinPercentile">
                 <property name="enabled">
                  <bool>true</bool>
                 </property>
@@ -1717,14 +1846,14 @@
             </widget>
            </item>
            <item>
-            <spacer name="verticalSpacer_6">
+            <spacer name="verticalSpacer_9">
              <property name="orientation">
               <enum>Qt::Vertical</enum>
              </property>
              <property name="sizeHint" stdset="0">
               <size>
                <width>20</width>
-               <height>90</height>
+               <height>359</height>
               </size>
              </property>
             </spacer>
@@ -2015,7 +2144,12 @@
           </property>
           <item>
            <property name="text">
-            <string>Detection and correction</string>
+            <string>Detection</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Correction</string>
            </property>
           </item>
           <item>
@@ -2227,7 +2361,7 @@
      <x>0</x>
      <y>0</y>
      <width>742</width>
-     <height>21</height>
+     <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
