@@ -42,6 +42,16 @@ class GsimcliParam(ParametersFile):
         ascending: sort in ascending order ('y'/'n')
         md_last: put missing data at the end of sorted stations ('y'/'n')
         st_user: stations IDs in order if st_order == 'user' (e.g., '3, 10, 2')
+        detect_prob: probability to build an interval centred in the local pdf
+        tolerance: use a tolerance radius around each station to compute its
+                   local PDF ('y'/'n')
+        radius: the circular radius used to the tolerance, used if
+                tolerance == 'y'
+        distance_units: state if the radius is given in units of distance,
+                        rather than number of nodes ('y'/'n'), used if
+                        tolerance == 'y'
+
+        --- CORRECTION ---
         correct_method: method for the inhomogeneities correction:
                         - 'mean' replaces with the mean
                         - 'median' replaces with the median
@@ -50,9 +60,8 @@ class GsimcliParam(ParametersFile):
                         - percentile : replace detected irregularities with the
                             percentile `100 * (1 - p)`, for a given p.
         skewness: samples skewness threshold, used if
-            correct_method == 'skewness'
+                  correct_method == 'skewness'
         percentile: p value used if correct_method == 'percentile'
-        detect_prob: probability to build an interval centred in the local pdf
 
         --- RESULTS ---
         detect_save: save intermediary files ('y'/'n'), which are:
@@ -109,12 +118,14 @@ class GsimcliParam(ParametersFile):
         opt_int = ['st_user', 'number_simulations', 'max_search_nodes',
                    'angles', 'XX_nodes_number', 'XX_minimum', 'XX_spacing',
                    'YY_nodes_number', 'YY_minimum', 'YY_spacing',
-                   'ZZ_nodes_number', 'ZZ_minimum', 'ZZ_spacing']
+                   'ZZ_nodes_number', 'ZZ_minimum', 'ZZ_spacing',
+                   'radius']
         opt_real = ['skewness', 'percentile', 'nugget', 'sill', 'ranges']
-        opt_boolean = ['ascending', 'md_last']
+        opt_boolean = ['ascending', 'md_last', 'tolerance', 'distance_units']
         order = ['data', 'no_data', 'data_header', 'name',
                  'variables', 'st_order', 'ascending', 'md_last', 'st_user',
-                 'correct_method', 'skewness', 'percentile', 'detect_prob',
+                 'detect_prob', 'tolerance', 'radius', 'distance_units',
+                 'correct_method', 'skewness', 'percentile',
                  'detect_save', 'sim_purge', 'results', 'results_file',
                  'dss_par', 'dss_exe', 'number_simulations', 'krig_type',
                  'model', 'nugget', 'sill', 'ranges', 'angles',
