@@ -104,22 +104,24 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.DB_checkBatchNetworks.toggled.connect(self.enable_batch_networks)
         self.SO_checkSkipSim.toggled.connect(self.enable_skip_sim)
         self.actionPrintStatus.toggled.connect(self.disable_print_status)
+        self.HD_checkTolerance.toggled.connect(self.enable_tolerance)
         self.HR_checkPurgeSims.toggled.connect(self.enable_purge_sims)
 
         # combo boxes
         self.HD_comboStationOrder.currentIndexChanged.connect(
                                                   self.change_station_order)
-        self.HC_comboDetectionMethod.currentIndexChanged.connect(
+        self.HC_comboCorrectionMethod.currentIndexChanged.connect(
                                                          self.enable_skewness)
-        self.HC_comboDetectionMethod.currentIndexChanged.connect(
+        self.HC_comboCorrectionMethod.currentIndexChanged.connect(
                                                      self.enable_percentile)
 
         # hidden
-        self.SV_labelBatchDecades.setVisible(False)
-        self.HD_groupUserOrder.setVisible(False)
         self.groupProgress.setVisible(False)
         self.groupStatusInfo.setVisible(False)
         self.groupTime.setVisible(False)
+        self.SV_labelBatchDecades.setVisible(False)
+        self.HD_groupUserOrder.setVisible(False)
+        self.HD_groupTolerance.setVisible(False)
         self.HC_groupSkewness.setVisible(False)
         self.HC_groupPercentile.setVisible(False)
 
@@ -207,7 +209,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             sys.__stdout__.write(text)
 
     def set_stacked_item(self, current, previous):
-        """Connects the right menu (QTreeWidget) with the panels on the right
+        """Connect the right menu (QTreeWidget) with the panels on the right
         (QStackedWidget).
 
         """
@@ -238,7 +240,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.stackedWidget.setCurrentWidget(self.HomogenisationResults)
 
     def set_recent_settings(self):
-        """Create the recents settings files menu. Filter non
+        """Create the recent settings files menu. Filter non
         existing files.
 
         """
@@ -507,12 +509,19 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.HD_checkAscending.setDisabled(disable_checks)
         self.HD_checkMDLast.setDisabled(disable_checks)
 
+    def enable_tolerance(self, toggle):
+        """Toggle the widgets related to the tolerance feature on the local
+        PDF calculation.
+
+        """
+        self.HD_groupTolerance.setVisible(toggle)
+
     def enable_skewness(self, index):
         """Toggle the widgets related to the skewness correction method.
         Connected to the correction method combobox.
 
         """
-        if self.HC_comboDetectionMethod.currentText() == "Skewness":
+        if self.HC_comboCorrectionMethod.currentText() == "Skewness":
             enable = True
         else:
             enable = False
@@ -523,7 +532,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         Connected to the correction method combobox.
 
         """
-        if self.HC_comboDetectionMethod.currentText() == "Percentile":
+        if self.HC_comboCorrectionMethod.currentText() == "Percentile":
             enable = True
         else:
             enable = False
@@ -770,10 +779,18 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         else:
             save("ascending", self.HD_checkAscending.isChecked())
             save("md_last", self.HD_checkMDLast.isChecked())
-        save("correct_method", self.HC_comboDetectionMethod.currentIndex())
+        save("detect_prob", self.HD_spinProb.value())
+        save("tolerance", self.HD_checkTolerance.isChecked())
+        if self.HD_checkTolerance.isChecked():
+            save("radius", self.HD_spinTolerance.value())
+            save("distance_units", self.HD_radioDistance.isChecked())
+        self.settings.endGroup()
+
+        # Homogenisation / Correction
+        self.settings.beginGroup("Correction")
+        save("correct_method", self.HC_comboCorrectionMethod.currentIndex())
         save("skewness", self.HC_spinSkewness.value())
         save("percentile", self.HC_spinPercentile.value())
-        save("detect_prob", self.HD_spinProb.value())
         self.settings.endGroup()
 
         # Homogenisation / Results
@@ -865,10 +882,18 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         else:
             self.HD_checkAscending.setChecked(load("ascending"))
             self.HD_checkMDLast.setChecked(load("md_last"))
-        self.HC_comboDetectionMethod.setCurrentIndex(load("correct_method"))
+        self.HD_spinProb.setValue(load("detect_prob"))
+        self.HD_checkTolerance.setChecked(load("tolerance"))
+        if self.HD_checkTolerance.isChecked():
+            self.HD_spinTolerance.setValue(load("radius"))
+            self.HD_radioDistance.setChecked(load("distance_units"))
+        self.settings.endGroup()
+
+        # Homogenisation / Correction
+        self.settings.beginGroup("Correction")
+        self.HC_comboCorrectionMethod.setCurrentIndex(load("correct_method"))
         self.HC_spinSkewness.setValue(load("skewness"))
         self.HC_spinPercentile.setValue(load("percentile"))
-        self.HD_spinProb.setValue(load("detect_prob"))
         self.settings.endGroup()
 
         # Homogenisation / Results
@@ -977,11 +1002,20 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         else:
             self.HD_checkAscending.setChecked(to_bool(load("ascending")))
             self.HD_checkMDLast.setChecked(to_bool(load("md_last")))
-        self.HC_comboDetectionMethod.setCurrentIndex(
+        self.HD_spinProb.setValue(float(load("detect_prob")))
+        self.HD_checkTolerance.setChecked(to_bool(load("tolerance")))
+        if self.HD_checkTolerance.isChecked():
+            self.HD_spinTolerance.setValue(float(load("radius")))
+            self.HD_radioDistance.setChecked(
+                                              to_bool(load("distance_units")))
+        qsettings.endGroup()
+
+        # Homogenisation / Correction
+        qsettings.beginGroup("Detection")
+        self.HC_comboCorrectionMethod.setCurrentIndex(
                                                  int(load("correct_method")))
         self.HC_spinSkewness.setValue(float(load("skewness")))
         self.HC_spinPercentile.setValue(float(load("percentile")))
-        self.HD_spinProb.setValue(float(load("detect_prob")))
         qsettings.endGroup()
 
         # Homogenisation / Results
@@ -1057,14 +1091,20 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         else:
             self.HD_checkAscending.setChecked(self.params.ascending)
             self.HD_checkMDLast.setChecked(self.params.md_last)
-        self.HC_comboDetectionMethod.setCurrentIndex(
-             self.HC_comboDetectionMethod.findText(self.params.correct_method,
+        self.HD_spinProb.setValue(self.params.detect_prob)
+        self.HD_checkTolerance.setChecked(self.params.tolerance)
+        if self.HD_checkTolerance.isChecked():
+            self.HD_spinTolerance.setValue(self.params.radius)
+            self.HD_radioDistance(self.params.distance_units)
+
+        # Homogenisation / Correction
+        self.HC_comboCorrectionMethod.setCurrentIndex(
+             self.HC_comboCorrectionMethod.findText(self.params.correct_method,
                                                    QtCore.Qt.MatchContains))
         if self.params.correct_method == "skewness":
             self.HC_spinSkewness.setValue(self.params.skewness)
         elif self.params.correct_method == "percentile":
             self.HC_spinPercentile.setValue(self.params.percentile)
-        self.HD_spinProb.setValue(self.params.detect_prob)
 
         # Homogenisation / Results
         self.HR_checkSaveInter.setChecked(self.params.detect_save)
@@ -1142,13 +1182,19 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         else:
             self.params.ascending = self.HD_checkAscending.isChecked()
             self.params.md_last = self.HD_checkMDLast.isChecked()
-        self.params.correct_method = (self.HC_comboDetectionMethod.
+        self.params.detect_prob = self.HD_spinProb.value()
+        self.params.tolerance = self.HD_checkTolerance.isChecked()
+        if self.params.tolerance:
+            self.params.radius = self.HD_spinTolerance.value()
+            self.params.distance_units = self.HD_radioDistance.isChecked()
+
+        # Homogenisation / Correction
+        self.params.correct_method = (self.HC_comboCorrectionMethod.
                                      currentText().lower())
         if self.params.correct_method == "skewness":
             self.params.skewness = self.HC_spinSkewness.value()
         elif self.params.correct_method == "percentile":
             self.params.percentile = self.HC_spinPercentile.value()
-        self.params.detect_prob = self.HD_spinProb.value()
 
         # Homogenisation / Results
         self.params.detect_save = self.HR_checkSaveInter.isChecked()

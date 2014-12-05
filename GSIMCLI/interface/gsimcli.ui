@@ -1493,7 +1493,7 @@
            <item>
             <widget class="QCheckBox" name="HD_checkTolerance">
              <property name="text">
-              <string>Use a tolerance radius around the station to compute each local PDF</string>
+              <string>Use a tolerance radius around each station to compute its local PDF</string>
              </property>
             </widget>
            </item>
@@ -1539,7 +1539,7 @@
                </widget>
               </item>
               <item>
-               <widget class="QRadioButton" name="HD_radioToleranceNodes">
+               <widget class="QRadioButton" name="HD_radioNodes">
                 <property name="text">
                  <string>Number of nodes</string>
                 </property>
@@ -1549,7 +1549,13 @@
                </widget>
               </item>
               <item>
-               <widget class="QRadioButton" name="HD_radioToleranceDistance">
+               <widget class="QRadioButton" name="HD_radioDistance">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="toolTip">
+                 <string>Not available yet.</string>
+                </property>
                 <property name="text">
                  <string>Units of distance</string>
                 </property>
@@ -1671,7 +1677,7 @@
            <item>
             <layout class="QHBoxLayout" name="horizontalLayout_22">
              <item>
-              <widget class="QLabel" name="HC_labelDetectionMethod">
+              <widget class="QLabel" name="HC_labelCorrectionMethod">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                  <horstretch>0</horstretch>
@@ -1684,7 +1690,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QComboBox" name="HC_comboDetectionMethod">
+              <widget class="QComboBox" name="HC_comboCorrectionMethod">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                  <horstretch>0</horstretch>
