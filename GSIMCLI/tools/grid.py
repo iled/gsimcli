@@ -817,19 +817,20 @@ class GridFiles(object):
         curr_line = np.zeros(self.nfiles)
 
         for layer in xrange(neighbours_lines.shape[1]):
-            for j, grid in enumerate(self.files):
-                # skip header lines only once per grid file
-                if skip and self.header:
-                    skip_lines(grid, self.header)
-                for i, line in enumerate(neighbours_lines[:, layer]):
+            for i, line in enumerate(neighbours_lines[:, layer]):
+                for j, grid in enumerate(self.files):
+                    # skip header lines only once per grid file
+                    if skip and self.header:
+                        skip_lines(grid, self.header)
+
                     # advance to the next line with a neighbour node
                     skip_lines(grid, int(line - curr_line[j] - 1))
                     # read the line and store its value
                     a = grid.readline()
                     arr[i + j * nnodes] = float(a)
 
-                curr_line[j] = line
-                skip = False
+                    curr_line[j] = line
+                    skip = False
 
             # compute the required statistics
             if lmean:
@@ -1207,11 +1208,11 @@ def _wrap2():
     # print 'loading grids'
     grids = GridFiles()
     grids.load(fstpar, nsims, griddims, fstcoord, nodesize, -999.9, 0)
-    vstats = grids.stats_vline(pointloc, lmean=True, lvar=True, lperc=True,
-                               p=0.95)
-#     vstats = grids.stats_area(pointloc, tol=0, lmean=True, lvar=True, lperc=True,
+#     vstats = grids.stats_vline(pointloc, lmean=True, lvar=True, lperc=True,
 #                                p=0.95)
-    # vstats.save(os.path.join(outpath, 'statsmap2.out'), 'var')
+    vstats = grids.stats_area(pointloc, tol=rad, lmean=True, lvar=True, lperc=True,
+                               p=0.95)
+    vstats.save(os.path.join(outpath, 'statsmap_t' + str(rad) + '.out'), 'var')
     grids.dump()
     return vstats
 
@@ -1221,19 +1222,25 @@ if __name__ == '__main__':
     fstpar = '/home/julio/Testes/cost-home/rede000010_work/1990-1999/1990-1999_dss_map_st0_sim.out'
     outpath = '/home/julio/Testes/cost-home/rede000010_work/test'
     psetpath = '/home/julio/Testes/cost-home/rede000010_work/1990-1999/1990-1999_candidate_0.prn'
-    nsims = 10
+    nsims = 500
     pointloc = [1815109.147, 7190958.185]
     griddims = [81, 122, 10]
     fstcoord = [1770000, 7094000, 1990]
     nodesize = [1000, 1000, 1]
 
+    rad = 0
+    print(timeit.timeit("_wrap2()", setup="from __main__ import _wrap2",
+                    number=10))
+    for rad in xrange(0, 5):#(0, 3):
+
     # """ timer
 #     print 'calculating grid stats + drill'
 #     print(timeit.timeit("_wrap1()", setup="from __main__ import _wrap1",
 #                         number=100))
-    print 'calculating vline stats'
-    print(timeit.timeit("_wrap2()", setup="from __main__ import _wrap2",
-                        number=100))
+        print 'calculating vline stats'
+        print 'tolerance: ', rad
+        print(timeit.timeit("_wrap2()", setup="from __main__ import _wrap2",
+                            number=10))
     # """
 
 #     snirh = '/home/julio/Testes/snirh500_dssim_narrow/snirh.prn'
