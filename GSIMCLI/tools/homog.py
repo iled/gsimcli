@@ -24,7 +24,7 @@ import tools.grid as gr
 _ntuple_stations = namedtuple('Stations', 'stations total')
 
 
-def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
+def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
            percentile=None, flag=True, save=False, outfile=None, header=True):
     """Try to detect and homogenise irregularities in data series, following
     the geostatistical simulation approach:
@@ -48,6 +48,9 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
     obs_file : PointSet object or string
         Instance of PointSet type containing the observed values at the
         candidate station, or string with the full path to the PointSet file.
+    rad : number, default 0
+        Tolerance radius used to search for neighbour nodes, used to calculate
+        the local pdf's.
     method : {'mean', 'median', 'skewness', 'percentile'} string, default
         'mean'
         Method for the inhomogeneities correction:
@@ -140,8 +143,8 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
 
     obs_xy = list(obs.values.iloc[0, :2])
     # calculate stats
-    vline_stats = grids.stats_vline(obs_xy, lmean, lmed, lskew, lperc=True,
-                                    p=prob, save=save)
+    local_stats = grids.stats_area(obs_xy, rad, lmean, lmed, lskew, lperc=True,
+                                   p=prob, save=save)
 
     # remove lines with no-data and flags
     if 'Flag' in obs.values.columns:
@@ -153,7 +156,7 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
     nodatas = obs.values['clim'].isin([obs.nodata]).sum()
     obs.values = obs.values.replace(obs.nodata, np.nan)
     # replace NaN's with the mean values
-    meanvalues = pd.Series(vline_stats.values['mean'].values, name='clim',
+    meanvalues = pd.Series(local_stats.values['mean'].values, name='clim',
                            index=obs.values.index)
     obs.values.update(meanvalues, overwrite=False)
 
@@ -164,8 +167,8 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
                                grids.cellz, header)
 
     # detect irregularities
-    hom_where = ~obs.values['clim'].between(vline_stats.values['lperc'],
-                                            vline_stats.values['rperc'])
+    hom_where = ~obs.values['clim'].between(local_stats.values['lperc'],
+                                            local_stats.values['rperc'])
     detected_number = hom_where.sum()  # + fn
 
     # homogenise irregularities
@@ -173,24 +176,24 @@ def detect(grids, obs_file, method='mean', prob=0.95, skewness=None,
                               list(obs.varnames), obs.values.copy())
 
     if method == 'mean':
-        fixvalues = vline_stats.values['mean'].values
+        fixvalues = local_stats.values['mean'].values
     elif method == 'median':
-        fixvalues = vline_stats.values['median'].values
+        fixvalues = local_stats.values['median'].values
     elif method == 'skewness' and skewness:
-        fixvalues = np.where(vline_stats.values['skewness'] > skewness,
-                             vline_stats.values['median'],
-                             vline_stats.values['mean'])
+        fixvalues = np.where(local_stats.values['skewness'] > skewness,
+                             local_stats.values['median'],
+                             local_stats.values['mean'])
     elif method == 'percentile':
         # allow a different percentile value for the detection and for the
         # correction
         if percentile != prob:
             grids.reset_read()
-            vline_perc = grids.stats_vline(obs_xy, lperc=True, p=percentile,
-                                           save=False)
+            vline_perc = grids.stats_area(obs_xy, rad, lperc=True,
+                                          p=percentile, save=False)
         else:
-            vline_perc = vline_stats
+            vline_perc = local_stats
 
-        fixvalues = np.where(obs.values['clim'] > vline_stats.values['rperc'],
+        fixvalues = np.where(obs.values['clim'] > local_stats.values['rperc'],
                              vline_perc.values['rperc'],
                              vline_perc.values['lperc'])
 

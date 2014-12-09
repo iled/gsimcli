@@ -43,7 +43,7 @@ is_alive = True
 
 def gsimcli(stations_file, stations_header, no_data, stations_order,
             correct_method, detect_prob, detect_flag, detect_save, exe_path,
-            par_file, outfolder, purge_sims, correct_skew=None,
+            par_file, outfolder, purge_sims, rad=0, correct_skew=None,
             correct_percentile=None, cores=None, dbgfile=None,
             print_status=False, skip_dss=False):
     """Main routine to run GSIMCLI homogenisation procedure in a set of
@@ -88,6 +88,9 @@ def gsimcli(stations_file, stations_header, no_data, stations_order,
         Directory to save the results.
     purge_sims : boolean
         Remove all simulated maps in the end.
+    rad : number, default 0
+        Tolerance radius used to search for neighbour nodes, used to calculate
+        the local pdf's.
     correct_skew : float, optional
         Samples skewness threshold, used if `correct_method == 'skewness'`.
     correct_percentile: float, optional
@@ -211,7 +214,7 @@ def gsimcli(stations_file, stations_header, no_data, stations_order,
                                  method=correct_method, prob=detect_prob,
                                  flag=detect_flag, save=detect_save,
                                  outfile=intermediary_files, header=True,
-                                 skewness=correct_skew,
+                                 skewness=correct_skew, rad=rad,
                                  percentile=correct_percentile)
         homogenised, detected_number, filled_number = homogenisation
         if print_status:
@@ -307,6 +310,11 @@ def run_par(par_path, print_status=False, skip_dss=False, cores=None):
     elif gscpar.correct_method.lower() == 'percentile':
         perc = gscpar.percentile
 
+    if gscpar.tolerance:
+        radius = gscpar.radius
+    else:
+        radius = 0
+
     if print_status:
         print 'Candidates order: ', ', '.join(map(str, stations_order))
         print 'Set up complete. Running GSIMCLI...'
@@ -314,8 +322,8 @@ def run_par(par_path, print_status=False, skip_dss=False, cores=None):
                       stations_order, gscpar.correct_method,
                       gscpar.detect_prob, detect_flag, gscpar.detect_save,
                       gscpar.dss_exe, dsspar, gscpar.results, gscpar.sim_purge,
-                      skew, perc, cores=cores, print_status=print_status,
-                      skip_dss=skip_dss)
+                      radius, skew, perc, cores=cores,
+                      print_status=print_status, skip_dss=skip_dss)
 
     # FIXME: workaround for merge dependence
     results = list(results)
