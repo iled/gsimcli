@@ -14,6 +14,7 @@ import os
 import sys
 from tempfile import NamedTemporaryFile
 import time
+import warnings
 
 base = os.path.dirname(os.path.dirname(__file__))
 sys.path.append(base)
@@ -164,6 +165,103 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.count_status = [0, 0, 0, 0]
         self.total_sims = 0
         self.current_sim = 0
+
+        # set the GUI parameters here
+        #    Main Window
+        gp = "MW"
+        size = GuiParam("size", widget=self, group=gp,
+                        get_value=self.size)
+        position = GuiParam("position", widget=self, group=gp,
+                            get_value=self.pos)
+        state = GuiParam("state", widget=self, group=gp,
+                         get_value=self.saveState)
+        defaultdir = GuiParam("default_dir", widget=self, group=gp,
+                              get_value=self.default_dir)
+        printstatus = GuiParam("print_status", widget=self, group=gp,
+                               get_value=self.print_status)
+        recent_settings = GuiParam("recent_settings", widget=self,
+                                   group=gp, otype=list,
+                                   get_value=self.recent_settings)
+        #    Data / Load
+        gp = "DL"
+        no_data = GuiParam("no_data", self.DL_spinNoData, otype=float,
+                           group=gp, gsimcli_name="no_data",
+                           get_value=self.DL_spinNoData.value,
+                           set_value=self.DL_spinNoData.setValue)
+        header = GuiParam("header", self, otype=bool, group=gp,
+                          gsimcli_name="header", get_value=self.header)
+        data_name = GuiParam("data_name", self.DL_lineDataName, otype=str,
+                             group=gp, gsimcli_name="data_name",
+                             get_value=self.DL_lineDataName.text,
+                             set_value=self.DL_lineDataName.setText)
+        varnames = GuiParam("variables", self.DL_listVarNames, otype=list,
+                            group=gp, gsimcli_name="variables",
+                            get_value=qlist_to_pylist(self.DL_listVarNames))
+        #    Data / Batch
+        gp = "DB"
+        batch_networks = GuiParam("batch_networks", self.DB_checkBatchNetworks,
+                                  group=gp, otype=bool,
+                                  get_value=self.DB_checkBatchNetworks.isChecked,
+                                  set_value=self.DB_checkBatchNetworks.setChecked)
+        net_paths = GuiParam("networks_paths", self.DB_listNetworksPaths,
+                             group=gp, otype=list,
+                             get_value=qlist_to_pylist(self.DB_listNetworksPaths))
+        batch_decades = GuiParam("batch_decades", self.DB_checkBatchDecades,
+                                 group=gp, otype=bool,
+                                 get_value=self.DB_checkBatchDecades.isChecked,
+                                 set_value=self.DB_checkBatchDecades.setChecked)
+        dec_path = GuiParam("decades_path", self.DB_lineDecadesPath, otype=str,
+                            group=gp,
+                            get_value=self.DB_lineDecadesPath.text,
+                            set_value=self.DB_lineDecadesPath.setText,
+                            depends=self.DB_checkBatchDecades.isChecked)
+        networkd_id = GuiParam("network_id", self.DB_lineNetworkID, otype=str,
+                               group=gp,
+                               get_value=self.DB_lineNetworkID.text,
+                               set_value=self.DB_lineNetworkID.setText,
+                               depends=self.DB_checkBatchDecades.isChecked)
+        var_path = GuiParam("variography_path, ", self.DB_lineVariogPath,
+                            group=gp, otype=str,
+                            get_value=self.DB_lineVariogPath.text,
+                            set_value=self.DB_lineVariogPath.setText,
+                            depends=self.DB_checkBatchDecades.isChecked)
+        #    Simulation / Options
+        gp = "SO"
+        par_path = GuiParam("par_path", self.SO_lineParPath, otype=str,
+                            group=gp,
+                            get_value=self.SO_lineParPath.text,
+                            set_value=self.SO_lineParPath.setText)
+        exe_path = GuiParam("exe_path", self.SO_lineExePath, otype=str,
+                            group=gp,
+                            get_value=self.SO_lineExePath.text,
+                            set_value=self.SO_lineExePath.setText)
+        n_sims = GuiParam("number_simulations", self.SO_spinNumberSims,
+                          group=gp, otype=int,
+                          get_value=self.SO_spinNumberSims.value,
+                          set_value=self.SO_spinNumberSims.setValue)
+        krig_type = GuiParam("krigging_type", self.SO_comboKrigType, otype=str,
+                             group=gp,
+                             get_value=self.SO_comboKrigType.currentIndex)
+        max_nodes = GuiParam("max_search_nodes", self.SO_spinMaxSearchNodes,
+                             group=gp, otype=int,
+                             get_value=self.SO_spinMaxSearchNodes.value,
+                             set_value=self.SO_spinMaxSearchNodes.setValue)
+        cpu_cores = GuiParam("cpu_cores", self.SO_spinCores, otype=int,
+                             group=gp,
+                             get_value=self.SO_spinCores.value,
+                             set_value=self.SO_spinCores.setValue)
+        skip_sim = GuiParam("skip_sim", self.SO_checkSkipSim, otype=bool,
+                            group=gp,
+                            get_value=self.SO_checkSkipSim.isChecked,
+                            set_value=self.SO_checkSkipSim.setChecked)
+        #    Simulation / Grid
+        
+        
+        tolerance = GuiParam("tolerance", widget=self.HD_checkTolerance,
+                             otype=bool, group="HC", gsimcli_name="tolerance",
+                             get_value=self.HD_checkTolerance.isChecked,
+                             set_value=self.HD_checkTolerance.setChecked)
+        self.guiparams = [tolerance]
 
     def __del__(self):
         # Restore sys.stdout
@@ -1721,6 +1819,96 @@ class EmittingStream(QtCore.QObject):
     def flush(self):
         sys.__stdout__.flush()
 
+
+class GuiParam(object):
+    """Hold the necessary settings to manage each GUI parameter.
+
+    """
+    def __init__(self, name, widget, otype, get_value, set_value, group,
+                 depends=None, gsimcli_name=None):
+        """Constructor to initialise a GUI parameter.
+
+        Parameters
+        ----------
+        name : string
+            Name of the parameter that will be used to store its value in the
+            GUI settings file.
+        widget : QObject
+            Qt widget instance related to the parameter.
+        otype : type
+            Object type (float, int, bool, etc.).
+        get_value : function
+            Method in the QObject instance that allows to retrieve its value.
+        set_value : function
+            Method in the QObject instance that allows to change its value.
+        group : string
+            Settings group that the parameter belongs to.
+        depends : list of function, optional
+            Functions to retrieve values from other widgets that the parameter
+            depends on.
+        gsimcli_name : string, optional
+            Name of the parameter in the GsimcliParam class. If given, it will
+            check if it exists in the class definition and it will warn if not.
+
+        """
+        self.name = name
+        self.widget = widget
+        self.type = type
+        self.get_value = get_value
+        self.set_value = set_value
+        self.group = group
+        self.depends = depends
+        self.gsimcli_name = gsimcli_name
+
+        if gsimcli_name:
+            self.check_gsimcli_params()
+            
+        self.flush()
+
+    def check_dependencies(self):
+        """A widget may depend on the value of another widget. This method
+        checks if all the parameter dependencies are met.
+
+        Only boolean values are supported for the dependencies.
+
+        """
+        for dependency in self.depends:
+            if not dependency():
+                return False
+        return bool(self.depends)
+
+    def check_gsimcli_params(self):
+        """Check if the parameter is included in the GsimcliParam class
+        definition. A warn message will be thrown if it is not included, as a
+        reminder.
+
+        """
+        name = self.gsimcli_name
+        checklist = (name in GsimcliParam.__doc__() and
+                     (name in GsimcliParam.fields or
+                      name in GsimcliParam.optional))
+        if all(checklist):
+            return True
+        else:
+            warnings.warn("The parameter {} is not properly configured in "
+                          "GsimcliParam class. Please check if it is included "
+                          "in the docstring and in the fields or optional "
+                          "lists.".format(self.name))
+            return False
+    
+    def flush(self):
+        try:
+            self.value = self.get_value()
+        except TypeError:
+            self.value = self.get_value
+            
+    def save(self):
+        """Provide an interface to save the parameter value in QSettings.
+        
+        """
+        self.flush()
+        return (self.name, self.value)
+        
 
 def qlist_to_pylist(qlist):
     """Convert QListWidget to Python list.
