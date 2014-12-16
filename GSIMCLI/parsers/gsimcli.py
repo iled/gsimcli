@@ -82,6 +82,8 @@ class GsimcliParam(ParametersFile):
         dss_exe: path to the DSS executable
         number_simulations: number of simulations
         krig_type: krigging type (OK, SK)
+        search_radius: search ellipsoid radius (dir. 1, dir. 2, dir. 3), in the
+                       data scale
 
         --- DSS: variogram ---
         model: model type (S = spherical, E = exponential, G = gaussian)
@@ -119,7 +121,7 @@ class GsimcliParam(ParametersFile):
                    'angles', 'XX_nodes_number', 'XX_minimum', 'XX_spacing',
                    'YY_nodes_number', 'YY_minimum', 'YY_spacing',
                    'ZZ_nodes_number', 'ZZ_minimum', 'ZZ_spacing',
-                   'radius']
+                   'radius', 'search_radius']
         opt_real = ['skewness', 'percentile', 'nugget', 'sill', 'ranges']
         opt_boolean = ['ascending', 'md_last', 'tolerance', 'distance_units']
         order = ['data', 'no_data', 'data_header', 'name',
@@ -128,8 +130,8 @@ class GsimcliParam(ParametersFile):
                  'correct_method', 'skewness', 'percentile',
                  'detect_save', 'sim_purge', 'results', 'results_file',
                  'dss_par', 'dss_exe', 'number_simulations', 'krig_type',
-                 'model', 'nugget', 'sill', 'ranges', 'angles',
-                 'max_search_nodes',
+                 'search_radius', 'model', 'nugget', 'sill', 'ranges',
+                 'angles', 'max_search_nodes',
                  'XX_nodes_number', 'XX_minimum', 'XX_spacing',
                  'YY_nodes_number', 'YY_minimum', 'YY_spacing',
                  'ZZ_nodes_number', 'ZZ_minimum', 'ZZ_spacing']
@@ -190,8 +192,12 @@ class GsimcliParam(ParametersFile):
             else:
                 grid_specs.append(dss_grid[i])
 
-        radius = [grid_specs[0] * grid_specs[2], grid_specs[3] * grid_specs[5],
-                  grid_specs[6] * grid_specs[8]]
+        if hasattr(self, 'search_radius'):
+            radius = self.search_radius
+        else:
+            radius = [grid_specs[0] * grid_specs[2],
+                      grid_specs[3] * grid_specs[5],
+                      grid_specs[6] * grid_specs[8]]
 
         keywords = ['datapath', 'columns_set', 'nd', 'output', 'srchradius',
                     'xx', 'yy', 'zz']

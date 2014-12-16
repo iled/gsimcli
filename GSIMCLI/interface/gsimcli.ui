@@ -1291,6 +1291,164 @@
            </item>
           </layout>
          </widget>
+         <widget class="QWidget" name="SimulationAdvanced">
+          <layout class="QVBoxLayout" name="verticalLayout_29">
+           <property name="spacing">
+            <number>15</number>
+           </property>
+           <item>
+            <layout class="QVBoxLayout" name="verticalLayout_28">
+             <item>
+              <widget class="QLabel" name="label_63">
+               <property name="font">
+                <font>
+                 <pointsize>14</pointsize>
+                 <weight>50</weight>
+                 <bold>false</bold>
+                </font>
+               </property>
+               <property name="text">
+                <string>Advanced</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="Line" name="line_10">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="groupBox_10">
+             <property name="toolTip">
+              <string/>
+             </property>
+             <property name="title">
+              <string>Search parameters</string>
+             </property>
+             <layout class="QFormLayout" name="formLayout_7">
+              <property name="fieldGrowthPolicy">
+               <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+              </property>
+              <property name="horizontalSpacing">
+               <number>50</number>
+              </property>
+              <item row="0" column="0">
+               <widget class="QLabel" name="SA_labelStrategy">
+                <property name="text">
+                 <string>Search strategy</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="SA_labelMinData">
+                <property name="text">
+                 <string>Minimum number of data</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QSpinBox" name="SA_spinMinData">
+                <property name="minimum">
+                 <number>1</number>
+                </property>
+                <property name="maximum">
+                 <number>64</number>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="SA_labelMaxSamples">
+                <property name="text">
+                 <string>Maximum number of samples</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QSpinBox" name="SA_spinMaxSamples">
+                <property name="minimum">
+                 <number>1</number>
+                </property>
+                <property name="maximum">
+                 <number>64</number>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="SA_labelMaxNodes">
+                <property name="text">
+                 <string>Maximum number of nodes</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QSpinBox" name="SA_spinMaxNodes">
+                <property name="minimum">
+                 <number>1</number>
+                </property>
+                <property name="maximum">
+                 <number>1000</number>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QComboBox" name="SA_comboStrategy">
+                <property name="currentIndex">
+                 <number>1</number>
+                </property>
+                <item>
+                 <property name="text">
+                  <string>Two-part search</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Data nodes</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <widget class="QLabel" name="SA_labelRadius">
+                <property name="text">
+                 <string>Radius</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="0">
+               <widget class="QLabel" name="SA_labelAngles">
+                <property name="text">
+                 <string>Angles</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1">
+               <widget class="QLineEdit" name="SA_lineRadius"/>
+              </item>
+              <item row="5" column="1">
+               <widget class="QLineEdit" name="SA_lineAngles"/>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <spacer name="verticalSpacer_10">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>238</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </widget>
          <widget class="QWidget" name="HomogenisationDetection">
           <layout class="QVBoxLayout" name="verticalLayout_26">
            <property name="spacing">
@@ -2135,9 +2293,6 @@
           <item>
            <property name="text">
             <string>Advanced</string>
-           </property>
-           <property name="flags">
-            <set>ItemIsSelectable|ItemIsDragEnabled|ItemIsUserCheckable</set>
            </property>
           </item>
          </item>

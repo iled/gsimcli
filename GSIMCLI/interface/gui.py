@@ -108,6 +108,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.HR_checkPurgeSims.toggled.connect(self.enable_purge_sims)
 
         # combo boxes
+        self.SA_comboStrategy.currentIndexChanged.connect(
+                                                      self.enable_maxsamples)
         self.HD_comboStationOrder.currentIndexChanged.connect(
                                                   self.change_station_order)
         self.HC_comboCorrectionMethod.currentIndexChanged.connect(
@@ -120,6 +122,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.groupStatusInfo.setVisible(False)
         self.groupTime.setVisible(False)
         self.SV_labelBatchDecades.setVisible(False)
+        self.SA_labelMaxSamples.setVisible(False)
+        self.SA_spinMaxSamples.setVisible(False)
         self.HD_groupUserOrder.setVisible(False)
         self.HD_groupTolerance.setVisible(False)
         self.HC_groupSkewness.setVisible(False)
@@ -538,6 +542,18 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             enable = False
         self.HC_groupPercentile.setVisible(enable)
 
+    def enable_maxsamples(self, index):
+        """Toggle the widgets related to the two-part search strategy.
+        Connected to the search strategy combobox.
+
+        """
+        if self.SA_comboStrategy.currentText() == "Two-part search":
+            enable = True
+        else:
+            enable = False
+        self.SA_labelMaxSamples.setVisible(enable)
+        self.SA_spinMaxSamples.setVisible(enable)
+
     def browse_data_file(self):
         """Open the dialog to select an existing data file. Connected to the
         browse data file pushbutton.
@@ -767,8 +783,14 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             save("angles", self.SV_lineAngles.text())
         self.settings.endGroup()
 
+        # Simulation / Advanced
+        self.settings.beginGroup("Advanced")
+        save("search_radius", self.SA_lineRadius.text())
+        self.settings.endGroup()
+
         self.settings.endGroup()
         self.settings.beginGroup("Homogenisation")
+
         # Homogenisation / Detection
         self.settings.beginGroup("Detection")
         save("station_order", self.HD_comboStationOrder.currentIndex())
@@ -869,6 +891,11 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.SV_spinSill.setValue(load("sill"))
             self.SV_lineRanges.setText(load("ranges"))
             self.SV_lineAngles.setText(load("angles"))
+        self.settings.endGroup()
+
+        # Simulation / Advanced
+        self.settings.beginGroup("Advanced")
+        self.SA_lineRadius.setText(load("search_radius"))
         self.settings.endGroup()
 
         self.settings.endGroup()
@@ -991,6 +1018,11 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.SV_lineAngles.setText(load("angles"))
         qsettings.endGroup()
 
+        # Simulation / Advanced
+        qsettings.beginGroup("Advanced")
+        self.SA_lineRadius.setText(load("search_radius"))
+        qsettings.endGroup()
+
         qsettings.endGroup()
         qsettings.beginGroup("Homogenisation")
         # Homogenisation / Detection
@@ -1078,6 +1110,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.DB_checkBatchDecades.setChecked(True)
             self.DB_lineDecadesPath.setText(self.params.data)
             self.DL_lineDataPath.clear()
+
+        # Simulation / Advanced
+        self.SA_lineRadius.setText(self.params.search_radius)
 
         # Homogenisation / Detection
         st_order = self.params.st_order
@@ -1171,6 +1206,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.params.sill = self.SV_spinSill.value()
             self.params.ranges = self.SV_lineRanges.text()
             self.params.angles = self.SV_lineAngles.text()
+
+        # Simulation / Advanced
+        self.params.search_radius = self.SA_lineRadius.text()
 
         # Homogenisation / Detection
         st_order = self.HD_comboStationOrder.currentText().lower()
