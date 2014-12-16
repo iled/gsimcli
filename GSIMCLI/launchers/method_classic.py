@@ -294,13 +294,18 @@ def run_par(par_path, print_status=False, skip_dss=False, cores=None):
 
     if gscpar.st_order == 'user':
         stations_set = gscpar.st_user
+        ascending = None
+        md_last = None
     else:
         stations_set = None
+        ascending = gscpar.ascending
+        md_last = gscpar.md_last
+
     stations_order = (hmg.station_order
                       (method=gscpar.st_order, nd=gscpar.no_data,
                        pset_file=stations_pset, header=gscpar.data_header,
-                       userset=stations_set, ascending=gscpar.ascending,
-                       md_last=gscpar.md_last))
+                       userset=stations_set, ascending=ascending,
+                       md_last=md_last))
 
     detect_flag = True
     skew = None
