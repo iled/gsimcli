@@ -118,6 +118,7 @@ def filename_indexing(file_id, n):
 
     """
     base, ext = os.path.splitext(file_id)
+    # fname = base + str(n) + ext  # to load older simulations
     fname = base + '_' + str(n) + ext
     return fname
 
