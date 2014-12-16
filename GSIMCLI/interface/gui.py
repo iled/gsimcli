@@ -486,13 +486,15 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         st_order = self.HD_comboStationOrder.currentText()
         order_warning = None
         if st_order == "User":
-            if self.DB_listNetworksPaths.count() > 1:
+            if self.batch_networks and self.DB_listNetworksPaths.count() > 1:
                 enable_user = False
                 disable_checks = False
                 order_warning = ("Not possible to define candidate stations "
                                  "order manually while processing multiple "
                                  "networks.")
-            elif self.DB_listNetworksPaths.count() < 1:
+            elif ((not self.DL_lineDataPath.text() and not self.batch_networks)
+                  or (self.batch_networks and
+                      self.DB_listNetworksPaths.count() < 1)):
                 enable_user = False
                 disable_checks = False
                 order_warning = ("No network data given yet.")
@@ -1490,23 +1492,26 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             secdir = self.wildcard_decade
         else:
             secdir = None
+        varnames = qlist_to_pylist(self.DL_listVarNames)
         if self.batch_networks:
             stations_list, total = hmg.list_networks_stations(
                            networks=qlist_to_pylist(self.DB_listNetworksPaths),
-                           variables=qlist_to_pylist(self.DL_listVarNames),
+                           variables=varnames,
                            secdir=secdir, header=self.header, nvars=5)
         else:
             data_path = self.DL_lineDataPath.text()
+            stations_list = dict()
             if data_path:
                 if self.batch_decades:
                     pset_file = hmg.find_pset_file(directory=data_path,
                                                   header=self.header, nvars=5)
                 else:
                     pset_file = data_path
-                stations_list = hmg.list_stations(pset_file, self.header)
-                total = len(stations_list)
+                stations = hmg.list_stations(pset_file, self.header,
+                                                  variables=varnames)
+                total = len(stations)
+                stations_list[os.path.dirname(data_path)] = stations
             else:
-                stations_list = list()
                 total = 0
 
         return hmg._ntuple_stations(stations_list, total)

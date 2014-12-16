@@ -274,12 +274,12 @@ def fill_station(pset_file, values, time_min, time_max, time_step=1,
     return pset, filled_count
 
 
-def list_stations(pset_file, header=True):
+def list_stations(pset_file, header=True, variables=None):
     """List all the stations in one PointSet file.
 
     A PointSet file can contain stations belonging to different networks. This
-    functions does not distinguish networks, so two stations with the same name
-    but in different networks will be reported as one.
+    functions does not distinguish networks, so two stations with the same ID
+    but in different networks will be reported as being the same.
 
     Parameters
     ----------
@@ -287,6 +287,9 @@ def list_stations(pset_file, header=True):
         Instance of PointSet or string with the full path to the PointSet file.
     header : boolean, default True
         True if `pset_file` has the GSLIB standard header lines.
+    variables : list of string, optional
+        Mandatory variable names for GSIMCLI process (e.g.,
+        ['x', 'y', 'time', 'station', 'clim']).
 
     Returns
     -------
@@ -303,6 +306,9 @@ def list_stations(pset_file, header=True):
     else:
         pset = gr.PointSet()
         pset.load(pset_file, header=header)
+
+    if variables:
+        pset.flush_varnames(variables)
 
     stations = np.unique(pset.values.station)
     stations_list = map(int, stations)
@@ -490,24 +496,6 @@ def station_order(method, pset_file=None, nd=-999.9, header=True,
             order according to the difference between the station average and
             the network average;
         - user: the user specifies which stations and their order.
-    pset_file : PointSet object or string, optional
-        Instance of PointSet or string with the full path to the PointSet file.
-        Required if `method` is not 'user'.
-    nd : number, default -999.9
-        Value representing missing data.
-    header : boolean, default True
-        True if `pset_file` has the GSLIB standard header lines.
-    userset : list, optional
-        List with the stations ID numbers in the desired order.
-    ascending : boolean, default True
-        Sort in ascending or descending order.
-    md_last : boolean, default True
-        Put missing data at the beginning or the end.
-
-    Returns
-    -------
-    stations_list : list
-        Stations ID numbers sorted according to the selected `method`.
     pset_file : PointSet object or string, optional
         Instance of PointSet or string with the full path to the PointSet file.
         Required if `method` is not 'user'.
