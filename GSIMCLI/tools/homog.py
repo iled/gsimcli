@@ -155,16 +155,19 @@ def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
     # calculate the no-data's and replace them with NaN
     nodatas = obs.values['clim'].isin([obs.nodata]).sum()
     obs.values = obs.values.replace(obs.nodata, np.nan)
-    # replace NaN's with the mean values
-    meanvalues = pd.Series(local_stats.values['mean'].values, name='clim',
-                           index=obs.values.index)
-    obs.values.update(meanvalues, overwrite=False)
 
-    # find and fill missing values
+    # mean values
+    meanvalues = pd.Series(local_stats.values['mean'].values, name='clim')
+
+    # find and fill missing values with the mean values
     fn = 0
     if obs.values.shape[0] < grids.dz:
         obs, fn = fill_station(obs, meanvalues, grids.zi, grids.zi + grids.dz,
                                grids.cellz, header)
+
+    # replace NaN's with the mean values
+    meanvalues.index = obs.values.index
+    obs.values.update(meanvalues, overwrite=False)
 
     # detect irregularities
     hom_where = ~obs.values['clim'].between(local_stats.values['lperc'],
