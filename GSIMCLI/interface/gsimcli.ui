@@ -2389,56 +2389,56 @@
               <number>0</number>
              </property>
              <item row="0" column="0">
-              <widget class="QLabel" name="label_3">
+              <widget class="QLabel" name="SI_labelNetwork">
                <property name="text">
                 <string>Network:</string>
                </property>
               </widget>
              </item>
              <item row="0" column="1">
-              <widget class="QLabel" name="labelStatusNetwork">
+              <widget class="QLabel" name="SI_labelStatusNetwork">
                <property name="text">
                 <string/>
                </property>
               </widget>
              </item>
              <item row="1" column="0">
-              <widget class="QLabel" name="label_4">
+              <widget class="QLabel" name="SI_labelDecade">
                <property name="text">
                 <string>Decade:</string>
                </property>
               </widget>
              </item>
              <item row="1" column="1">
-              <widget class="QLabel" name="labelStatusDecade">
+              <widget class="QLabel" name="SI_labelStatusDecade">
                <property name="text">
                 <string/>
                </property>
               </widget>
              </item>
              <item row="2" column="0">
-              <widget class="QLabel" name="label_5">
+              <widget class="QLabel" name="SI_labelStation">
                <property name="text">
                 <string>Station ID:</string>
                </property>
               </widget>
              </item>
              <item row="2" column="1">
-              <widget class="QLabel" name="labelStatusStation">
+              <widget class="QLabel" name="SI_labelStatusStation">
                <property name="text">
                 <string/>
                </property>
               </widget>
              </item>
              <item row="3" column="0">
-              <widget class="QLabel" name="label_6">
+              <widget class="QLabel" name="SI_labelSim">
                <property name="text">
                 <string>Simulation:</string>
                </property>
               </widget>
              </item>
              <item row="3" column="1">
-              <widget class="QLabel" name="labelStatusSim">
+              <widget class="QLabel" name="SI_labelStatusSim">
                <property name="text">
                 <string/>
                </property>
