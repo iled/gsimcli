@@ -167,33 +167,30 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.current_sim = 0
 
         # set the GUI parameters here
-        #    Main Window
-        gp = "MW"
-        size = GuiParam("size", widget=self, group=gp,
-                        get_value=self.size)
-        position = GuiParam("position", widget=self, group=gp,
-                            get_value=self.pos)
-        state = GuiParam("state", widget=self, group=gp,
-                         get_value=self.saveState)
-        defaultdir = GuiParam("default_dir", widget=self, group=gp,
-                              get_value=self.default_dir)
-        printstatus = GuiParam("print_status", widget=self, group=gp,
-                               get_value=self.print_status)
-        recent_settings = GuiParam("recent_settings", widget=self,
-                                   group=gp, otype=list,
-                                   get_value=self.recent_settings)
+#         gp = "main_window"
+#         size = GuiParam("size", widget=self, group=gp,
+#                         get_value="size")
+#         position = GuiParam("position", widget=self, group=gp,
+#                             get_value=self.pos)
+#         state = GuiParam("state", widget=self, group=gp,
+#                          get_value=self.saveState)
+#         defaultdir = GuiParam("default_dir", widget=self, group=gp,
+#                               get_value=self.default_dir)
+#         printstatus = GuiParam("print_status", widget=self, group=gp,
+#                                get_value=self.print_status)
+#         recent_settings = GuiParam("recent_settings", widget=self,
+#                                    group=gp, otype=list,
+#                                    get_value=self.recent_settings)
         #    Data / Load
-        gp = "DL"
+        gp = "data_load"
         no_data = GuiParam("no_data", self.DL_spinNoData, otype=float,
                            group=gp, gsimcli_name="no_data",
-                           get_value=self.DL_spinNoData.value,
-                           set_value=self.DL_spinNoData.setValue)
-        header = GuiParam("header", self, otype=bool, group=gp,
-                          gsimcli_name="header", get_value=self.header)
+                           get_value="value", set_value="setValue")
+#         header = GuiParam("header", self, otype=bool, group=gp,
+#                           gsimcli_name="header", get_value=self.header)
         data_name = GuiParam("data_name", self.DL_lineDataName, otype=str,
                              group=gp, gsimcli_name="data_name",
-                             get_value=self.DL_lineDataName.text,
-                             set_value=self.DL_lineDataName.setText)
+                             get_value="text", set_value="setText")
         varnames = GuiParam("variables", self.DL_listVarNames, otype=list,
                             group=gp, gsimcli_name="variables",
                             get_value=qlist_to_pylist(self.DL_listVarNames))
@@ -255,8 +252,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
                             get_value=self.SO_checkSkipSim.isChecked,
                             set_value=self.SO_checkSkipSim.setChecked)
         #    Simulation / Grid
-        
-        
+
+
         tolerance = GuiParam("tolerance", widget=self.HD_checkTolerance,
                              otype=bool, group="HC", gsimcli_name="tolerance",
                              get_value=self.HD_checkTolerance.isChecked,
@@ -1824,7 +1821,7 @@ class GuiParam(object):
     """Hold the necessary settings to manage each GUI parameter.
 
     """
-    def __init__(self, name, widget, otype, get_value, set_value, group,
+    def __init__(self, name, widget, get_value, set_value, group, otype=None,
                  depends=None, gsimcli_name=None):
         """Constructor to initialise a GUI parameter.
 
@@ -1835,25 +1832,28 @@ class GuiParam(object):
             GUI settings file.
         widget : QObject
             Qt widget instance related to the parameter.
-        otype : type
-            Object type (float, int, bool, etc.).
-        get_value : function
-            Method in the QObject instance that allows to retrieve its value.
-        set_value : function
-            Method in the QObject instance that allows to change its value.
+        get_value : string
+            Method name in the QObject instance that allows to retrieve its
+            value.
+        set_value : string
+            Method name in the QObject instance that allows to change its
+            value.
         group : string
             Settings group that the parameter belongs to.
+        otype : type, optional
+            Object type (float, int, bool, etc.).
         depends : list of function, optional
             Functions to retrieve values from other widgets that the parameter
             depends on.
         gsimcli_name : string, optional
             Name of the parameter in the GsimcliParam class. If given, it will
-            check if it exists in the class definition and it will warn if not.
+            check if it exists in the class definition and it will warn if it
+            does not exist.
 
         """
         self.name = name
         self.widget = widget
-        self.type = type
+        self.otype = otype
         self.get_value = get_value
         self.set_value = set_value
         self.group = group
@@ -1862,7 +1862,7 @@ class GuiParam(object):
 
         if gsimcli_name:
             self.check_gsimcli_params()
-            
+
         self.flush()
 
     def check_dependencies(self):
@@ -1895,20 +1895,55 @@ class GuiParam(object):
                           "in the docstring and in the fields or optional "
                           "lists.".format(self.name))
             return False
-    
+
     def flush(self):
-        try:
-            self.value = self.get_value()
-        except TypeError:
-            self.value = self.get_value
-            
+        if self.otype is list:
+            self.value = qlist_to_pylist(self.widget)
+        else:
+            try:
+                self.value = getattr(self.widget, self.get_value)()
+            except TypeError:
+                self.value = getattr(self.widget, self.get_value)
+
+    def update(self):
+        if isinstance(self.widget, QtGui.QMainWindow):
+            pass
+        if isinstance(self.widget, QtGui.QLineEdit):
+            self.value = self.widget.text()
+        if isinstance(self.widget, QtGui.QSpinBox):
+            self.value = self.widget.value()
+        if isinstance(self.widget, QtGui.QListWidget):
+            self.value = qlist_to_pylist(self.widget)
+        if isinstance(self.widget, QtGui.QComboBox):
+            self.value = self.widget.currentIndex()
+        if (isinstance(self.widget, QtGui.QCheckBox) or
+                isinstance(self.widget, QtGui.QRadioButton)):
+            self.value = self.widget.isChecked()
+
+    def load(self, value):
+        if isinstance(self.widget, QtGui.QMainWindow):
+            pass
+        if isinstance(self.widget, QtGui.QLineEdit):
+            self.widget.setText(value)
+        if isinstance(self.widget, QtGui.QSpinBox):
+            self.widget.setValue()
+        if isinstance(self.widget, QtGui.QListWidget):
+            pylist_to_qlist(value, self.widget)
+        if isinstance(self.widget, QtGui.QComboBox):
+            self.widget.setCurrentIndex()
+        if (isinstance(self.widget, QtGui.QCheckBox) or
+                isinstance(self.widget, QtGui.QRadioButton)):
+            self.widget.setChecked(value)
+
+        self.update()
+
     def save(self):
         """Provide an interface to save the parameter value in QSettings.
-        
+
         """
         self.flush()
         return (self.name, self.value)
-        
+
 
 def qlist_to_pylist(qlist):
     """Convert QListWidget to Python list.
