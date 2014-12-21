@@ -78,6 +78,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.wildcard_decade = 'dec*'
         self.wildcard_variog = '*variog*.csv'
         self.wildcard_grid = '*grid*.csv'
+        self.set_gui_params()
 
         # buttons
         self.buttonBox.button(QtGui.QDialogButtonBox.
@@ -166,37 +167,35 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.total_sims = 0
         self.current_sim = 0
 
-        self.set_gui_params()
-
     def __del__(self):
         # Restore sys.stdout
         sys.stdout = sys.__stdout__
 
     def set_gui_params(self):
-                # set the GUI parameters
+        # set the GUI parameters
         #    Main Window
-#         gp = "main_window"
-#         size = GuiParam("size", widget=self, group=gp,
-#                         get_value="size")
-#         position = GuiParam("position", widget=self, group=gp,
-#                             get_value=self.pos)
-#         state = GuiParam("state", widget=self, group=gp,
-#                          get_value=self.saveState)
-#         defaultdir = GuiParam("default_dir", widget=self, group=gp,
-#                               get_value=self.default_dir)
-#         printstatus = GuiParam("print_status", widget=self, group=gp,
-#                                get_value=self.print_status)
-#         recent_settings = GuiParam("recent_settings", widget=self,
-#                                    group=gp, otype=list,
-#                                    get_value=self.recent_settings)
+        #         gp = "main_window"
+        #         size = GuiParam("size", widget=self, group=gp)
+        #         pos = GuiParam("position", widget=self, group=gp)
+        #         state = GuiParam("state", widget=self, group=gp)
+        #                          get_value=self.saveState)
+        #         defaultdir = GuiParam("default_dir", widget=self, group=gp,
+        #                               get_value=self.default_dir)
+        #         printstatus = GuiParam("print_status", widget=self, group=gp,
+        #                                get_value=self.print_status)
+        #         recent_settings = GuiParam("recent_settings", widget=self,
+        #                                    group=gp, otype=list,
+        #                                    get_value=self.recent_settings)
         #    Data / Load
         gp = "data_load"
+        data_path = GuiParam("data_path", self.DL_lineDataPath, group=gp,
+                             gsimcli_name="data")
         no_data = GuiParam("no_data", self.DL_spinNoData, group=gp,
                            gsimcli_name="no_data")
-#         header = GuiParam("header", self, otype=bool, group=gp,
-#                           gsimcli_name="header", get_value=self.header)
+        header = GuiParam("header", self.DL_checkHeader, group=gp,
+                          gsimcli_name="header")
         data_name = GuiParam("data_name", self.DL_lineDataName, group=gp,
-                             gsimcli_name="data_name")
+                             gsimcli_name="name")
         varnames = GuiParam("variables", self.DL_listVarNames, group=gp,
                             gsimcli_name="variables")
         #    Data / Batch
@@ -289,16 +288,16 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         r_path = GuiParam("results_path", self.HR_lineResultsPath, group=gp)
         r_name = GuiParam("results_name", self.HR_lineResultsName, group=gp)
 
-        self.guiparams = [no_data, data_name, varnames, batch_networks,
-                          network_paths, batch_decades, dec_path, network_id,
-                          var_path, par_path, exe_path, n_sims, krig_type,
-                          max_nodes, cpu_cores, skip_sim, xx_nodes_n,
-                          yy_nodes_n, zz_nodes_n, xx_min, yy_min, zz_min,
-                          xx_spacing, yy_spacing, zz_spacing, varmodel, nugget,
-                          sill, ranges, varangles, station_order, user_order,
-                          ascending, md_last, detect_prob, tolerance, radius,
-                          dist_units, correct, skew, perc, detect_save,
-                          sim_purge, r_path, r_name]
+        self.guiparams = [data_path, no_data, header, data_name, varnames,
+                          batch_networks, network_paths, batch_decades,
+                          dec_path, network_id, var_path, par_path, exe_path,
+                          n_sims, krig_type, max_nodes, cpu_cores, skip_sim,
+                          xx_nodes_n, yy_nodes_n, zz_nodes_n, xx_min, yy_min,
+                          zz_min, xx_spacing, yy_spacing, zz_spacing, varmodel,
+                          nugget, sill, ranges, varangles, station_order,
+                          user_order, ascending, md_last, detect_prob,
+                          tolerance, radius, dist_units, correct, skew, perc,
+                          detect_save, sim_purge, r_path, r_name]
 
     def about(self):
         """The About box. """
@@ -811,18 +810,6 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.preview_data_file(self.find_data_file())
 
     def save_settings(self):
-        group = str()
-        for param in self.guiparams:
-            if param.group != group:
-                if group:
-                    self.settings.endGroup()
-                group = param.group
-                self.settings.beginGroup(group)
-
-            self.settings.setValue(*param.save())
-        self.settings.endGroup()
-
-    def save_settings_old(self):
         """Store all the user options to QSettings.
 
         Auxiliary function as a workaround to save on linux (iniformat).
@@ -846,107 +833,28 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         save("print_status", self.print_status)
         _save_lists("recent_settings", self.recent_settings)
         self.settings.endGroup()
+        # Other groups
+        group = str()
+        for param in self.guiparams:
+            if param.group != group:
+                if group:
+                    self.settings.endGroup()
+                group = param.group
+                self.settings.beginGroup(group)
 
-        self.settings.beginGroup("Data")
-        # Data / Load
-        self.settings.beginGroup("Specifications")
-        if self.batch_decades:
-            save("data_path", self.DB_lineDecadesPath.text())
-        else:
-            save("data_path", self.DL_lineDataPath.text())
-        save("no_data", self.DL_spinNoData.value())
-        save("header", self.header)
-        save("data_name", self.DL_lineDataName.text())
-        varnames = qlist_to_pylist(self.DL_listVarNames)
-        _save_lists("variables", varnames)
-        self.settings.endGroup()
-
-        # Data / Batch
-        self.settings.beginGroup("Batch")
-        save("batch_networks", self.batch_networks)
-        networks = qlist_to_pylist(self.DB_listNetworksPaths)
-        _save_lists("networks_paths", networks)
-        save("batch_decades", self.batch_decades)
-        if self.batch_decades:
-            save("decades_path", self.DB_lineDecadesPath.text())
-            save("network_id", self.DB_lineNetworkID.text())
-            save("variography_path", self.DB_lineVariogPath.text())
-        self.settings.endGroup()
-
-        self.settings.endGroup()
-        self.settings.beginGroup("Simulation")
-        # Simulation / Options
-        self.settings.beginGroup("Options")
-        save("par_path", self.SO_lineParPath.text())
-        save("exe_path", self.SO_lineExePath.text())
-        save("number_simulations", self.SO_spinNumberSims.value())
-        save("krigging_type", self.SO_comboKrigType.currentIndex())
-        save("max_search_nodes", self.SO_spinMaxSearchNodes.value())
-        save("cpu_cores", self.SO_spinCores.value())
-        save("skip_sim", self.skip_sim)
-        self.settings.endGroup()
-
-        # Simulation / Grid
-        self.settings.beginGroup("Grid")
-        if not self.batch_networks:
-            save("XX_nodes_number", self.SG_spinXXNodes.value())
-            save("YY_nodes_number", self.SG_spinYYNodes.value())
-            save("ZZ_nodes_number", self.SG_spinZZNodes.value())
-            save("XX_minimum", self.SG_spinXXOrig.value())
-            save("YY_minimum", self.SG_spinYYOrig.value())
-            save("ZZ_minimum", self.SG_spinZZOrig.value())
-            save("XX_spacing", self.SG_spinXXSize.value())
-            save("YY_spacing", self.SG_spinYYSize.value())
-            save("ZZ_spacing", self.SG_spinZZSize.value())
-        self.settings.endGroup()
-
-        # Simulation / Variogram
-        self.settings.beginGroup("Variogram")
-        if not self.batch_decades:
-            save("model", self.SV_comboVarModel.currentIndex())
-            save("nugget", self.SV_spinNugget.value())
-            save("sill", self.SV_spinSill.value())
-            save("ranges", self.SV_lineRanges.text())
-            save("angles", self.SV_lineAngles.text())
-        self.settings.endGroup()
-
-        self.settings.endGroup()
-        self.settings.beginGroup("Homogenisation")
-        # Homogenisation / Detection
-        self.settings.beginGroup("Detection")
-        save("station_order", self.HD_comboStationOrder.currentIndex())
-        st_order = self.HD_comboStationOrder.currentText().lower()
-        if st_order == "user":
-            user_order = qlist_to_pylist(self.HD_listUserOrder)
-            _save_lists("user_order", user_order)
-        else:
-            save("ascending", self.HD_checkAscending.isChecked())
-            save("md_last", self.HD_checkMDLast.isChecked())
-        save("detect_prob", self.HD_spinProb.value())
-        save("tolerance", self.HD_checkTolerance.isChecked())
-        if self.HD_checkTolerance.isChecked():
-            save("radius", self.HD_spinTolerance.value())
-            save("distance_units", self.HD_radioDistance.isChecked())
-        self.settings.endGroup()
-
-        # Homogenisation / Correction
-        self.settings.beginGroup("Correction")
-        save("correct_method", self.HC_comboCorrectionMethod.currentIndex())
-        save("skewness", self.HC_spinSkewness.value())
-        save("percentile", self.HC_spinPercentile.value())
-        self.settings.endGroup()
-
-        # Homogenisation / Results
-        self.settings.beginGroup("Results")
-        save("detect_save", self.HR_checkSaveInter.isChecked())
-        save("sim_purge", self.HR_checkPurgeSims.isChecked())
-        save("results_path", self.HR_lineResultsPath.text())
-        save("results_name", self.HR_lineResultsName.text())
-        self.settings.endGroup()
-
+            self.settings.setValue(*param.save())
         self.settings.endGroup()
 
     def load_settings(self):
+        """Load and apply all user options from QSettings.
+
+        """
+        load = self.settings.value
+        # Main Window
+        self.settings.beginGroup("main_window")
+        self.actionPrintStatus.setChecked(load("print_status"))
+        self.settings.endGroup()
+        # Other groups
         group = str()
         for param in self.guiparams:
             if param.group != group:
@@ -956,110 +864,6 @@ class GsimcliMainWindow(QtGui.QMainWindow):
                 self.settings.beginGroup(group)
 
             param.load(self.settings.value(param.name))
-
-        self.settings.endGroup()
-        self.apply_settings()
-
-    def load_settings_old(self):
-        """Load and apply all user options from QSettings.
-
-        """
-        load = self.settings.value
-        # Main Window
-        self.settings.beginGroup("main_window")
-        self.actionPrintStatus.setChecked(load("print_status"))
-        self.settings.endGroup()
-
-        self.settings.beginGroup("Data")
-        # Data / Load
-        self.settings.beginGroup("Specifications")
-        self.DB_lineDecadesPath.setText(load("data_path"))
-        self.DL_spinNoData.setValue(load("no_data"))
-        self.DL_checkHeader.setChecked(load("header"))
-        self.DL_lineDataName.setText(load("data_name"))
-        pylist_to_qlist(load("variables"), self.DL_listVarNames)
-        self.settings.endGroup()
-
-        # Data / Batch
-        self.settings.beginGroup("Batch")
-        self.DB_checkBatchNetworks.setChecked(load("batch_networks"))
-        pylist_to_qlist(load("networks_paths"), self.DB_listNetworksPaths)
-        self.DB_checkBatchDecades.setChecked(load("batch_decades"))
-        if self.batch_decades:
-            self.DB_lineDecadesPath.setText(load("decades_path"))
-            self.DB_lineNetworkID.setText(load("network_id"))
-            self.DB_lineVariogPath.setText(load("variography_path"))
-        self.settings.endGroup()
-
-        self.settings.endGroup()
-        self.settings.beginGroup("Simulation")
-        # Simulation / Options
-        self.settings.beginGroup("Options")
-        self.SO_lineParPath.setText(load("par_path"))
-        self.SO_lineExePath.setText(load("exe_path"))
-        self.SO_spinNumberSims.setValue(load("number_simulations"))
-        self.SO_comboKrigType.setCurrentIndex(load("krigging_type"))
-        self.SO_spinMaxSearchNodes.setValue(load("max_search_nodes"))
-        self.SO_spinCores.setValue(load("cpu_cores"))
-        self.SO_checkSkipSim.setChecked(load("skip_sim"))
-        self.settings.endGroup()
-
-        # Simulation / Grid
-        self.settings.beginGroup("Grid")
-        if not self.batch_networks:
-            self.SG_spinXXNodes.setValue(load("XX_nodes_number"))
-            self.SG_spinYYNodes.setValue(load("YY_nodes_number"))
-            self.SG_spinZZNodes.setValue(load("ZZ_nodes_number"))
-            self.SG_spinXXOrig.setValue(load("XX_minimum"))
-            self.SG_spinYYOrig.setValue(load("YY_minimum"))
-            self.SG_spinZZOrig.setValue(load("ZZ_minimum"))
-            self.SG_spinXXSize.setValue(load("XX_spacing"))
-            self.SG_spinYYSize.setValue(load("YY_spacing"))
-            self.SG_spinZZSize.setValue(load("ZZ_spacing"))
-        self.settings.endGroup()
-
-        # Simulation / Variogram
-        self.settings.beginGroup("Variogram")
-        if not self.batch_decades:
-            self.SV_comboVarModel.setCurrentIndex(load("model"))
-            self.SV_spinNugget.setValue(load("nugget"))
-            self.SV_spinSill.setValue(load("sill"))
-            self.SV_lineRanges.setText(load("ranges"))
-            self.SV_lineAngles.setText(load("angles"))
-        self.settings.endGroup()
-
-        self.settings.endGroup()
-        self.settings.beginGroup("Homogenisation")
-        # Homogenisation / Detection
-        self.settings.beginGroup("Detection")
-        self.HD_comboStationOrder.setCurrentIndex(load("station_order"))
-        st_order = self.HD_comboStationOrder.currentText().lower()
-        if st_order == "user":
-            pylist_to_qlist(load("user_order"), self.HD_listUserOrder)
-        else:
-            self.HD_checkAscending.setChecked(load("ascending"))
-            self.HD_checkMDLast.setChecked(load("md_last"))
-        self.HD_spinProb.setValue(load("detect_prob"))
-        self.HD_checkTolerance.setChecked(load("tolerance"))
-        if self.HD_checkTolerance.isChecked():
-            self.HD_spinTolerance.setValue(load("radius"))
-            self.HD_radioDistance.setChecked(load("distance_units"))
-        self.settings.endGroup()
-
-        # Homogenisation / Correction
-        self.settings.beginGroup("Correction")
-        self.HC_comboCorrectionMethod.setCurrentIndex(load("correct_method"))
-        self.HC_spinSkewness.setValue(load("skewness"))
-        self.HC_spinPercentile.setValue(load("percentile"))
-        self.settings.endGroup()
-
-        # Homogenisation / Results
-        self.settings.beginGroup("Results")
-        self.HR_checkSaveInter.setChecked(load("detect_save"))
-        self.HR_checkPurgeSims.setChecked(load("sim_purge"))
-        self.HR_lineResultsPath.setText(load("results_path"))
-        self.HR_lineResultsName.setText(load("results_name"))
-        self.settings.endGroup()
 
         self.settings.endGroup()
         self.apply_settings()
@@ -1379,6 +1183,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         """Reset all the ui settings. Connected to dialogbuttonbox.
 
         """
+        self.settings.clear()
         raise NotImplementedError
 
     def save_gsimcli_params(self):
@@ -1653,6 +1458,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         """
         if current:
             self.preview_data_file(self.find_data_file())
+        self.enable_header(self.header)
 
     def check_decades_dir(self):
         """Check if there is a decades folder in every network.
@@ -1949,7 +1755,7 @@ class GuiParam(object):
             return False
 
     def update(self):
-        if isinstance(self.widget, QtGui.QMainWindow):
+        if isinstance(self.widget, GsimcliMainWindow):
             pass
         if isinstance(self.widget, QtGui.QLineEdit):
             self.value = self.widget.text()
@@ -1966,7 +1772,7 @@ class GuiParam(object):
             self.value = self.widget.isChecked()
 
     def load(self, value):
-        if isinstance(self.widget, QtGui.QMainWindow):
+        if isinstance(self.widget, GsimcliMainWindow):
             pass
         elif isinstance(self.widget, QtGui.QLineEdit):
             self.widget.setText(value)
