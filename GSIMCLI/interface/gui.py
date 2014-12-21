@@ -189,6 +189,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         #    Data / Load
         gp = "data_load"
         data_path = GuiParam("data_path", self.DL_lineDataPath, group=gp,
+                             depends=not self.batch_decades,
                              gsimcli_name="data")
         no_data = GuiParam("no_data", self.DL_spinNoData, group=gp,
                            gsimcli_name="no_data")
@@ -214,79 +215,104 @@ class GsimcliMainWindow(QtGui.QMainWindow):
                             group=gp, depends=batch_decades)
         #    Simulation / Options
         gp = "simulation_options"
-        par_path = GuiParam("par_path", self.SO_lineParPath, group=gp)
-        exe_path = GuiParam("exe_path", self.SO_lineExePath, group=gp)
+        par_path = GuiParam("par_path", self.SO_lineParPath, group=gp,
+                            gsimcli_name="dss_par")
+        exe_path = GuiParam("exe_path", self.SO_lineExePath, group=gp,
+                            gsimcli_name="dss_exe")
         n_sims = GuiParam("number_simulations", self.SO_spinNumberSims,
-                          group=gp)
-        krig_type = GuiParam("krigging_type", self.SO_comboKrigType, group=gp)
+                          group=gp, gsimcli_name="number_simulations")
+        krig_type = GuiParam("krigging_type", self.SO_comboKrigType, group=gp,
+                             gsimcli_name="krig_type")
         max_nodes = GuiParam("max_search_nodes", self.SO_spinMaxSearchNodes,
-                             group=gp)
+                             group=gp, gsimcli_name="max_search_nodes")
         cpu_cores = GuiParam("cpu_cores", self.SO_spinCores, group=gp)
         skip_sim = GuiParam("skip_sim", self.SO_checkSkipSim, group=gp)
         #    Simulation / Grid
         gp = "simulation_grid"
         xx_nodes_n = GuiParam("XX_nodes_number", self.SG_spinXXNodes,
-                              group=gp, depends=batch_networks)
+                              group=gp, depends=not self.batch_networks,
+                              gsimcli_name="XX_nodes_number")
         yy_nodes_n = GuiParam("YY_nodes_number", self.SG_spinYYNodes,
-                              group=gp, depends=batch_networks)
+                              group=gp, depends=not self.batch_networks,
+                              gsimcli_name="YY_nodes_number")
         zz_nodes_n = GuiParam("ZZ_nodes_number", self.SG_spinZZNodes,
-                              group=gp, depends=batch_networks)
+                              group=gp, depends=not self.batch_networks,
+                              gsimcli_name="ZZ_nodes_number")
         xx_min = GuiParam("XX_minimum", self.SG_spinXXOrig, group=gp,
-                          depends=batch_networks)
+                          depends=not self.batch_networks,
+                          gsimcli_name="XX_minimum")
         yy_min = GuiParam("YY_minimum", self.SG_spinYYOrig, group=gp,
-                          depends=batch_networks)
+                          depends=not self.batch_networks,
+                          gsimcli_name="YY_minimum")
         zz_min = GuiParam("ZZ_minimum", self.SG_spinZZOrig, group=gp,
-                          depends=batch_networks)
+                          depends=not self.batch_networks,
+                          gsimcli_name="ZZ_minimum")
         xx_spacing = GuiParam("XX_spacing", self.SG_spinXXSize, group=gp,
-                              depends=batch_networks)
+                              depends=not self.batch_networks,
+                              gsimcli_name="XX_spacing")
         yy_spacing = GuiParam("YY_spacing", self.SG_spinYYSize, group=gp,
-                              depends=batch_networks)
+                              depends=not self.batch_networks,
+                              gsimcli_name="YY_spacing")
         zz_spacing = GuiParam("ZZ_spacing", self.SG_spinZZSize, group=gp,
-                              depends=batch_networks)
+                              depends=not self.batch_networks,
+                              gsimcli_name="ZZ_spacing")
         #    Simulation / Variogram
         gp = "simulation_variogram"
         varmodel = GuiParam("model", self.SV_comboVarModel, group=gp,
-                            depends=not batch_decades.value)
+                            depends=not self.batch_decades,
+                            gsimcli_name="model")
         nugget = GuiParam("nugget", self.SV_spinNugget, group=gp,
-                          depends=not batch_decades.value)
+                          depends=not self.batch_decades,
+                          gsimcli_name="nugget")
         sill = GuiParam("sill", self.SV_spinSill, group=gp,
-                        depends=not batch_decades.value)
+                        depends=not self.batch_decades, gsimcli_name="sill")
         ranges = GuiParam("ranges", self.SV_lineRanges, group=gp,
-                          depends=not batch_decades.value)
+                          depends=not self.batch_decades,
+                          gsimcli_name="ranges")
         varangles = GuiParam("angles", self.SV_lineAngles, group=gp,
-                             depends=not batch_decades.value)
+                             depends=not self.batch_decades,
+                             gsimcli_name="angles")
         #    Homogenisation / Detection
         gp = "homogenisation_detection"
         station_order = GuiParam("station_order", self.HD_comboStationOrder,
-                                 group=gp)
+                                 group=gp, gsimcli_name="st_order")
         user = self.HD_comboStationOrder.currentText().lower() == "user"
         user_order = GuiParam("user_order", self.HD_listUserOrder, group=gp,
-                              depends=user)
+                              depends=user, gsimcli_name="st_user")
         ascending = GuiParam("ascending", self.HD_checkAscending, group=gp,
-                             depends=not user)
+                             depends=not user, gsimcli_name="ascending")
         md_last = GuiParam("md_last", self.HD_checkMDLast, group=gp,
-                           depends=not user)
-        detect_prob = GuiParam("detect_prob", self.HD_spinProb, group=gp)
-        tolerance = GuiParam("tolerance", self.HD_checkTolerance, group=gp)
+                           depends=not user, gsimcli_name="md_last")
+        detect_prob = GuiParam("detect_prob", self.HD_spinProb, group=gp,
+                               gsimcli_name="detect_prob")
+        tolerance = GuiParam("tolerance", self.HD_checkTolerance, group=gp,
+                             gsimcli_name="tolerance")
         radius = GuiParam("radius", self.HD_spinTolerance, group=gp,
-                          depends=tolerance)
+                          depends=tolerance, gsimcli_name="radius")
         dist_units = GuiParam("distance_units", self.HD_radioDistance,
-                              group=gp, depends=tolerance)
+                              group=gp, depends=tolerance,
+                              gsimcli_name="distance_units")
         #    Homogenisation / Correction
         gp = "homogenisation_correction"
         cormethod = self.HC_comboCorrectionMethod.currentText().lower()
         correct = GuiParam("correct_method", self.HC_comboCorrectionMethod,
-                           group=gp)
+                           group=gp, gsimcli_name="correct_method")
         skew = GuiParam("skewness", self.HC_spinSkewness, group=gp,
-                        depends=cormethod == "skewness")
+                        depends=cormethod == "skewness",
+                        gsimcli_name="skewness")
         perc = GuiParam("percentile", self.HC_spinPercentile, group=gp,
-                        depends=cormethod == "percentile")
+                        depends=cormethod == "percentile",
+                        gsimcli_name="percentile")
         #    Homogenisation / Results
         gp = "homogenisation_results"
-        detect_save = GuiParam("detect_save", self.HR_checkSaveInter, group=gp)
-        sim_purge = GuiParam("sim_purge", self.HR_checkPurgeSims, group=gp)
-        r_path = GuiParam("results_path", self.HR_lineResultsPath, group=gp)
-        r_name = GuiParam("results_name", self.HR_lineResultsName, group=gp)
+        detect_save = GuiParam("detect_save", self.HR_checkSaveInter, group=gp,
+                               gsimcli_name="detect_save")
+        sim_purge = GuiParam("sim_purge", self.HR_checkPurgeSims, group=gp,
+                             gsimcli_name="sim_purge")
+        r_path = GuiParam("results_path", self.HR_lineResultsPath, group=gp,
+                          gsimcli_name="results")
+        r_name = GuiParam("results_name", self.HR_lineResultsName, group=gp,
+                          gsimcli_name="results_file")
 
         self.guiparams = [data_path, no_data, header, data_name, varnames,
                           batch_networks, network_paths, batch_decades,
@@ -1090,6 +1116,58 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         """Save GsimcliParams from ui options.
 
         """
+        gspar = self.params
+        for param in self.guiparams:
+            print "name: ", param.name
+            name = param.gsimcli_name
+            if name is not None:
+                print "gsimcli: ", param.gsimcli_name
+                if param.check_dependencies():  # not param.empty() and
+                    # krigging type
+                    if name == "krig_type":
+                        krigtype = self.SO_comboKrigType.currentText()
+                        if krigtype == "Simple":
+                            krigtype = "SK"
+                        elif krigtype == "Ordinary":
+                            krigtype = "OK"
+                        gspar.krig_type = krigtype
+                    # variogram model
+                    elif name == "model":
+                        model = self.SV_comboVarModel.currentText()[0]
+                        gspar.model = model
+                    # station order
+                    elif name == "st_order":
+                        st_order = (self.HD_comboStationOrder.
+                                    currentText().lower())
+                        if st_order == "id order":
+                            st_order = "sorted"
+                        gspar.st_order = st_order
+                    elif name == "correct_method":
+                        gspar.correct_method = (self.HC_comboCorrectionMethod.
+                                                currentText().lower())
+                    # other params
+                    elif name in ["results", "results_file"]:
+                        setattr(gspar, name, param.value.encode('utf-8'))
+                    else:
+                        pname, value = param.save_gsimcli()
+                        print pname, value
+                        setattr(gspar, pname, value)
+                        print "saved"
+
+        self.params.save(par_path)
+        self.actionGSIMCLI.setEnabled(True)
+        self.estimate_necessary_space()
+
+        self.statusBar().showMessage("gsimcli parameters saved at: {}".
+                                     format(self.params.path), 5000)
+        if self.print_status:
+            print "saved at: ", self.params.path
+
+    def save_gsimcli_settings_old(self, par_path=None):
+        """Save GsimcliParams from ui options.
+
+        DEPRECATED
+        """
         # Data / Load
         if self.batch_decades:
             self.params.data = self.DB_lineDecadesPath.text()
@@ -1168,7 +1246,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.actionGSIMCLI.setEnabled(True)
         self.estimate_necessary_space()
 
-        self.statusBar().showMessage("Parameters saved at: {}".
+        self.statusBar().showMessage("gsimcli parameters saved at: {}".
                                      format(self.params.path), 5000)
         if self.print_status:
             print "saved at: ", self.params.path
@@ -1713,7 +1791,10 @@ class GuiParam(object):
         self.name = name
         self.widget = widget
         self.group = group
-        self.depends = depends
+        if isinstance(depends, list) or depends is None:
+            self.depends = depends
+        else:
+            self.depends = [depends]
         self.gsimcli_name = gsimcli_name
 
         if gsimcli_name:
@@ -1723,21 +1804,23 @@ class GuiParam(object):
 
     def check_dependencies(self):
         """A widget may depend on the value of another widget. This method
-        checks if all the parameter dependencies are met.
+        checks if all the parameter dependencies are met. Returns True if all
+        dependencies are satisfied or if it has no dependencies.
 
         Only boolean values are supported for the dependencies.
 
         """
-        for dependency in self.depends:
-            if isinstance(dependency, GuiParam):
-                dep = dependency.value
-            elif callable(dependency):
-                dep = dependency()
-            else:
-                dep = dependency
-            if not dep:
-                return False
-        return bool(self.depends)
+        if self.depends:
+            for dependency in self.depends:
+                if isinstance(dependency, GuiParam):
+                    dep = dependency.value
+                elif callable(dependency):
+                    dep = dependency()
+                else:
+                    dep = dependency
+                if not dep:
+                    return False
+        return True
 
     def check_gsimcli_params(self):
         """Check if the parameter is included in the GsimcliParam class
@@ -1796,6 +1879,23 @@ class GuiParam(object):
         """
         self.update()
         return (self.name, self.value)
+
+    def save_gsimcli(self):
+        """Provide an interface to save the parameter value in the gsimcli
+        parameters file.
+
+        """
+        self.update()
+        return (self.gsimcli_name, self.value)
+
+    def empty(self):
+        """Return True if the widget's value is empty.
+
+        Warning: if the value is 0, it will also return True.
+
+        """
+        self.update()
+        return not self.value
 
 
 def qlist_to_pylist(qlist):
