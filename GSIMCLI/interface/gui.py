@@ -204,14 +204,14 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         batch_networks = GuiParam("batch_networks", self.DB_checkBatchNetworks,
                                   group=gp)
         network_paths = GuiParam("networks_paths", self.DB_listNetworksPaths,
-                                 group=gp)
+                                 group=gp, depends=batch_networks)
         batch_decades = GuiParam("batch_decades", self.DB_checkBatchDecades,
                                  group=gp)
         dec_path = GuiParam("decades_path", self.DB_lineDecadesPath, group=gp,
                             depends=batch_decades)
         network_id = GuiParam("network_id", self.DB_lineNetworkID, group=gp,
                               depends=batch_decades)
-        var_path = GuiParam("variography_path, ", self.DB_lineVariogPath,
+        var_path = GuiParam("variography_path", self.DB_lineVariogPath,
                             group=gp, depends=batch_decades)
         #    Simulation / Options
         gp = "simulation_options"
@@ -878,7 +878,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         load = self.settings.value
         # Main Window
         self.settings.beginGroup("main_window")
-        self.actionPrintStatus.setChecked(load("print_status"))
+        self.actionPrintStatus.setChecked(bool(load("print_status")))
         self.settings.endGroup()
         # Other groups
         group = str()
@@ -920,9 +920,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.actionPrintStatus.setChecked(to_bool(load("print_status")))
         qsettings.endGroup()
 
-        qsettings.beginGroup("Data")
+        #qsettings.beginGroup("Data")
         # Data / Load
-        qsettings.beginGroup("Specifications")
+        qsettings.beginGroup("data_load")
         self.DB_lineDecadesPath.setText(load("data_path"))
         self.DL_spinNoData.setValue(float(load("no_data")))
         self.DL_checkHeader.setChecked(to_bool(load("header")))
@@ -1118,10 +1118,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         """
         gspar = self.params
         for param in self.guiparams:
-            print "name: ", param.name
             name = param.gsimcli_name
             if name is not None:
-                print "gsimcli: ", param.gsimcli_name
                 if param.check_dependencies():  # not param.empty() and
                     # krigging type
                     if name == "krig_type":
@@ -1150,9 +1148,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
                         setattr(gspar, name, param.value.encode('utf-8'))
                     else:
                         pname, value = param.save_gsimcli()
-                        print pname, value
                         setattr(gspar, pname, value)
-                        print "saved"
 
         self.params.save(par_path)
         self.actionGSIMCLI.setEnabled(True)
@@ -1303,6 +1299,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
                                         QtCore.QSettings.NativeFormat)
             # FIXME: code smell, allKeys may not work well on all platforms
             for key in self.settings.allKeys():
+                value = self.settings.value(key)
+                print key, value
                 exported.setValue(key, self.settings.value(key))
             exported.sync()
             self.add_recent_settings(filepath)
@@ -1346,7 +1344,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         """
         self.loaded_settings = filepath
         loaded = QtCore.QSettings(filepath, QtCore.QSettings.NativeFormat)
-        if self.linux:
+        if self.linux and False:
             self.load_settings_iniformat(loaded)
         else:
             # FIXME: code smell, allKeys may not work well on all platforms
@@ -1858,18 +1856,18 @@ class GuiParam(object):
         if isinstance(self.widget, GsimcliMainWindow):
             pass
         elif isinstance(self.widget, QtGui.QLineEdit):
-            self.widget.setText(value)
+            self.widget.setText(str(value))
         elif isinstance(self.widget, QtGui.QSpinBox):
-            self.widget.setValue(value)
+            self.widget.setValue(int(value))
         elif isinstance(self.widget, QtGui.QDoubleSpinBox):
-            self.widget.setValue(value)
+            self.widget.setValue(float(value))
         elif isinstance(self.widget, QtGui.QListWidget):
             pylist_to_qlist(value, self.widget)
         elif isinstance(self.widget, QtGui.QComboBox):
-            self.widget.setCurrentIndex(value)
+            self.widget.setCurrentIndex(int(value))
         elif (isinstance(self.widget, QtGui.QCheckBox) or
                 isinstance(self.widget, QtGui.QRadioButton)):
-            self.widget.setChecked(value)
+            self.widget.setChecked(bool(value))
 
         self.update()
 
