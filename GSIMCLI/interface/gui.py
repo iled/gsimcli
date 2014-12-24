@@ -111,6 +111,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.HR_checkPurgeSims.toggled.connect(self.enable_purge_sims)
 
         # combo boxes
+        self.SA_comboStrategy.currentIndexChanged.connect(
+                                                      self.enable_maxsamples)
         self.HD_comboStationOrder.currentIndexChanged.connect(
                                                   self.change_station_order)
         self.HC_comboCorrectionMethod.currentIndexChanged.connect(
@@ -123,6 +125,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.groupStatusInfo.setVisible(False)
         self.groupTime.setVisible(False)
         self.SV_labelBatchDecades.setVisible(False)
+        self.SA_labelMaxSamples.setVisible(False)
+        self.SA_spinMaxSamples.setVisible(False)
         self.HD_groupUserOrder.setVisible(False)
         self.HD_groupTolerance.setVisible(False)
         self.HC_groupSkewness.setVisible(False)
@@ -152,6 +156,16 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.actionOnlineDocs.triggered.connect(self.online_docs)
         self.actionAbout.triggered.connect(self.about)
 
+        # hidden widgets by default
+        self.set_hidden([self.groupProgress, self.groupStatusInfo,
+                         self.groupTime,
+                         self.SI_labelNetwork, self.SI_labelStatusNetwork,
+                         self.SI_labelDecade, self.SI_labelStatusDecade,
+                         self.SV_labelBatchDecades,
+                         self.SA_labelMaxSamples, self.SA_spinMaxSamples,
+                         self.HD_groupUserOrder, self.HD_groupTolerance,
+                         self.HC_groupSkewness, self.HC_groupPercentile])
+
         # spin
         self.set_cpu_cores()
 
@@ -162,10 +176,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         sys.stdout = EmittingStream()
         sys.stdout.text_written.connect(self.output_status)
 
-        # keep track of current status: network, decade, candidate, simulation
-        self.count_status = [0, 0, 0, 0]
-        self.total_sims = 0
-        self.current_sim = 0
+        # initialise status counters
+        self.set_counters()
 
     def __del__(self):
         # Restore sys.stdout
@@ -350,18 +362,18 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 
         """
         if "STATUS: network" in text:
-            info_object = self.labelStatusNetwork
+            info_object = self.SI_labelStatusNetwork
             self.count_status[0] += 1
         elif "STATUS: decade" in text:
-            info_object = self.labelStatusDecade
+            info_object = self.SI_labelStatusDecade
             self.count_status[1] += 1
         elif "STATUS: candidate" in text:
-            info_object = self.labelStatusStation
+            info_object = self.SI_labelStatusStation
             self.count_status[2] += 1
             self.current_sim = (self.SO_spinNumberSims.value() *
                                 self.count_status[2])
         elif "STATUS: realization" in text:
-            info_object = self.labelStatusSim
+            info_object = self.SI_labelStatusSim
             self.count_status[3] += 1
             self.current_sim += 1
 
@@ -470,6 +482,22 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.SO_spinCores.setValue(cpu_count())
         self.SO_spinCores.setMaximum(cpu_count())
 
+    def set_hidden(self, widgets):
+        """Hide a list of widgets.
+
+        """
+        for widget in widgets:
+            widget.setVisible(False)
+
+    def set_counters(self):
+        """Initialise or reset the counters that keep track current status:
+        network, decade, candidate, simulation.
+
+        """
+        self.count_status = [0, 0, 0, 0]
+        self.total_sims = 0
+        self.current_sim = 0
+
     def enable_header(self, toggle):
         """Act when the header checkbox is toggled. Try to set the data name.
 
@@ -506,8 +534,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 
     def enable_batch_networks(self, toggle):
         """Toggle all the batch network related widgets, including the menu
-        option for Simulation\Grid. Connected to the batch
-        networks checkbox.
+        option for Simulation\Grid.
+        Connected to the batch networks checkbox.
 
         Update the estimated necessary space.
 
@@ -540,6 +568,10 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 
         # calc space
         self.estimate_necessary_space()
+
+        # toggle status info
+        self.SI_labelNetwork.setVisible(toggle)
+        self.SI_labelStatusNetwork.setVisible(toggle)
 
     def enable_batch_decades(self, toggle):
         """Toggle all the batch decades related widgets, including the menu
@@ -588,6 +620,10 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.preview_data_file(self.find_data_file())
         # calc space
         self.estimate_necessary_space()
+
+        # toggle status info
+        self.SI_labelDecade.setVisible(toggle)
+        self.SI_labelStatusDecade.setVisible(toggle)
 
     def enable_skip_sim(self, toggle):
         """Toggle widgets related to the skip_sim checkbox: save
@@ -705,6 +741,18 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         else:
             enable = False
         self.HC_groupPercentile.setVisible(enable)
+
+    def enable_maxsamples(self, index):
+        """Toggle the widgets related to the two-part search strategy.
+        Connected to the search strategy combobox.
+
+        """
+        if self.SA_comboStrategy.currentText() == "Two-part search":
+            enable = True
+        else:
+            enable = False
+        self.SA_labelMaxSamples.setVisible(enable)
+        self.SA_spinMaxSamples.setVisible(enable)
 
     def browse_data_file(self):
         """Open the dialog to select an existing data file. Connected to the
@@ -963,6 +1011,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.DB_lineDecadesPath.setText(self.params.data)
             self.DL_lineDataPath.clear()
 
+        # Simulation / Advanced
+        self.SA_lineRadius.setText(self.params.search_radius)
+
         # Homogenisation / Detection
         st_order = self.params.st_order
         if st_order == "sorted":
@@ -1190,7 +1241,10 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 
         """
         # initialise the number of decades
-        decades = 10
+        if self.batch_decades:
+            decades = 10
+        else:
+            decades = 1
         # save total number of simulations
         self.total_sims = 0
         # TODO: estimate for other files
@@ -1457,6 +1511,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.groupStatusInfo.setVisible(False)
         self.groupProgress.setVisible(False)
         self.actionGSIMCLI.setEnabled(True)
+        self.set_counters()
         self.finish_time = time.time()
 
     def abort_gsimcli(self):
