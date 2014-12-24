@@ -723,7 +723,7 @@
              <item>
               <widget class="QLabel" name="SO_labelMaxSearchNodes">
                <property name="text">
-                <string>Maximum number of nodes to be found</string>
+                <string>Maximum number of nodes to search for</string>
                </property>
               </widget>
              </item>
@@ -1308,7 +1308,7 @@
                 </font>
                </property>
                <property name="text">
-                <string>Advanced</string>
+                <string>Advanced settings</string>
                </property>
               </widget>
              </item>
@@ -1375,10 +1375,16 @@
                 <property name="maximum">
                  <number>64</number>
                 </property>
+                <property name="value">
+                 <number>16</number>
+                </property>
                </widget>
               </item>
               <item row="3" column="0">
                <widget class="QLabel" name="SA_labelMaxNodes">
+                <property name="toolTip">
+                 <string>This is the same parameter that is in the Simulation options pane.</string>
+                </property>
                 <property name="text">
                  <string>Maximum number of nodes</string>
                 </property>
@@ -1386,27 +1392,33 @@
               </item>
               <item row="3" column="1">
                <widget class="QSpinBox" name="SA_spinMaxNodes">
+                <property name="toolTip">
+                 <string>This is the same parameter that is in the Simulation options pane.</string>
+                </property>
                 <property name="minimum">
                  <number>1</number>
                 </property>
                 <property name="maximum">
                  <number>1000</number>
                 </property>
+                <property name="value">
+                 <number>16</number>
+                </property>
                </widget>
               </item>
               <item row="0" column="1">
                <widget class="QComboBox" name="SA_comboStrategy">
                 <property name="currentIndex">
-                 <number>1</number>
+                 <number>0</number>
                 </property>
                 <item>
                  <property name="text">
-                  <string>Two-part search</string>
+                  <string>Data nodes</string>
                  </property>
                 </item>
                 <item>
                  <property name="text">
-                  <string>Data nodes</string>
+                  <string>Two-part search</string>
                  </property>
                 </item>
                </widget>
@@ -1426,10 +1438,18 @@
                </widget>
               </item>
               <item row="4" column="1">
-               <widget class="QLineEdit" name="SA_lineRadius"/>
+               <widget class="QLineEdit" name="SA_lineRadius">
+                <property name="placeholderText">
+                 <string>Defaults to variogram range</string>
+                </property>
+               </widget>
               </item>
               <item row="5" column="1">
-               <widget class="QLineEdit" name="SA_lineAngles"/>
+               <widget class="QLineEdit" name="SA_lineAngles">
+                <property name="placeholderText">
+                 <string>Defaults to variogram angles</string>
+                </property>
+               </widget>
               </item>
              </layout>
             </widget>

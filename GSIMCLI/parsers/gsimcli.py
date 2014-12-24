@@ -82,8 +82,6 @@ class GsimcliParam(ParametersFile):
         dss_exe: path to the DSS executable
         number_simulations: number of simulations
         krig_type: krigging type (OK, SK)
-        search_radius: search ellipsoid radius (dir. 1, dir. 2, dir. 3), in the
-                       data scale
 
         --- DSS: variogram ---
         model: model type (S = spherical, E = exponential, G = gaussian)
@@ -92,8 +90,16 @@ class GsimcliParam(ParametersFile):
         ranges: ranges (dir. 1, dir. 2, dir. 3), in the data scale
         angles: direction angles
 
+        --- DSS: search parameters ---
+        search_strategy: search strategy (0 = two-part search, 1 = data nodes)
+        min_data: minimum number of data (samples and nodes) to search for
+        max_search_samples: maximum number of samples to search for
+        max_search_nodes: maximum number of nodes to search for
+        search_radius: search ellipsoid radius (dir. 1, dir. 2, dir. 3), in the
+                       data scale
+        search_angles: search anisotropy angles
+        
         --- DSS: grid ---
-        max_search_nodes: maximum number of nodes to be found
         XX_nodes_number: number of nodes in x-axis
         XX_minimum: minimum coordinate in x-axis
         XX_spacing: distance between nodes (or node size) in x-axis
@@ -117,11 +123,12 @@ class GsimcliParam(ParametersFile):
         boolean = ['data_header', 'detect_save', 'sim_purge']
         opt_text = ['dss_par', 'name', 'variables', 'krig_type', 'model',
                     'results_file']
-        opt_int = ['st_user', 'number_simulations', 'max_search_nodes',
-                   'angles', 'XX_nodes_number', 'XX_minimum', 'XX_spacing',
+        opt_int = ['st_user', 'number_simulations', 'search_strategy',
+                   'min_data', 'max_samples', 'max_search_nodes', 'angles',
+                   'XX_nodes_number', 'XX_minimum', 'XX_spacing',
                    'YY_nodes_number', 'YY_minimum', 'YY_spacing',
                    'ZZ_nodes_number', 'ZZ_minimum', 'ZZ_spacing',
-                   'radius', 'search_radius']
+                   'radius', 'search_radius', 'search_angles']
         opt_real = ['skewness', 'percentile', 'nugget', 'sill', 'ranges']
         opt_boolean = ['ascending', 'md_last', 'tolerance', 'distance_units']
         order = ['data', 'no_data', 'data_header', 'name',
@@ -130,8 +137,9 @@ class GsimcliParam(ParametersFile):
                  'correct_method', 'skewness', 'percentile',
                  'detect_save', 'sim_purge', 'results', 'results_file',
                  'dss_par', 'dss_exe', 'number_simulations', 'krig_type',
-                 'search_radius', 'model', 'nugget', 'sill', 'ranges',
-                 'angles', 'max_search_nodes',
+                 'search_strategy', 'search_radius', 'search_angles',
+                 'min_data', 'max_search_samples', 'max_search_nodes', 'model',
+                 'nugget', 'sill', 'ranges', 'angles',
                  'XX_nodes_number', 'XX_minimum', 'XX_spacing',
                  'YY_nodes_number', 'YY_minimum', 'YY_spacing',
                  'ZZ_nodes_number', 'ZZ_minimum', 'ZZ_spacing']

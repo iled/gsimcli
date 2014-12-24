@@ -120,18 +120,6 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.HC_comboCorrectionMethod.currentIndexChanged.connect(
                                                      self.enable_percentile)
 
-        # hidden
-        self.groupProgress.setVisible(False)
-        self.groupStatusInfo.setVisible(False)
-        self.groupTime.setVisible(False)
-        self.SV_labelBatchDecades.setVisible(False)
-        self.SA_labelMaxSamples.setVisible(False)
-        self.SA_spinMaxSamples.setVisible(False)
-        self.HD_groupUserOrder.setVisible(False)
-        self.HD_groupTolerance.setVisible(False)
-        self.HC_groupSkewness.setVisible(False)
-        self.HC_groupPercentile.setVisible(False)
-
         # line edits
         self.DL_lineDataPath.textChanged.connect(self.preview_data_file)
         self.DB_lineDecadesPath.textChanged.connect(self.changed_decades_path)
@@ -156,6 +144,11 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.actionOnlineDocs.triggered.connect(self.online_docs)
         self.actionAbout.triggered.connect(self.about)
 
+        # spin
+        self.set_cpu_cores()
+        self.SO_spinMaxSearchNodes.valueChanged.connect(self.set_max_nodes)
+        self.SA_spinMaxNodes.valueChanged.connect(self.set_max_nodes)
+
         # hidden widgets by default
         self.set_hidden([self.groupProgress, self.groupStatusInfo,
                          self.groupTime,
@@ -165,9 +158,6 @@ class GsimcliMainWindow(QtGui.QMainWindow):
                          self.SA_labelMaxSamples, self.SA_spinMaxSamples,
                          self.HD_groupUserOrder, self.HD_groupTolerance,
                          self.HC_groupSkewness, self.HC_groupPercentile])
-
-        # spin
-        self.set_cpu_cores()
 
         # default
         self.default_varnames()
@@ -180,11 +170,23 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.set_counters()
 
     def __del__(self):
-        # Restore sys.stdout
+        """ Restore sys.stdout. """
         sys.stdout = sys.__stdout__
 
     def set_gui_params(self):
+        """Set the GUI parameters.
+
+        To add new parameters, follow the model:
+
+        >>> new_par = GuiParam("par name", self.Qt_widget, group, dependencies,
+                           "name in the gsimcli par file")
+        >>> add(new_par)
+
+        """
+        pd.DataFrame.appl
         # set the GUI parameters
+        self.guiparams = list()
+        add = self.guiparams.extend
         #    Main Window
         #         gp = "main_window"
         #         size = GuiParam("size", widget=self, group=gp)
@@ -211,6 +213,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
                              gsimcli_name="name")
         varnames = GuiParam("variables", self.DL_listVarNames, group=gp,
                             gsimcli_name="variables")
+        add([data_path, no_data, header, data_name, varnames])
         #    Data / Batch
         gp = "data_batch"
         batch_networks = GuiParam("batch_networks", self.DB_checkBatchNetworks,
@@ -228,6 +231,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         var_path = GuiParam("variography_path", self.DB_lineVariogPath,
                             group=gp, depends=[batch_decades, lambda: not
                                                self.batch_networks])
+        add([batch_networks, network_paths, batch_decades, dec_path,
+             network_id, var_path])
         #    Simulation / Options
         gp = "simulation_options"
         par_path = GuiParam("par_path", self.SO_lineParPath, group=gp,
@@ -242,6 +247,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
                              group=gp, gsimcli_name="max_search_nodes")
         cpu_cores = GuiParam("cpu_cores", self.SO_spinCores, group=gp)
         skip_sim = GuiParam("skip_sim", self.SO_checkSkipSim, group=gp)
+        add([par_path, exe_path, n_sims, krig_type, max_nodes, cpu_cores,
+             skip_sim])
         #    Simulation / Grid
         gp = "simulation_grid"
         xx_nodes_n = GuiParam("XX_nodes_number", self.SG_spinXXNodes,
@@ -271,6 +278,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         zz_spacing = GuiParam("ZZ_spacing", self.SG_spinZZSize, group=gp,
                               depends=lambda: not self.batch_networks,
                               gsimcli_name="ZZ_spacing")
+        add([xx_nodes_n, yy_nodes_n, zz_nodes_n, xx_min, yy_min, zz_min,
+             xx_spacing, yy_spacing, zz_spacing])
         #    Simulation / Variogram
         gp = "simulation_variogram"
         varmodel = GuiParam("model", self.SV_comboVarModel, group=gp,
@@ -288,6 +297,22 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         varangles = GuiParam("angles", self.SV_lineAngles, group=gp,
                              depends=lambda: not self.batch_decades,
                              gsimcli_name="angles")
+        add([varmodel, nugget, sill, ranges, varangles])
+        #    Simulation / Advanced
+        gp = "simulation_advanced"
+        strategy = GuiParam("search_strategy", self.SA_comboStrategy, group=gp,
+                            gsimcli_name="search_strategy")
+        min_data = GuiParam("min_data", self.SA_spinMinData, group=gp,
+                            gsimcli_name="min_data")
+        max_samples = GuiParam("max_search_samples", self.SA_spinMaxSamples,
+                               group=gp, gsimcli_name="max_search_samples",
+                               depends=lambda: strategy.widget.
+                               currentText().lower() == "two-part search")
+        search_radius = GuiParam("search_radius", self.SA_lineRadius, group=gp,
+                                 gsimcli_name="search_radius")
+        search_angles = GuiParam("search_angles", self.SA_lineAngles, group=gp,
+                                 gsimcli_name="search_angles")
+        add([strategy, min_data, max_samples, search_radius, search_angles])
         #    Homogenisation / Detection
         gp = "homogenisation_detection"
         station_order = GuiParam("station_order", self.HD_comboStationOrder,
@@ -313,6 +338,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         dist_units = GuiParam("distance_units", self.HD_radioDistance,
                               group=gp, depends=tolerance,
                               gsimcli_name="distance_units")
+        add([station_order, user_order, ascending, md_last, detect_prob,
+             tolerance, radius, dist_units])
         #    Homogenisation / Correction
         gp = "homogenisation_correction"
         correct = GuiParam("correct_method", self.HC_comboCorrectionMethod,
@@ -325,6 +352,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
                         depends=lambda: correct.widget.
                         currentText().lower() == "percentile",
                         gsimcli_name="percentile")
+        add([correct, skew, perc])
         #    Homogenisation / Results
         gp = "homogenisation_results"
         detect_save = GuiParam("detect_save", self.HR_checkSaveInter, group=gp,
@@ -335,17 +363,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
                           gsimcli_name="results")
         r_name = GuiParam("results_name", self.HR_lineResultsName, group=gp,
                           gsimcli_name="results_file")
-
-        self.guiparams = [data_path, no_data, header, data_name, varnames,
-                          batch_networks, network_paths, batch_decades,
-                          dec_path, network_id, var_path, par_path, exe_path,
-                          n_sims, krig_type, max_nodes, cpu_cores, skip_sim,
-                          xx_nodes_n, yy_nodes_n, zz_nodes_n, xx_min, yy_min,
-                          zz_min, xx_spacing, yy_spacing, zz_spacing, varmodel,
-                          nugget, sill, ranges, varangles, station_order,
-                          user_order, ascending, md_last, detect_prob,
-                          tolerance, radius, dist_units, correct, skew, perc,
-                          detect_save, sim_purge, r_path, r_name]
+        add([detect_save, sim_purge, r_path, r_name])
 
     def about(self):
         """The About box. """
@@ -416,6 +434,15 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.stackedWidget.setCurrentWidget(self.HomogenisationCorrection)
         elif tree_item == "Results":
             self.stackedWidget.setCurrentWidget(self.HomogenisationResults)
+
+    def set_max_nodes(self, i):
+        """Sync both spin boxes that handle the maximum number of nodes to be
+        found.
+        Connected to SO_spinMaxSearchNodes and SA_spinMaxNodes.
+
+        """
+        self.SO_spinMaxSearchNodes.setValue(i)
+        self.SA_spinMaxNodes.setValue(i)
 
     def set_recent_settings(self):
         """Create the recent settings files menu. Filter non
@@ -898,8 +925,6 @@ class GsimcliMainWindow(QtGui.QMainWindow):
     def save_settings(self, settings=None):
         """Store all the user options to QSettings.
 
-        Auxiliary function as a workaround to save on linux (iniformat).
-
         """
         if settings:
             save = settings.setValue
@@ -963,6 +988,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
     def load_gsimcli_settings(self):
         """Load and apply all user options from already loaded GsimcliParams.
 
+        DEPRECATED
         """
         # Data / Load
         self.DL_lineDataPath.setText(self.params.data)
