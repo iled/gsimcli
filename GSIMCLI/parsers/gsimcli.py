@@ -118,10 +118,10 @@ class GsimcliParam(ParametersFile):
               - consider every dss parameters as optional?
         """
         par_set = 'GSIMCLI'
-        text = ['data', 'st_order', 'correct_method', 'results', 'dss_exe']
+        text = ['st_order', 'correct_method', 'results', 'dss_exe']
         real_n = ['detect_prob', 'no_data']
         boolean = ['data_header', 'detect_save', 'sim_purge']
-        opt_text = ['dss_par', 'name', 'variables', 'krig_type', 'model',
+        opt_text = ['data', 'dss_par', 'name', 'variables', 'krig_type', 'model',
                     'results_file']
         opt_int = ['st_user', 'number_simulations', 'search_strategy',
                    'min_data', 'max_samples', 'max_search_nodes', 'angles',

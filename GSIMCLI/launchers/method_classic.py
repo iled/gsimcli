@@ -245,7 +245,7 @@ def gsimcli(stations_file, stations_header, no_data, stations_order,
     return homogenised_file, dnumber_list, fnumber_list
 
 
-def run_par(par_path, print_status=False, skip_dss=False, cores=None):
+def run_par(par_path, print_status=False, **kwargs):
     """Run GSIMCLI using the settings included in a parameters file.
 
     Parameters
@@ -254,12 +254,6 @@ def run_par(par_path, print_status=False, skip_dss=False, cores=None):
         File path or GsimcliParam instance with GSIMCLI parameters.
     print_status : boolean, default False
         Print some messages with the procedure status while it is running.
-    skip_dss : boolean, default False
-        Do not run DSS. Choose if the simulated maps are already in place and
-        only the homogenisation process is needed.
-    cores : int, optional
-        Maximum number of cores to be used. If None, it will use all available
-        cores.
 
     Returns
     -------
@@ -327,8 +321,7 @@ def run_par(par_path, print_status=False, skip_dss=False, cores=None):
                       stations_order, gscpar.correct_method,
                       gscpar.detect_prob, detect_flag, gscpar.detect_save,
                       gscpar.dss_exe, dsspar, gscpar.results, gscpar.sim_purge,
-                      radius, skew, perc, cores=cores,
-                      print_status=print_status, skip_dss=skip_dss)
+                      radius, skew, perc, print_status=print_status, **kwargs)
 
     # FIXME: workaround for merge dependence
     results = list(results)
@@ -338,7 +331,7 @@ def run_par(par_path, print_status=False, skip_dss=False, cores=None):
 
 
 def batch_decade(par_path, variograms_file, print_status=False,
-                 skip_dss=False, network_id=None, cores=None):
+                 network_id=None, **kwargs):
     """Batch process to run GSIMCLI with data files divided in decades.
 
     Parameters
@@ -349,15 +342,9 @@ def batch_decade(par_path, variograms_file, print_status=False,
         Variograms file path.
     print_status : boolean, default False
         Print some messages with the procedure status while it is running.
-    skip_dss : boolean, default False
-        Do not run DSS. Choose if the simulated maps are already in place and
-        only the homogenisation process is needed.
     network_id : string, optional
         Network ID. If not given, will try to deduce from 'data' field, which
         should be passed in par_path.
-    cores : int, optional
-        Maximum number of cores to be used. If None, it will use all available
-        cores.
 
     See Also
     --------
@@ -382,7 +369,7 @@ def batch_decade(par_path, variograms_file, print_status=False,
             - other columns will be ignored
 
     The directory containing the decadal data files, which should be passed in
-    the field 'data' of par_path, must have data files containing, at least,
+    the field 'data' of `par_path`, must have data files containing, at least,
     the first year of each decade in their file names.
 
     The variogram is assumed to be isotropic in the horizontal direction and
@@ -412,7 +399,7 @@ def batch_decade(par_path, variograms_file, print_status=False,
         first_year = decade[1].ix['decade'].split('-')[0].strip()
         # try to use the directory containing the decadal data, otherwise try
         # to find it in the same directory as the variograms file
-        if os.path.exists(gscpar.data):
+        if hasattr(gscpar, "data") and os.path.exists(gscpar.data):
             if os.path.isfile(gscpar.data):
                 data_folder = os.path.dirname(gscpar.data)
             else:
@@ -450,7 +437,7 @@ def batch_decade(par_path, variograms_file, print_status=False,
 #         gscpar.update(fields, values, True, ut.filename_indexing
 #                       (new_par, decade[1].ix['decade']))
         gscpar.update(fields, values)
-        results.append(run_par(gscpar, print_status, skip_dss, cores))
+        results.append(run_par(gscpar, print_status, **kwargs))
 
     # workaround for batch_network not working without batch_decade, thus not
     # updating the data path
@@ -466,7 +453,7 @@ def batch_decade(par_path, variograms_file, print_status=False,
 
 
 def batch_networks(par_path, networks, decades=False, print_status=False,
-                   skip_dss=False, cores=None):
+                   **kwargs):
     """Batch process to run GSIMCLI along different networks.
 
     WARNING: it is only working for decades=True
@@ -485,12 +472,6 @@ def batch_networks(par_path, networks, decades=False, print_status=False,
         *\*variog\*.csv*.
     print_status : boolean, default False
         Print some messages with the procedure status while it is running.
-    skip_dss : boolean, default False
-        Do not run DSS. Choose if the simulated maps are already in place and
-        only the homogenisation process is needed.
-    cores : int, optional
-        Maximum number of cores to be used. If None, it will use all available
-        cores.
 
     See Also
     --------
@@ -529,8 +510,8 @@ def batch_networks(par_path, networks, decades=False, print_status=False,
         results_this_network = ut.filename_indexing(results_file, network_id)
         grid = hmg.read_specfile(specfile)
         fields = ['XX_nodes_number', 'XX_minimum', 'XX_spacing',
-                 'YY_nodes_number', 'YY_minimum', 'YY_spacing',
-                 'ZZ_nodes_number', 'ZZ_spacing', 'results', 'results_file']
+                  'YY_nodes_number', 'YY_minimum', 'YY_spacing',
+                  'ZZ_nodes_number', 'ZZ_spacing', 'results', 'results_file']
         values = [grid.xnodes, grid.xmin, grid.xsize,
                   grid.ynodes, grid.ymin, grid.ysize,
                   str(10), str(1), network_results, results_this_network]
@@ -541,10 +522,10 @@ def batch_networks(par_path, networks, decades=False, print_status=False,
         if decades:
             variogram_file = os.path.join(network,
                                           glob.glob('*variog*.csv')[0])
-            batch_decade(gscpar, variogram_file, print_status, skip_dss,
-                         cores=cores)
+            batch_decade(gscpar, variogram_file, print_status, network_id,
+                         **kwargs)
         else:
-            run_par(par_path, print_status, skip_dss, cores)
+            run_par(par_path, print_status, **kwargs)
 
 
 if __name__ == '__main__':

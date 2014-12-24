@@ -183,7 +183,6 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         >>> add(new_par)
 
         """
-        pd.DataFrame.appl
         # set the GUI parameters
         self.guiparams = list()
         add = self.guiparams.extend
@@ -208,7 +207,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         no_data = GuiParam("no_data", self.DL_spinNoData, group=gp,
                            gsimcli_name="no_data")
         header = GuiParam("header", self.DL_checkHeader, group=gp,
-                          gsimcli_name="header")
+                          gsimcli_name="data_header")
         data_name = GuiParam("data_name", self.DL_lineDataName, group=gp,
                              gsimcli_name="name")
         varnames = GuiParam("variables", self.DL_listVarNames, group=gp,
@@ -1131,7 +1130,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.statusBar().showMessage("gsimcli parameters saved at: {}".
                                      format(self.params.path), 5000)
         if self.print_status:
-            print "saved at: ", self.params.path
+            print "gsimcli parameters saved at: ", self.params.path
 
     def apply_settings(self):
         """Create or update GsimcliParams file. Connected to dialogbuttonbox.
