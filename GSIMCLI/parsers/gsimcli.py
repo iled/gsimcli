@@ -134,11 +134,14 @@ class GsimcliParam(ParametersFile):
                  'YY_nodes_number', 'YY_minimum', 'YY_spacing',
                  'ZZ_nodes_number', 'ZZ_minimum', 'ZZ_spacing']
 
-        ParametersFile.__init__(self, field_sep=':', value_sep=',',
-                                par_set=par_set, text=text, real_n=real_n,
-                                boolean=boolean, opt_text=opt_text,
-                                opt_int=opt_int, opt_real=opt_real,
-                                opt_boolean=opt_boolean, order=order)
+        super(GsimcliParam, self).__init__(field_sep=':', value_sep=',',
+                                           par_set=par_set, text=text,
+                                           real_n=real_n, boolean=boolean,
+                                           opt_text=opt_text, opt_int=opt_int,
+                                           opt_real=opt_real,
+                                           opt_boolean=opt_boolean,
+                                           order=order)
+
         if par_path:
             self.load(par_path)
 
@@ -174,8 +177,8 @@ class GsimcliParam(ParametersFile):
             varnames = pset.varnames
 
         columns_set = [varnames.index('x') + 1, varnames.index('y') + 1,
-                      varnames.index('time') + 1, varnames.index('clim') +
-                      1, 0, 0]
+                       varnames.index('time') + 1, varnames.index('clim') +
+                       1, 0, 0]
 
         gsc_grid = ['XX_nodes_number', 'XX_minimum', 'XX_spacing',
                     'YY_nodes_number', 'YY_minimum', 'YY_spacing',
