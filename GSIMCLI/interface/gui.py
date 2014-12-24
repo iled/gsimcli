@@ -143,7 +143,6 @@ class GsimcliMainWindow(QtGui.QMainWindow):
                             self.open_settings, self.settings.fileName()))
         # self.actionOpen.triggered.connect(self.open_gsimcli_params)
         self.actionOpenSettingsFile.triggered.connect(self.browse_settings)
-        # self.actionSave.triggered.connect(self.save_gsimcli_params)
         self.actionSaveSettings.triggered.connect(self.save_settings)
         # self.actionSaveAs.triggered.connect(self.save_as_gsimcli_params)
         self.actionExportSettings.triggered.connect(self.export_settings)
@@ -911,125 +910,6 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 
         settings.endGroup()
 
-    def load_settings_iniformat(self, qsettings):
-        """Load and apply all user options from QSettings in iniformat.
-
-        TODO: needs refactoring as an auxiliary function to load_settings.
-
-        DEPRECATED
-        """
-        load = qsettings.value
-
-        def _load_lists(key, target):
-            if qsettings.contains(key):
-                pylist_to_qlist(load(key), target)
-            else:
-                values = list()
-                count = sum(key in child for child in qsettings.childKeys())
-                for i in xrange(count):
-                    values.append(load(key + "_" + str(i)))
-                pylist_to_qlist(values, target)
-
-        # Main Window
-        qsettings.beginGroup("main_window")
-        self.actionPrintStatus.setChecked(to_bool(load("print_status")))
-        qsettings.endGroup()
-
-        # qsettings.beginGroup("Data")
-        # Data / Load
-        qsettings.beginGroup("data_load")
-        self.DB_lineDecadesPath.setText(load("data_path"))
-        self.DL_spinNoData.setValue(float(load("no_data")))
-        self.DL_checkHeader.setChecked(to_bool(load("header")))
-        self.DL_lineDataName.setText(load("data_name"))
-        _load_lists("variables", self.DL_listVarNames)
-        qsettings.endGroup()
-
-        # Data / Batch
-        qsettings.beginGroup("Batch")
-        self.DB_checkBatchNetworks.setChecked(to_bool(load("batch_networks")))
-        _load_lists("networks_paths", self.DB_listNetworksPaths)
-        self.DB_checkBatchDecades.setChecked(to_bool(load("batch_decades")))
-        if self.batch_decades:
-            self.DB_lineDecadesPath.setText(load("decades_path"))
-            self.DB_lineNetworkID.setText(load("network_id"))
-            self.DB_lineVariogPath.setText(load("variography_path"))
-        qsettings.endGroup()
-
-        qsettings.endGroup()
-        qsettings.beginGroup("Simulation")
-        # Simulation / Options
-        qsettings.beginGroup("Options")
-        self.SO_lineParPath.setText(load("par_path"))
-        self.SO_lineExePath.setText(load("exe_path"))
-        self.SO_spinNumberSims.setValue(int(load("number_simulations")))
-        self.SO_comboKrigType.setCurrentIndex(int(load("krigging_type")))
-        self.SO_spinMaxSearchNodes.setValue(int(load("max_search_nodes")))
-        self.SO_spinCores.setValue(int(load("cpu_cores")))
-        self.SO_checkSkipSim.setChecked(to_bool(load("skip_sim")))
-        qsettings.endGroup()
-
-        # Simulation / Grid
-        qsettings.beginGroup("Grid")
-        if not self.batch_networks:
-            self.SG_spinXXNodes.setValue(int(load("XX_nodes_number")))
-            self.SG_spinYYNodes.setValue(int(load("YY_nodes_number")))
-            self.SG_spinZZNodes.setValue(int(load("ZZ_nodes_number")))
-            self.SG_spinXXOrig.setValue(int(load("XX_minimum")))
-            self.SG_spinYYOrig.setValue(int(load("YY_minimum")))
-            self.SG_spinZZOrig.setValue(int(load("ZZ_minimum")))
-            self.SG_spinXXSize.setValue(int(load("XX_spacing")))
-            self.SG_spinYYSize.setValue(int(load("YY_spacing")))
-            self.SG_spinZZSize.setValue(int(load("ZZ_spacing")))
-        qsettings.endGroup()
-
-        # Simulation / Variogram
-        qsettings.beginGroup("Variogram")
-        if not self.batch_decades:
-            self.SV_comboVarModel.setCurrentIndex(int(load("model")))
-            self.SV_spinNugget.setValue(float(load("nugget")))
-            self.SV_spinSill.setValue(float(load("sill")))
-            self.SV_lineRanges.setText(load("ranges"))
-            self.SV_lineAngles.setText(load("angles"))
-        qsettings.endGroup()
-
-        qsettings.endGroup()
-        qsettings.beginGroup("Homogenisation")
-        # Homogenisation / Detection
-        qsettings.beginGroup("Detection")
-        self.HD_comboStationOrder.setCurrentIndex(int(load("station_order")))
-        st_order = self.HD_comboStationOrder.currentText().lower()
-        if st_order == "user":
-            _load_lists("user_order", self.HD_listUserOrder)
-        else:
-            self.HD_checkAscending.setChecked(to_bool(load("ascending")))
-            self.HD_checkMDLast.setChecked(to_bool(load("md_last")))
-        self.HD_spinProb.setValue(float(load("detect_prob")))
-        self.HD_checkTolerance.setChecked(to_bool(load("tolerance")))
-        if self.HD_checkTolerance.isChecked():
-            self.HD_spinTolerance.setValue(float(load("radius")))
-            self.HD_radioDistance.setChecked(
-                                              to_bool(load("distance_units")))
-        qsettings.endGroup()
-
-        # Homogenisation / Correction
-        qsettings.beginGroup("Detection")
-        self.HC_comboCorrectionMethod.setCurrentIndex(
-                                                 int(load("correct_method")))
-        self.HC_spinSkewness.setValue(float(load("skewness")))
-        self.HC_spinPercentile.setValue(float(load("percentile")))
-        qsettings.endGroup()
-
-        # Homogenisation / Results
-        qsettings.beginGroup("Results")
-        self.HR_checkSaveInter.setChecked(to_bool(load("detect_save")))
-        self.HR_checkPurgeSims.setChecked(to_bool(load("sim_purge")))
-        self.HR_lineResultsPath.setText(load("results_path"))
-        self.HR_lineResultsName.setText(load("results_name"))
-        qsettings.endGroup()
-
-        qsettings.endGroup()
-
     def load_gsimcli_settings(self):
         """Load and apply all user options from already loaded GsimcliParams.
 
@@ -1135,7 +1015,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         for param in self.guiparams:
             name = param.gsimcli_name
             if name is not None:
-                if param.check_dependencies():  # not param.empty() and
+                if param.check_dependencies() and param.has_data():
                     # krigging type
                     if name == "krig_type":
                         krigtype = self.SO_comboKrigType.currentText()
@@ -1174,94 +1054,6 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         if self.print_status:
             print "saved at: ", self.params.path
 
-    def save_gsimcli_settings_old(self, par_path=None):
-        """Save GsimcliParams from ui options.
-
-        DEPRECATED
-        """
-        # Data / Load
-        if self.batch_decades:
-            self.params.data = self.DB_lineDecadesPath.text()
-        else:
-            self.params.data = self.DL_lineDataPath.text()
-        self.params.no_data = self.DL_spinNoData.value()
-        self.params.data_header = self.header
-        self.params.name = self.DL_lineDataName.text()
-        self.params.variables = qlist_to_pylist(self.DL_listVarNames)
-
-        # Simulation / Options
-        if self.SO_lineParPath.text():
-            self.params.dss_par = self.SO_lineParPath.text()
-        self.params.dss_exe = self.SO_lineExePath.text()
-        self.params.number_simulations = self.SO_spinNumberSims.value()
-        krigtype = self.SO_comboKrigType.currentText()
-        if krigtype == "Simple":
-            krigtype = "SK"
-        elif krigtype == "Ordinary":
-            krigtype = "OK"
-        self.params.krig_type = krigtype
-        self.params.max_search_nodes = self.SO_spinMaxSearchNodes.value()
-
-        # Simulation / Grid
-        if not self.batch_networks:
-            self.params.XX_nodes_number = self.SG_spinXXNodes.value()
-            self.params.YY_nodes_number = self.SG_spinYYNodes.value()
-            self.params.ZZ_nodes_number = self.SG_spinZZNodes.value()
-            self.params.XX_minimum = self.SG_spinXXOrig.value()
-            self.params.YY_minimum = self.SG_spinYYOrig.value()
-            self.params.ZZ_minimum = self.SG_spinZZOrig.value()
-            self.params.XX_spacing = self.SG_spinXXSize.value()
-            self.params.YY_spacing = self.SG_spinYYSize.value()
-            self.params.ZZ_spacing = self.SG_spinZZSize.value()
-
-        # Simulation / Variogram
-        if not self.batch_decades:
-            self.params.model = self.SV_comboVarModel.currentText()[0]
-            self.params.nugget = self.SV_spinNugget.value()
-            self.params.sill = self.SV_spinSill.value()
-            self.params.ranges = self.SV_lineRanges.text()
-            self.params.angles = self.SV_lineAngles.text()
-
-        # Homogenisation / Detection
-        st_order = self.HD_comboStationOrder.currentText().lower()
-        if st_order == "id order":
-            st_order = "sorted"
-        self.params.st_order = st_order
-        if st_order == "user":
-            self.params.st_user = qlist_to_pylist(self.HD_listUserOrder)
-        else:
-            self.params.ascending = self.HD_checkAscending.isChecked()
-            self.params.md_last = self.HD_checkMDLast.isChecked()
-        self.params.detect_prob = self.HD_spinProb.value()
-        self.params.tolerance = self.HD_checkTolerance.isChecked()
-        if self.params.tolerance:
-            self.params.radius = self.HD_spinTolerance.value()
-            self.params.distance_units = self.HD_radioDistance.isChecked()
-
-        # Homogenisation / Correction
-        self.params.correct_method = (self.HC_comboCorrectionMethod.
-                                     currentText().lower())
-        if self.params.correct_method == "skewness":
-            self.params.skewness = self.HC_spinSkewness.value()
-        elif self.params.correct_method == "percentile":
-            self.params.percentile = self.HC_spinPercentile.value()
-
-        # Homogenisation / Results
-        self.params.detect_save = self.HR_checkSaveInter.isChecked()
-        self.params.sim_purge = self.HR_checkPurgeSims.isChecked()
-        self.params.results = self.HR_lineResultsPath.text().encode('utf-8')
-        self.params.results_file = self.HR_lineResultsName.text(
-                                                            ).encode('utf-8')
-
-        self.params.save(par_path)
-        self.actionGSIMCLI.setEnabled(True)
-        self.estimate_necessary_space()
-
-        self.statusBar().showMessage("gsimcli parameters saved at: {}".
-                                     format(self.params.path), 5000)
-        if self.print_status:
-            print "saved at: ", self.params.path
-
     def apply_settings(self):
         """Create or update GsimcliParams file. Connected to dialogbuttonbox.
 
@@ -1274,13 +1066,6 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         """
         self.settings.clear()
         raise NotImplementedError
-
-    def save_gsimcli_params(self):
-        """Update the loaded GsimcliParams file.
-
-        """
-        # DEPRECATED
-        self.save_gsimcli_settings(self.loaded_params)
 
     def save_as_gsimcli_params(self):
         """Open the dialog to select a new file to save current settings in
