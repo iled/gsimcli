@@ -160,7 +160,7 @@ class GsimcliParam(ParametersFile):
         if not self.data_header and (not hasattr(self, 'variables') or
                                      not hasattr(self, 'name')):
             raise ValueError('Missing header in the data file or \'variables\''
-                             'parameter')
+                             ' parameter')
 
     def update_dsspar(self, save=False, dsspar_path=None):
         """Update the DSS parameters file according to the set of parameters

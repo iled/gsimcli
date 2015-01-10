@@ -525,15 +525,22 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.current_sim = 0
 
     def enable_header(self, toggle):
-        """Act when the header checkbox is toggled. Try to set the data name.
+        """Act when the header checkbox is toggled.
+        If not processing batch networks, try to set the data name to the first
+        line of the data file, in case it has header, or to the filename
+        otherwise.
 
         """
         self.header = toggle
-        if toggle and self.DL_plainDataPreview.blockCount() > 1:
-            self.DL_lineDataName.setText(self.DL_plainDataPreview.toPlainText()
-                                         .split(os.linesep)[0])
-        else:
-            self.DL_lineDataName.clear()
+        if not self.batch_networks:
+            if toggle and self.DL_plainDataPreview.blockCount() > 1:
+                text_preview = self.DL_plainDataPreview.toPlainText()
+                first_line = text_preview.split(os.linesep)[0]
+                self.DL_lineDataName.setText(first_line)
+            else:
+                path = self.DL_lineDataPath.text()
+                filename = os.path.basename(path)
+                self.DL_lineDataName.setText(os.path.splitext(filename)[0])
 
     def enable_decades_group(self, enable):
         """Toggle all the batch decade related widgets. Connected to the batch
