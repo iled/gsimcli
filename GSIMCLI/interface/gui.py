@@ -1491,12 +1491,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 
         """
         cores = self.SO_spinCores.value()
-        print "current_sim: ", self.current_sim
-        print "total_sims: ", self.total_sims
         if not progress:
             progress = 100 * (self.current_sim - cores) / self.total_sims
 
-        print "progress: ", progress
         self.progressBar.setValue(progress)
 
     def set_time(self, seconds):

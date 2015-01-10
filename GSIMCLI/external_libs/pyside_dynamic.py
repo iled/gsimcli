@@ -102,8 +102,10 @@ conventions in your widget class.
 Return ``baseinstance``, if ``baseinstance`` is not ``None``. Otherwise
 return the newly created instance of the user interface.
 """
+    dirname, filename = os.path.split(uifile)
+    os.chdir(dirname)
     loader = UiLoader(baseinstance)
-    widget = loader.load(uifile)
+    widget = loader.load(filename)
     QMetaObject.connectSlotsByName(widget)
     return widget
 
