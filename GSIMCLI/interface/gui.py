@@ -388,11 +388,11 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             info_object = self.SI_labelStatusStation
             self.count_status[2] += 1
             self.current_sim = (self.SO_spinNumberSims.value() *
-                                self.count_status[2])
+                                (self.count_status[2] - 1))
         elif "STATUS: realization" in text:
             info_object = self.SI_labelStatusSim
             self.count_status[3] += 1
-            self.current_sim += 1
+            self.current_sim += self.SO_spinCores.value()
 
         else:
             info_object = None
@@ -1387,7 +1387,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
                 else:
                     pset_file = data_path
                 stations = hmg.list_stations(pset_file, self.header,
-                                                  variables=varnames)
+                                             variables=varnames)
                 total = len(stations)
                 stations_list[os.path.dirname(data_path)] = stations
             else:
@@ -1488,9 +1488,13 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         """Set the progress of the homogenisation process.
 
         """
+        cores = self.SO_spinCores.value()
+        print "current_sim: ", self.current_sim
+        print "total_sims: ", self.total_sims
         if not progress:
-            progress = 100 * self.current_sim / self.total_sims
+            progress = 100 * (self.current_sim - cores) / self.total_sims
 
+        print "progress: ", progress
         self.progressBar.setValue(progress)
 
     def set_time(self, seconds):
