@@ -1328,6 +1328,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
                     n_stations = stations_list.total
                 count = each_map * n_stations
                 self.total_sims = n_stations
+                if purge and each_map > each_max:
+                    each_max = each_map
 
             if purge:
                 count = each_max
