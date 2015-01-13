@@ -105,7 +105,8 @@ class Station(object):
         """
         self.no_data = no_data
 
-        if isinstance(path, str) and os.path.isfile(path):
+        if ((isinstance(path, str) or isinstance(path, unicode)) and
+                os.path.isfile(path)):
             self.path = path
             self.network_id = os.path.basename(os.path.dirname(path))
             spec = pc.filename_parse(path)
@@ -139,7 +140,8 @@ class Station(object):
             The given file was not parsed as a `data` file.
 
         """
-        if isinstance(path, str) and os.path.isfile(path) and content:
+        if ((isinstance(path, str) or isinstance(path, unicode)) and 
+                os.path.isfile(path) and content):
             if content == 'd':
                 self.data = pc.datafile(path, self.resolution, self.no_data)
             elif content == 'f':
@@ -174,7 +176,8 @@ class Station(object):
         The `breakpoints` file name must end with *detected.txt*.
 
         """
-        if isinstance(path, str) and os.path.isfile(path):
+        if ((isinstance(path, str) or isinstance(path, unicode) and
+                os.path.isfile(path)):
             detected_file = path
         else:
             path = os.path.dirname(self.path)
@@ -383,7 +386,8 @@ class Network(object):
         self.stations_number = 0
 
         if path:
-            if isinstance(path, str) and os.path.isdir(path):
+            if ((isinstance(path, str) or isinstance(path, unicode) and
+                    os.path.isdir(path)):
                 parsed = pc.directory_walk_v1(path)
                 selected = pc.files_select(parsed, ftype='data', content='d')
             else:
@@ -401,7 +405,7 @@ class Network(object):
         """Load all the stations in the network.
 
         Notice that the data has to be explicitly loaded, the stations are just
-        indexed to the network.
+        being indexed to the network.
 
         """
         self.stations = list()
@@ -612,7 +616,8 @@ class Network(object):
             File path or Series containing ID's and the corresponding keys.
 
         """
-        if isinstance(keys, str) and os.path.isfile(keys):
+        if ((isinstance(keys, str) or isinstance(keys, unicode) and
+                os.path.isfile(keys)):
             keys = ss.read_keys(keys)
         for i, station in enumerate(self.stations):
             station.id = keys.loc[station.id]

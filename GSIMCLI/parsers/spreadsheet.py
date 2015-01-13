@@ -194,7 +194,8 @@ def xls2costhome(xlspath, outpath=None, no_data=-999.9, sheet=None,
     network = ch.Network(no_data=no_data, network_id=network_id)
     stations = [label for label in xlstable.columns if '_clim' in label]
 
-    if isinstance(keys_path, str) and os.path.isfile(keys_path):
+    if ((isinstance(keys_path, str) or isinstance(keys_path, unicode)) and
+            os.path.isfile(keys_path)):
         keys = read_keys(keys_path)
         # station.id = keys.loc[station.id]
         # self.stations_id[i] = station.id
