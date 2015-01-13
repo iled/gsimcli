@@ -38,7 +38,7 @@ class Station(object):
 
     Attributes
     ----------
-    md : number
+    no_data : number
         Missing data value.
     path : string
         File path.
@@ -90,7 +90,7 @@ class Station(object):
     TODO: separate quality flag from data
 
     """
-    def __init__(self, path=None, spec=None, md=-999.9):
+    def __init__(self, path=None, spec=None, no_data=-999.9):
         """Initialise a Station instance.
 
         Parameters
@@ -99,11 +99,11 @@ class Station(object):
             File path.
         spec : list or tuple
             Wrapper  # TODO: replace with kwargs
-        md : number
+        no_data : number
             Missing data value.
 
         """
-        self.md = md
+        self.no_data = no_data
 
         if isinstance(path, str) and os.path.isfile(path):
             self.path = path
@@ -141,7 +141,7 @@ class Station(object):
         """
         if isinstance(path, str) and os.path.isfile(path) and content:
             if content == 'd':
-                self.data = pc.datafile(path, self.resolution, self.md)
+                self.data = pc.datafile(path, self.resolution, self.no_data)
             elif content == 'f':
                 self.quality = pc.qualityfile(path, self.resolution)
             self.path = path
@@ -150,7 +150,7 @@ class Station(object):
                              format(self.path))
         # FIXME: check if this is a problem; path optional?
         elif self.content == 'd' and os.path.isfile(self.path):
-            self.data = pc.datafile(self.path, self.resolution, self.md)
+            self.data = pc.datafile(self.path, self.resolution, self.no_data)
         elif self.content == 'f' and os.path.isfile(self.path):
             self.quality = pc.qualityfile(self.path, self.resolution)
 
@@ -212,13 +212,13 @@ class Station(object):
 
         """
         if path:
-            self.orig = Station(path, self.md)
+            self.orig = Station(path, self.no_data)
             if self.id != self.orig.id:
                 warnings.warn('mismatch between Station and ORIG IDs')
             if self.network_id != self.orig.network_id:
                 warnings.warn('mismatch between Station and ORIG networks')
         else:
-            self.orig = Station(match_sub(self.path, 'orig'), self.md)
+            self.orig = Station(match_sub(self.path, 'orig'), self.no_data)
 
     def match_inho(self, path=None):
         """Try to fetch the matching inhomogenous station data.
@@ -243,13 +243,13 @@ class Station(object):
 
         """
         if path:
-            self.inho = Station(path, self.md)
+            self.inho = Station(path, self.no_data)
             if self.id != self.inho.id:
                 warnings.warn('mismatch between Station and INHO IDs')
             if self.network_id != self.inho.network_id:
                 warnings.warn('mismatch between Station and INHO networks')
         else:
-            self.inho = Station(match_sub(self.path, 'inho'), self.md)
+            self.inho = Station(match_sub(self.path, 'inho'), self.no_data)
 
     def yearly(self, func='mean'):
         """Upscale data resolution to yearly.
@@ -339,7 +339,7 @@ class Network(object):
 
     Attributes
     ----------
-    md : number
+    no_data : number
         Missing data value.
     path : string
         Network folder path.
@@ -355,14 +355,14 @@ class Network(object):
         Number of stations in the network.
 
     """
-    def __init__(self, path=None, md=-999.9, network_id=None):
+    def __init__(self, path=None, no_data=-999.9, network_id=None):
         """Initialise a Network instance.
 
         Parameters
         ----------
         path : string, optional
             Network folder path.
-        md : number, default -999.9
+        no_data : number, default -999.9
             Missing data value.
         network_id : int, optional
             Network ID number.
@@ -374,7 +374,7 @@ class Network(object):
 
         TODO: handle other files besides data?
         """
-        self.md = md
+        self.no_data = no_data
         self.path = path
         self.id = network_id
         self.stations_id = list()
@@ -406,7 +406,7 @@ class Network(object):
         """
         self.stations = list()
         for station in self.stations_path:
-            self.stations.append(Station(station, self.md))
+            self.stations.append(Station(station, self.no_data))
 
     def add(self, station):
         """Add a station to the network.
@@ -589,7 +589,7 @@ class Network(object):
             st_data = pd.Series(pset.values.clim
                                 [pset.values.station == station_id].values,
                                 index, name=variable)
-            st = Station(md=self.md)
+            st = Station(no_data=self.no_data)
             st.data = st_data
             st.id = format(station_id, '0=8.0f')
             st.ftype = ftype
@@ -629,7 +629,7 @@ class Submission(object):
     ----------
     path : string
         Folder path.
-    md : number
+    no_data : number
         Missing data value.
     name : string
         Submission's name.
@@ -650,7 +650,7 @@ class Submission(object):
         Directory where the inhomogeneous station files are located.
 
     """
-    def __init__(self, path, md, networks_id=None, orig_path=None,
+    def __init__(self, path, no_data, networks_id=None, orig_path=None,
                  inho_path=None):
         """Initialise a Submission instance.
 
@@ -658,7 +658,7 @@ class Submission(object):
         ----------
         path : string
             Folder path.
-        md : number
+        no_data : number
             Missing data value.
         networks_id : list of int, optional
             Network ID numbers contained in the submission.
@@ -674,7 +674,7 @@ class Submission(object):
 
         """
         self.path = path
-        self.md = md
+        self.no_data = no_data
         self.name = os.path.basename(os.path.dirname(path))
         self.signal = os.path.basename(path)
         parsed = pc.directory_walk_v1(path)
@@ -688,7 +688,7 @@ class Submission(object):
 
         for network in grouped:
             self.networks_id.append(network[0][1][0])
-            self.networks.append(Network(network, md))
+            self.networks.append(Network(network, no_data))
             self.stations_number += self.networks[-1].stations_number
             self.stations_id.extend(self.networks[-1].stations_id)
 
@@ -791,13 +791,13 @@ def match_sub(path, sub, level=3):
 
 
 if __name__ == '__main__':
-    md = -999.9
+    no_data = -999.9
     p = '/Users/julio/Desktop/testes/cost-home/benchmark/h009/precip/sur1/000005/horrm21109001d.txt'
     p2 = '/Users/julio/Desktop/testes/cost-home/benchmark/h009/precip/sur1/000005/horrm21109001d__new.txt'
-    # st = Station(p, md)
+    # st = Station(p, no_data)
     # st.setup()
     subp = '/Users/julio/Desktop/testes/cost-home/benchmark/h009/precip/sur1'
-    # sub = Submission(subp, md)
+    # sub = Submission(subp, no_data)
     # sub.save('/Users/julio/Desktop/testes/')
     bench = '/Users/julio/Desktop/testes/cost-home/rede000005/1900_1909.txt'
     netw = Network(network_id='teste')

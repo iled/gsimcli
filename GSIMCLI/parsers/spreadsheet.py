@@ -126,10 +126,10 @@ def xls2gslib(xlspath, nd=-999.9, cols=None, sheet=0, header=0,
     return pset, keys
 
 
-def xls2costhome(xlspath, outpath=None, nd=-999.9, sheet=None, header=None,
-                 skip_rows=None, cols=None, network_id='ssssssss', status='xx',
-                 variable='vv', resolution='r', content='c', ftype='data',
-                 yearly_sum=False, keys_path=None):
+def xls2costhome(xlspath, outpath=None, no_data=-999.9, sheet=None,
+                 header=None, skip_rows=None, cols=None, network_id='ssssssss',
+                 status='xx', variable='vv', resolution='r', content='c',
+                 ftype='data', yearly_sum=False, keys_path=None, **kwargs):
     """Convert a file in GSIMCLI format (XLS with a particular structure) to a
     network of the COST-HOME format.
 
@@ -139,7 +139,7 @@ def xls2costhome(xlspath, outpath=None, nd=-999.9, sheet=None, header=None,
         File path.
     outpath : string, optional
         Folder path to save the converted network.
-    nd : number, default -999.9
+    no_data : number, default -999.9
         Missing data value.
     sheet : string or int, optional
         Name of Excel sheet or the page number of the sheet.
@@ -188,10 +188,10 @@ def xls2costhome(xlspath, outpath=None, nd=-999.9, sheet=None, header=None,
         div = 1.0
 
     xlsfile = pd.ExcelFile(xlspath)
-    xlstable = xlsfile.parse(sheetname=sheet, header=header, na_values=nd,
-                             skiprows=skip_rows, parse_cols=cols)
+    xlstable = xlsfile.parse(sheetname=sheet, header=header, na_values=no_data,
+                             skiprows=skip_rows, parse_cols=cols, index_col=0)
 
-    network = ch.Network(md=nd, network_id=network_id)
+    network = ch.Network(no_data=no_data, network_id=network_id)
     stations = [label for label in xlstable.columns if '_clim' in label]
 
     if isinstance(keys_path, str) and os.path.isfile(keys_path):
@@ -200,7 +200,7 @@ def xls2costhome(xlspath, outpath=None, nd=-999.9, sheet=None, header=None,
         # self.stations_id[i] = station.id
 
     for station in stations:
-        st = ch.Station(md=nd)
+        st = ch.Station(no_data=no_data)
         st.path = None
         st.network_id = network_id
         st.ftype = ftype
@@ -208,14 +208,12 @@ def xls2costhome(xlspath, outpath=None, nd=-999.9, sheet=None, header=None,
         st.variable = variable
         st.resolution = resolution
         stid = station.split('_')[0]
-        if keys_path:
+        if keys_path and os.path.isfile(keys_path):
             st.id = str(keys.loc[int(stid)].values[0])
         else:
             st.id = stid
         st.content = content
-        values = xlstable[station].values / div
-        time = xlstable.iloc[:, 0].values
-        st.data = pd.Series(values, time)
+        st.data = xlstable[station] / div
         network.add(st)
 
     if outpath:
@@ -262,7 +260,7 @@ if __name__ == '__main__':
     for path in pathlist:
         print path
         netid = os.path.basename(os.path.dirname(path))[4:]
-        xls2costhome(xlspath=path, outpath=os.path.dirname(path), nd=-999.9,
+        xls2costhome(xlspath=path, outpath=os.path.dirname(path), no_data=-999.9,
                         sheet='All stations', header=False, skip_rows=[1],
                         network_id=netid, status='ho',
                         variable='rr', resolution='y', content='d',

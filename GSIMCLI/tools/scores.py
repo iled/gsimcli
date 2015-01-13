@@ -187,14 +187,15 @@ def crmse_submission(submission, over_station=True, over_network=True,
 
     for network in submission.networks:
         if over_network:
-            network_crmses.loc[network.id] = crmse_network(
-                                        network, skip_missing, skip_outlier)
+            network_crmses.loc[network.id] = crmse_network(network,
+                                                           skip_missing,
+                                                           skip_outlier)
 
         if over_station:
             network.setup()
             for station in network.stations:
-                station_crmses.loc[station.id, network.id] = crmse_station(
-                                                    station, skip_outlier)
+                loc = station.id, network.id
+                station_crmses.loc[loc] = crmse_station(station, skip_outlier)
 
     results = list()
     if over_network:
@@ -205,8 +206,7 @@ def crmse_submission(submission, over_station=True, over_network=True,
     return results
 
 
-def improvement(submission, over_station, over_network, skip_missing,
-                skip_outlier):
+def improvement(submission, **kwargs):
     """Calculate the improvement of a benchmark submission.
 
     The improvement over the inhomogeneous data is computed as the quotient
@@ -237,26 +237,23 @@ def improvement(submission, over_station, over_network, skip_missing,
         - [*network improvement*, station improvement*]
 
     """
-    homog_crmse = crmse_submission(submission, over_station, over_network,
-                                skip_missing, skip_outlier)
+    homog_crmse = crmse_submission(submission, **kwargs)
 
     if not submission.inho_path:
         inho_path = ch.match_sub(submission.path, 'inho', level=2)
     else:
         inho_path = submission.inho_path
-    inho_sub = ch.Submission(inho_path, submission.md, submission.networks_id)
-    inho_crmse = crmse_submission(inho_sub, over_station, over_network,
-                                  skip_missing, skip_outlier)
+    inho_sub = ch.Submission(inho_path, submission.no_data,
+                             submission.networks_id)
+    inho_crmse = crmse_submission(inho_sub, **kwargs)
 
-    return homog_crmse, inho_crmse, list(
-                             np.array(homog_crmse) / np.array(inho_crmse))
+    improve = list(np.array(homog_crmse) / np.array(inho_crmse))
+    return homog_crmse, inho_crmse, improve
 
 
-def gsimcli_improvement(gsimcli_results, nodata=-999.9, network_ids=None,
-                        variable='rr', yearly_sum=True, over_station=True,
-                        over_network=True, skip_missing=False,
-                        skip_outlier=True, keys=None, costhome_path=None,
-                        costhome_save=False):
+def gsimcli_improvement(gsimcli_results, no_data=-999.9, network_ids=None,
+                        keys=None, costhome_path=None, costhome_save=False,
+                        **kwargs):
     """Calculate the improvement of a GSIMCLI process.
 
     It is just a wrapper around `improvement` and `xls2costhome`.
@@ -296,19 +293,19 @@ def gsimcli_improvement(gsimcli_results, nodata=-999.9, network_ids=None,
         if keys is not None:
             key = keys[i]
 
-        xls2costhome(xlspath=results, outpath=costhome_path, nd=nodata,
-                sheet='All stations', header=False, skip_rows=None,
-                network_id=network_id, status='ho', variable=variable,
-                resolution='y', content='d', ftype='data',
-                yearly_sum=yearly_sum, keys_path=key)
+        yearly_sum = kwargs.pop("yearly_sum")
+        xls2costhome(xlspath=results, outpath=costhome_path,
+                     sheet='All stations', header=False, skip_rows=None,
+                     network_id=network_id, status='ho', variable='rr',
+                     resolution='y', content='d', ftype='data', keys_path=key,
+                     yearly_sum=yearly_sum, **kwargs)
 
-    submission = ch.Submission(costhome_path, nodata, network_ids)
-    orig_path = "/home/julio/Testes/benchmark/orig/precip/sur1"
-    inho_path = "/home/julio/Testes/benchmark/inho/precip/sur1"
+    submission = ch.Submission(costhome_path, no_data, network_ids)
+    orig_path = kwargs.pop("orig_path")
+    inho_path = kwargs.pop("inho_path")
     submission.setup(orig_path, inho_path)
 
-    results = improvement(submission, over_station, over_network, skip_missing,
-                          skip_outlier)
+    results = improvement(submission, **kwargs)
 
     if not costhome_save:
         shutil.rmtree(costhome_path)
@@ -319,9 +316,9 @@ def gsimcli_improvement(gsimcli_results, nodata=-999.9, network_ids=None,
 if __name__ == '__main__':
     md = -999.9
 
-    macpath = '/Users/julio/Desktop/testes/cost-home/'
+    macpath = '/Users/julio/Desktop/testes/'
     mintpath = '/home/julio/Testes/'
-    basepath = mintpath
+    basepath = macpath
 
     """ # inho syn1
     netw_path = basepath + 'benchmark/inho/precip/syn1'
@@ -375,17 +372,19 @@ if __name__ == '__main__':
     # network_id = '000009'
     kis = [  # basepath + 'cost-home/rede000005/keys.txt',
            basepath + 'cost-home/rede000009/keys.txt']
+    orig_path = "/Users/julio/Desktop/testes/cost-home/benchmark/orig/precip/sur1"
+    inho_path = "/Users/julio/Desktop/testes/cost-home/benchmark/inho/precip/sur1"
     # """
 
     netw_path = basepath + 'benchmark/h011/precip/sur1'
     # network_id = ['000009', '000010']
-    sub = ch.Submission(netw_path, md, ['000009'])  # , ['000010'])
+#    sub = ch.Submission(netw_path, md, ['000009'])  # , ['000010'])
     # print crmse_submission_(sub, over_station=True, over_network=True,
     #                          skip_missing=False, skip_outlier=True)
 #    print improvement(sub, over_station=True, over_network=True,
 #                      skip_missing=False, skip_outlier=True)
 
-    print gsimcli_improvement(gsimcli_results, md, costhome_save=True,
-                              keys=kis)
+    print gsimcli_improvement(gsimcli_results, costhome_save=True, yearly_sum=True,
+                              keys=kis, orig_path=orig_path, inho_path=inho_path)
 
     print 'done'

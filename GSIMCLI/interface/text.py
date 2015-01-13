@@ -165,7 +165,7 @@ def convert_files():
         resolution = raw_input('Data temporal resolution (default: y): ')
         content = raw_input('Data content (default: d): ')
         # TODO: yearly_sum, keys_path
-        ss.xls2costhome(xlspath=gsimclipath, outpath=outpath, nd=nd,
+        ss.xls2costhome(xlspath=gsimclipath, outpath=outpath, nd=no_data,
                         sheet=sheet, header=False, skip_rows=None, cols=None,
                         network_id=network_id, status=status,
                         variable=variable, resolution=resolution,
