@@ -258,14 +258,14 @@ def gsimcli_improvement(gsimcli_results, no_data=-999.9, network_ids=None,
 
     It is just a wrapper around `improvement` and `xls2costhome`.
 
-    TODO: support multiple networks simultaneously
     """
     # accept str or list of str
-    if isinstance(gsimcli_results, str):
+    if (isinstance(gsimcli_results, str) or
+            isinstance(gsimcli_results, unicode)):
         gsimcli_results = [gsimcli_results]
-    if isinstance(network_ids, str):
+    if isinstance(network_ids, str) or isinstance(network_ids, unicode):
         network_ids = [network_ids]
-    if isinstance(keys, str):
+    if isinstance(keys, str) or isinstance(keys, unicode):
         keys = [keys]
 
     if network_ids is not None:
@@ -284,8 +284,10 @@ def gsimcli_improvement(gsimcli_results, no_data=-999.9, network_ids=None,
     if not os.path.exists(costhome_path):
         os.mkdir(costhome_path)
 
+    yearly_sum = kwargs.pop("yearly_sum")
     for i, results in enumerate(gsimcli_results):
         if network_ids is None:
+            # FIXME: only working for "redeXXXXXX"
             network_id = os.path.basename(os.path.dirname(results))[4:]
         else:
             network_id = network_ids[i]
@@ -293,7 +295,6 @@ def gsimcli_improvement(gsimcli_results, no_data=-999.9, network_ids=None,
         if keys is not None:
             key = keys[i]
 
-        yearly_sum = kwargs.pop("yearly_sum")
         xls2costhome(xlspath=results, outpath=costhome_path,
                      sheet='All stations', header=False, skip_rows=None,
                      network_id=network_id, status='ho', variable='rr',
@@ -367,10 +368,10 @@ if __name__ == '__main__':
     # """ # GSIMCLI
     # gsimcli_results = basepath + 'cost-home/rede000010/gsimcli_results.xls'
     # gsimcli_results = basepath + 'cost-home/500_dflt_16_allvar_vmedia/rede000009/gsimcli_results.xls'
-    gsimcli_results = [  # basepath + 'cost-home/rede000005/gsimcli_results.xls',
+    gsimcli_results = [basepath + 'cost-home/rede000005/gsimcli_results.xls',
                        basepath + 'cost-home/rede000009/gsimcli_results.xls']
     # network_id = '000009'
-    kis = [  # basepath + 'cost-home/rede000005/keys.txt',
+    kis = [basepath + 'cost-home/rede000005/keys.txt',
            basepath + 'cost-home/rede000009/keys.txt']
     orig_path = "/Users/julio/Desktop/testes/cost-home/benchmark/orig/precip/sur1"
     inho_path = "/Users/julio/Desktop/testes/cost-home/benchmark/inho/precip/sur1"
