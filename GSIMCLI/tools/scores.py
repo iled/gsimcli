@@ -149,7 +149,7 @@ def crmse_network(network, skip_missing=False, skip_outlier=True):
 
 
 def crmse_submission(submission, over_station=True, over_network=True,
-                        skip_missing=False, skip_outlier=True):
+                     skip_missing=False, skip_outlier=True):
     """Calculate the average CRMSE of a benchmark submission.
 
     The average can be calculated over all the stations and/or over the
@@ -206,11 +206,11 @@ def crmse_submission(submission, over_station=True, over_network=True,
 
 
 def improvement(submission, over_station, over_network, skip_missing,
-                   skip_outlier):
+                skip_outlier):
     """Calculate the improvement of a benchmark submission.
 
     The improvement over the inhomogeneous data is computed as the quotient
-    of the mean CRMSE of the homogenized networks and the mean CRMSE of the
+    of the mean CRMSE of the homogenised networks and the mean CRMSE of the
     same inhomogeneous networks.
 
     Parameters
@@ -240,10 +240,13 @@ def improvement(submission, over_station, over_network, skip_missing,
     homog_crmse = crmse_submission(submission, over_station, over_network,
                                 skip_missing, skip_outlier)
 
-    inho_path = ch.match_sub(submission.path, 'inho', level=2)
+    if not submission.inho_path:
+        inho_path = ch.match_sub(submission.path, 'inho', level=2)
+    else:
+        inho_path = submission.inho_path
     inho_sub = ch.Submission(inho_path, submission.md, submission.networks_id)
     inho_crmse = crmse_submission(inho_sub, over_station, over_network,
-                                     skip_missing, skip_outlier)
+                                  skip_missing, skip_outlier)
 
     return homog_crmse, inho_crmse, list(
                              np.array(homog_crmse) / np.array(inho_crmse))
@@ -267,7 +270,7 @@ def gsimcli_improvement(gsimcli_results, nodata=-999.9, network_ids=None,
         network_ids = [network_ids]
     if isinstance(keys, str):
         keys = [keys]
-    
+
     if network_ids is not None:
         if len(network_ids) != len(gsimcli_results):
             raise ValueError("Mismatch between number of results files and "
@@ -283,23 +286,26 @@ def gsimcli_improvement(gsimcli_results, nodata=-999.9, network_ids=None,
                                      'gsimcli to costhome')
     if not os.path.exists(costhome_path):
         os.mkdir(costhome_path)
-    
+
     for i, results in enumerate(gsimcli_results):
         if network_ids is None:
             network_id = os.path.basename(os.path.dirname(results))[4:]
         else:
             network_id = network_ids[i]
-            
+
         if keys is not None:
             key = keys[i]
 
         xls2costhome(xlspath=results, outpath=costhome_path, nd=nodata,
-                sheet='All stations', header=False, skip_rows=[1],
+                sheet='All stations', header=False, skip_rows=None,
                 network_id=network_id, status='ho', variable=variable,
                 resolution='y', content='d', ftype='data',
                 yearly_sum=yearly_sum, keys_path=key)
 
     submission = ch.Submission(costhome_path, nodata, network_ids)
+    orig_path = "/home/julio/Testes/benchmark/orig/precip/sur1"
+    inho_path = "/home/julio/Testes/benchmark/inho/precip/sur1"
+    submission.setup(orig_path, inho_path)
 
     results = improvement(submission, over_station, over_network, skip_missing,
                           skip_outlier)
@@ -361,23 +367,23 @@ if __name__ == '__main__':
     netw_path = basepath + 'benchmark/h002/precip/sur14'
     # """
 
-    #""" # GSIMCLI
+    # """ # GSIMCLI
     # gsimcli_results = basepath + 'cost-home/rede000010/gsimcli_results.xls'
     # gsimcli_results = basepath + 'cost-home/500_dflt_16_allvar_vmedia/rede000009/gsimcli_results.xls'
-    gsimcli_results = [basepath + 'cost-home/rede000005/gsimcli_results.xls',
+    gsimcli_results = [  # basepath + 'cost-home/rede000005/gsimcli_results.xls',
                        basepath + 'cost-home/rede000009/gsimcli_results.xls']
     # network_id = '000009'
-    kis = [basepath + 'cost-home/rede000005/keys.txt',
+    kis = [  # basepath + 'cost-home/rede000005/keys.txt',
            basepath + 'cost-home/rede000009/keys.txt']
     # """
 
-    # netw_path = basepath + 'benchmark/h011/precip/sur1'
+    netw_path = basepath + 'benchmark/h011/precip/sur1'
     # network_id = ['000009', '000010']
-#     sub = ch.Submission(netw_path, md, ['000009'])  # , ['000010'])
+    sub = ch.Submission(netw_path, md, ['000009'])  # , ['000010'])
     # print crmse_submission_(sub, over_station=True, over_network=True,
     #                          skip_missing=False, skip_outlier=True)
 #    print improvement(sub, over_station=True, over_network=True,
-#                         skip_missing=False, skip_outlier=True)
+#                      skip_missing=False, skip_outlier=True)
 
     print gsimcli_improvement(gsimcli_results, md, costhome_save=True,
                               keys=kis)
