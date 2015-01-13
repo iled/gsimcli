@@ -305,7 +305,7 @@ class Station(object):
             self.load()
         if not hasattr(self, 'orig'):
             self.match_orig(orig_path)
-            self.orig.load()
+        self.orig.load()
         if outliers and not hasattr(self, 'outliers'):
             if 'orig' not in self.path.lower():
                 warnings.warn('loading outliers from non ORIG submission')
@@ -644,9 +644,14 @@ class Submission(object):
     stations_id : list of int
         Unique station ID numbers contained in the submission. ID's relative to
         stations in different networks but with the same number count as one.
+    orig_path : string
+        Directory where the original station files are located.
+    inho_path : string
+        Directory where the inhomogeneous station files are located.
 
     """
-    def __init__(self, path, md, networks_id=None):
+    def __init__(self, path, md, networks_id=None, orig_path=None,
+                 inho_path=None):
         """Initialise a Submission instance.
 
         Parameters
@@ -657,6 +662,10 @@ class Submission(object):
             Missing data value.
         networks_id : list of int, optional
             Network ID numbers contained in the submission.
+        orig_path : string, optional
+            Directory where the original station files are located.
+        inho_path : string, optional
+            Directory where the inhomogeneous station files are located.
 
         Notes
         -----
@@ -685,6 +694,9 @@ class Submission(object):
 
         self.stations_id = list(np.unique(self.stations_id))
 
+        self.orig_path = orig_path
+        self.inho_path = inho_path
+
     def load(self):
         """Load all networks included in the submission. """
         for network in self.networks:
@@ -702,6 +714,48 @@ class Submission(object):
         """
         for network in self.networks:
             network.save(path)
+
+    def setup(self, orig_path=None, inho_path=None):
+        """Load all networks (and its stations) in the submission.
+
+        Set the original and the inhomogenised directories. Each one these
+        should contain a folder for each network in the submission, where each
+        network contains several stations.
+
+        Parameters
+        ----------
+        orig_path : string, optional
+            Directory with the original files for the submission.
+        inho_path : string, optional
+            Directory with the inhomogised files for the submission.
+
+        """
+        self.load()
+        if self.orig_path:
+            orig_path = self.orig_path
+        else:
+            self.orig_path = orig_path
+        if self.inho_path:
+            inho_path = self.inho_path
+        else:
+            self.inho_path = inho_path
+
+        if orig_path or inho_path:
+            for network in self.networks:
+                if orig_path:
+                    orig_netw = os.path.join(orig_path, network.id)
+                if inho_path:
+                    inho_netw = os.path.join(inho_path, network.id)
+                for station in network.stations:
+                    # find file by id
+                    file_pattern = os.sep + '*' + station.id + '*'
+                    if orig_path:
+                        orig_file = glob.glob(orig_netw + file_pattern)[0]
+                        station.match_orig(orig_file)
+                    if inho_path:
+                        inho_file = glob.glob(inho_netw + file_pattern)[0]
+                        station.match_inho(inho_file)
+                    station.setup()
 
 
 def match_sub(path, sub, level=3):
