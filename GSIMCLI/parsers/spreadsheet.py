@@ -196,8 +196,8 @@ def xls2costhome(xlspath, outpath=None, nd=-999.9, sheet=None, header=None,
 
     if isinstance(keys_path, str) and os.path.isfile(keys_path):
         keys = read_keys(keys_path)
-        #station.id = keys.loc[station.id]
-        #self.stations_id[i] = station.id
+        # station.id = keys.loc[station.id]
+        # self.stations_id[i] = station.id
 
     for station in stations:
         st = ch.Station(md=nd)
@@ -213,9 +213,11 @@ def xls2costhome(xlspath, outpath=None, nd=-999.9, sheet=None, header=None,
         else:
             st.id = stid
         st.content = content
-        st.data = xlstable[station] / div
+        values = xlstable[station].values / div
+        time = xlstable.iloc[:, 0].values
+        st.data = pd.Series(values, time)
         network.add(st)
-        
+
     if outpath:
         network.save(outpath)
 
@@ -224,12 +226,12 @@ def xls2costhome(xlspath, outpath=None, nd=-999.9, sheet=None, header=None,
 
 def read_keys(path):
     """Read a TSV file with the keys to the converted station IDs.
-    
+
     Parameters
     ----------
     path : string
         File path.
-        
+
     Returns
     -------
     keys : pandas.DataFrame
