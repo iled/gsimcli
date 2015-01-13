@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>742</width>
-    <height>660</height>
+    <width>796</width>
+    <height>776</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,6 +18,324 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <widget class="QFrame" name="leftFrame">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+        <horstretch>1</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="lineWidth">
+       <number>0</number>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_25">
+       <item>
+        <widget class="QTreeWidget" name="treeWidget">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>1</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>130</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="mouseTracking">
+          <bool>true</bool>
+         </property>
+         <attribute name="headerVisible">
+          <bool>true</bool>
+         </attribute>
+         <column>
+          <property name="text">
+           <string>Settings</string>
+          </property>
+         </column>
+         <item>
+          <property name="text">
+           <string>Data</string>
+          </property>
+          <property name="flags">
+           <set>ItemIsDragEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
+          </property>
+          <item>
+           <property name="text">
+            <string>Load</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Batch</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Save</string>
+           </property>
+           <property name="toolTip">
+            <string/>
+           </property>
+           <property name="flags">
+            <set>ItemIsSelectable|ItemIsDragEnabled|ItemIsUserCheckable</set>
+           </property>
+          </item>
+         </item>
+         <item>
+          <property name="text">
+           <string>Simulation</string>
+          </property>
+          <property name="flags">
+           <set>ItemIsDragEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
+          </property>
+          <item>
+           <property name="text">
+            <string>Options</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Grid</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Variogram</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Advanced</string>
+           </property>
+          </item>
+         </item>
+         <item>
+          <property name="text">
+           <string>Homogenisation</string>
+          </property>
+          <property name="flags">
+           <set>ItemIsDragEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
+          </property>
+          <item>
+           <property name="text">
+            <string>Detection</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Correction</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Results</string>
+           </property>
+          </item>
+         </item>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_8">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QFrame" name="groupStatus">
+         <property name="frameShape">
+          <enum>QFrame::Box</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Sunken</enum>
+         </property>
+         <property name="lineWidth">
+          <number>1</number>
+         </property>
+         <property name="midLineWidth">
+          <number>0</number>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_24">
+          <item>
+           <widget class="QLabel" name="label">
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Status</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Line" name="line_8">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="labelStatus">
+            <property name="text">
+             <string>Waiting...</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QWidget" name="groupStatusInfo" native="true">
+            <layout class="QFormLayout" name="formStatus">
+             <property name="fieldGrowthPolicy">
+              <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+             </property>
+             <property name="verticalSpacing">
+              <number>6</number>
+             </property>
+             <property name="margin">
+              <number>0</number>
+             </property>
+             <item row="0" column="0">
+              <widget class="QLabel" name="SI_labelNetwork">
+               <property name="text">
+                <string>Network:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLabel" name="SI_labelStatusNetwork">
+               <property name="text">
+                <string/>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="SI_labelDecade">
+               <property name="text">
+                <string>Decade:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QLabel" name="SI_labelStatusDecade">
+               <property name="text">
+                <string/>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="SI_labelStation">
+               <property name="text">
+                <string>Station ID:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <widget class="QLabel" name="SI_labelStatusStation">
+               <property name="text">
+                <string/>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0">
+              <widget class="QLabel" name="SI_labelSim">
+               <property name="text">
+                <string>Simulation:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="1">
+              <widget class="QLabel" name="SI_labelStatusSim">
+               <property name="text">
+                <string/>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QWidget" name="groupTime" native="true">
+            <layout class="QFormLayout" name="formLayout_6">
+             <property name="margin">
+              <number>0</number>
+             </property>
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_2">
+               <property name="text">
+                <string>Elapsed time:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLabel" name="labelTime">
+               <property name="text">
+                <string/>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QWidget" name="groupProgress" native="true">
+            <layout class="QHBoxLayout" name="horizontalLayout_21">
+             <property name="margin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QProgressBar" name="progressBar">
+               <property name="enabled">
+                <bool>true</bool>
+               </property>
+               <property name="toolTip">
+                <string>Homogenisation process progress</string>
+               </property>
+               <property name="statusTip">
+                <string/>
+               </property>
+               <property name="value">
+                <number>0</number>
+               </property>
+               <property name="invertedAppearance">
+                <bool>false</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QToolButton" name="buttonAbort">
+               <property name="toolTip">
+                <string>Abort process</string>
+               </property>
+               <property name="text">
+                <string>...</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
     <item row="0" column="1">
      <widget class="QFrame" name="rightFrame">
       <property name="sizePolicy">
@@ -48,7 +366,7 @@
           <enum>QFrame::Raised</enum>
          </property>
          <property name="currentIndex">
-          <number>0</number>
+          <number>9</number>
          </property>
          <widget class="QWidget" name="DataLoad">
           <layout class="QVBoxLayout" name="verticalLayout_8">
@@ -2198,6 +2516,406 @@
            </item>
           </layout>
          </widget>
+         <widget class="QWidget" name="ToolsBenchmark">
+          <layout class="QVBoxLayout" name="verticalLayout_31">
+           <property name="spacing">
+            <number>15</number>
+           </property>
+           <item>
+            <layout class="QVBoxLayout" name="verticalLayout_30">
+             <item>
+              <widget class="QLabel" name="label_64">
+               <property name="font">
+                <font>
+                 <pointsize>14</pointsize>
+                 <weight>50</weight>
+                 <bold>false</bold>
+                </font>
+               </property>
+               <property name="text">
+                <string>Benchmark</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="Line" name="line_11">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_28">
+             <item>
+              <widget class="QLabel" name="TB_labelResultsFile">
+               <property name="text">
+                <string>Results file</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="TB_lineResultsFile"/>
+             </item>
+             <item>
+              <widget class="QPushButton" name="TB_buttonResultsFile">
+               <property name="text">
+                <string>Browse...</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_29">
+             <item>
+              <widget class="QLabel" name="TB_labelNetworkID">
+               <property name="enabled">
+                <bool>true</bool>
+               </property>
+               <property name="text">
+                <string>Network ID</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="TB_lineNetworkID">
+               <property name="enabled">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_18">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QLabel" name="TB_labelNoData">
+               <property name="text">
+                <string>No data</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QDoubleSpinBox" name="TB_spinNoData">
+               <property name="decimals">
+                <number>3</number>
+               </property>
+               <property name="minimum">
+                <double>-1000000000.000000000000000</double>
+               </property>
+               <property name="maximum">
+                <double>1000000000.000000000000000</double>
+               </property>
+               <property name="value">
+                <double>-999.899999999999977</double>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_31">
+             <item>
+              <widget class="QLabel" name="TB_labelKeysFile">
+               <property name="text">
+                <string>Keys file</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="TB_lineKeysFile"/>
+             </item>
+             <item>
+              <widget class="QPushButton" name="TB_buttonKeysFile">
+               <property name="text">
+                <string>Browse...</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_33">
+             <item>
+              <widget class="QLabel" name="TB_labelOrig">
+               <property name="text">
+                <string>Original data</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="TB_lineOrig"/>
+             </item>
+             <item>
+              <widget class="QPushButton" name="TB_buttonOrig">
+               <property name="text">
+                <string>Browse...</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_34">
+             <item>
+              <widget class="QLabel" name="TB_labelInho">
+               <property name="text">
+                <string>Inhomogenous data</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="TB_lineInho"/>
+             </item>
+             <item>
+              <widget class="QPushButton" name="TB_buttonInho">
+               <property name="text">
+                <string>Browse...</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="TB_checkSaveCost">
+             <property name="text">
+              <string>Save generated files in the COST-HOME format</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_32">
+             <item>
+              <widget class="QLabel" name="TB_labelSaveCost">
+               <property name="enabled">
+                <bool>true</bool>
+               </property>
+               <property name="text">
+                <string>COST-HOME directory</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="TB_lineSaveCost">
+               <property name="enabled">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="TB_buttonSaveCost">
+               <property name="enabled">
+                <bool>true</bool>
+               </property>
+               <property name="text">
+                <string>Browse...</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="TB_checkAverageYearly">
+             <property name="text">
+              <string>Convert yearly summed data into a monthly average</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="TB_checkSkipMissing">
+             <property name="text">
+              <string>Skip records in which any station in the network has missing values</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="TB_checkSkipOutlier">
+             <property name="text">
+              <string>Skip records in which any station in the network has outlier values</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_10">
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>Calculate scores over...</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_35" stretch="0,0">
+             <property name="sizeConstraint">
+              <enum>QLayout::SetDefaultConstraint</enum>
+             </property>
+             <item>
+              <widget class="QGroupBox" name="TB_groupNetwork">
+               <property name="title">
+                <string>Network</string>
+               </property>
+               <property name="checkable">
+                <bool>true</bool>
+               </property>
+               <layout class="QFormLayout" name="formLayout_9">
+                <item row="0" column="0">
+                 <widget class="QLabel" name="TB_labelNetworkCRMSE">
+                  <property name="text">
+                   <string>CRMSE:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1">
+                 <widget class="QLineEdit" name="TB_lineNetworkCRMSE">
+                  <property name="frame">
+                   <bool>true</bool>
+                  </property>
+                  <property name="readOnly">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0">
+                 <widget class="QLabel" name="TB_labelNetworkImprov">
+                  <property name="text">
+                   <string>Improvement:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1">
+                 <widget class="QLineEdit" name="TB_lineNetworkImprov">
+                  <property name="readOnly">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item>
+              <widget class="QGroupBox" name="TB_groupStation">
+               <property name="title">
+                <string>Station</string>
+               </property>
+               <property name="flat">
+                <bool>false</bool>
+               </property>
+               <property name="checkable">
+                <bool>true</bool>
+               </property>
+               <layout class="QFormLayout" name="formLayout_8">
+                <property name="fieldGrowthPolicy">
+                 <enum>QFormLayout::FieldsStayAtSizeHint</enum>
+                </property>
+                <item row="0" column="0">
+                 <widget class="QLabel" name="TB_labelStationCRMSE">
+                  <property name="text">
+                   <string>CRMSE:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1">
+                 <widget class="QLineEdit" name="TB_lineStationImprov">
+                  <property name="readOnly">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0">
+                 <widget class="QLabel" name="TB_labelStationImprov">
+                  <property name="text">
+                   <string>Improvement:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1">
+                 <widget class="QLineEdit" name="TB_lineStationCRMSE">
+                  <property name="readOnly">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <spacer name="verticalSpacer_11">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>11</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_30">
+             <item>
+              <spacer name="horizontalSpacer_17">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QPushButton" name="TB_buttonCalculate">
+               <property name="text">
+                <string>Calculate</string>
+               </property>
+               <property name="autoDefault">
+                <bool>false</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_19">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
         </widget>
        </item>
        <item>
@@ -2210,324 +2928,6 @@
       </layout>
      </widget>
     </item>
-    <item row="0" column="0">
-     <widget class="QFrame" name="leftFrame">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-        <horstretch>1</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="lineWidth">
-       <number>0</number>
-      </property>
-      <layout class="QVBoxLayout" name="verticalLayout_25">
-       <item>
-        <widget class="QTreeWidget" name="treeWidget">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-           <horstretch>0</horstretch>
-           <verstretch>1</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>130</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>16777215</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="mouseTracking">
-          <bool>true</bool>
-         </property>
-         <attribute name="headerVisible">
-          <bool>true</bool>
-         </attribute>
-         <column>
-          <property name="text">
-           <string>Settings</string>
-          </property>
-         </column>
-         <item>
-          <property name="text">
-           <string>Data</string>
-          </property>
-          <property name="flags">
-           <set>ItemIsDragEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
-          </property>
-          <item>
-           <property name="text">
-            <string>Load</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Batch</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Save</string>
-           </property>
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="flags">
-            <set>ItemIsSelectable|ItemIsDragEnabled|ItemIsUserCheckable</set>
-           </property>
-          </item>
-         </item>
-         <item>
-          <property name="text">
-           <string>Simulation</string>
-          </property>
-          <property name="flags">
-           <set>ItemIsDragEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
-          </property>
-          <item>
-           <property name="text">
-            <string>Options</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Grid</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Variogram</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Advanced</string>
-           </property>
-          </item>
-         </item>
-         <item>
-          <property name="text">
-           <string>Homogenisation</string>
-          </property>
-          <property name="flags">
-           <set>ItemIsDragEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
-          </property>
-          <item>
-           <property name="text">
-            <string>Detection</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Correction</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Results</string>
-           </property>
-          </item>
-         </item>
-        </widget>
-       </item>
-       <item>
-        <spacer name="verticalSpacer_8">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <widget class="QFrame" name="groupStatus">
-         <property name="frameShape">
-          <enum>QFrame::Box</enum>
-         </property>
-         <property name="frameShadow">
-          <enum>QFrame::Sunken</enum>
-         </property>
-         <property name="lineWidth">
-          <number>1</number>
-         </property>
-         <property name="midLineWidth">
-          <number>0</number>
-         </property>
-         <layout class="QVBoxLayout" name="verticalLayout_24">
-          <item>
-           <widget class="QLabel" name="label">
-            <property name="font">
-             <font>
-              <weight>75</weight>
-              <bold>true</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>Status</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="Line" name="line_8">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="labelStatus">
-            <property name="text">
-             <string>Waiting...</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QWidget" name="groupStatusInfo" native="true">
-            <layout class="QFormLayout" name="formStatus">
-             <property name="fieldGrowthPolicy">
-              <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
-             </property>
-             <property name="verticalSpacing">
-              <number>6</number>
-             </property>
-             <property name="margin">
-              <number>0</number>
-             </property>
-             <item row="0" column="0">
-              <widget class="QLabel" name="SI_labelNetwork">
-               <property name="text">
-                <string>Network:</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="1">
-              <widget class="QLabel" name="SI_labelStatusNetwork">
-               <property name="text">
-                <string/>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="SI_labelDecade">
-               <property name="text">
-                <string>Decade:</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="1">
-              <widget class="QLabel" name="SI_labelStatusDecade">
-               <property name="text">
-                <string/>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="0">
-              <widget class="QLabel" name="SI_labelStation">
-               <property name="text">
-                <string>Station ID:</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="1">
-              <widget class="QLabel" name="SI_labelStatusStation">
-               <property name="text">
-                <string/>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="0">
-              <widget class="QLabel" name="SI_labelSim">
-               <property name="text">
-                <string>Simulation:</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="1">
-              <widget class="QLabel" name="SI_labelStatusSim">
-               <property name="text">
-                <string/>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </widget>
-          </item>
-          <item>
-           <widget class="QWidget" name="groupTime" native="true">
-            <layout class="QFormLayout" name="formLayout_6">
-             <property name="margin">
-              <number>0</number>
-             </property>
-             <item row="0" column="0">
-              <widget class="QLabel" name="label_2">
-               <property name="text">
-                <string>Elapsed time:</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="1">
-              <widget class="QLabel" name="labelTime">
-               <property name="text">
-                <string/>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </widget>
-          </item>
-          <item>
-           <widget class="QWidget" name="groupProgress" native="true">
-            <layout class="QHBoxLayout" name="horizontalLayout_21">
-             <property name="margin">
-              <number>0</number>
-             </property>
-             <item>
-              <widget class="QProgressBar" name="progressBar">
-               <property name="enabled">
-                <bool>true</bool>
-               </property>
-               <property name="toolTip">
-                <string>Homogenisation process progress</string>
-               </property>
-               <property name="statusTip">
-                <string/>
-               </property>
-               <property name="value">
-                <number>0</number>
-               </property>
-               <property name="invertedAppearance">
-                <bool>false</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QToolButton" name="buttonAbort">
-               <property name="toolTip">
-                <string>Abort process</string>
-               </property>
-               <property name="text">
-                <string>...</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -2535,7 +2935,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>742</width>
+     <width>796</width>
      <height>22</height>
     </rect>
    </property>
@@ -2573,6 +2973,7 @@
     <property name="title">
      <string>&amp;Tools</string>
     </property>
+    <addaction name="actionBenchmarkScores"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -2706,6 +3107,14 @@
   <action name="actionOnlineDocs">
    <property name="text">
     <string>Online &amp;documentation</string>
+   </property>
+  </action>
+  <action name="actionBenchmarkScores">
+   <property name="text">
+    <string>Benchmark scores</string>
+   </property>
+   <property name="shortcut">
+    <string>F8</string>
    </property>
   </action>
  </widget>

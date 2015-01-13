@@ -90,7 +90,7 @@ class Station(object):
     TODO: separate quality flag from data
 
     """
-    def __init__(self, path=None, spec=None, no_data=-999.9):
+    def __init__(self, path=None, no_data=-999.9, spec=None):
         """Initialise a Station instance.
 
         Parameters

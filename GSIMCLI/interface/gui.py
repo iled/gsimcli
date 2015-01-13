@@ -25,6 +25,7 @@ from launchers import method_classic
 import pandas as pd
 from parsers.gsimcli import GsimcliParam
 import tools.homog as hmg
+import tools.scores as scores
 from tools.utils import seconds_convert
 
 
@@ -96,6 +97,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.HD_buttonResetStations.clicked.connect(self.reset_stations)
         self.HR_buttonResultsPath.clicked.connect(self.browse_results)
         self.buttonAbort.clicked.connect(self.abort_gsimcli)
+        self.TB_buttonCalculate.clicked.connect(self.calculate_scores)
 
         # change pages
         self.treeWidget.expandAll()
@@ -109,6 +111,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.actionPrintStatus.toggled.connect(self.disable_print_status)
         self.HD_checkTolerance.toggled.connect(self.enable_tolerance)
         self.HR_checkPurgeSims.toggled.connect(self.enable_purge_sims)
+        self.TB_checkSaveCost.toggled.connect(self.enable_save_cost)
+        self.TB_groupNetwork.toggled.connect(self.enable_scores_network)
+        self.TB_groupStation.toggled.connect(self.enable_scores_station)
 
         # combo boxes
         self.SA_comboStrategy.currentIndexChanged.connect(
@@ -125,6 +130,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.DB_lineDecadesPath.textChanged.connect(self.changed_decades_path)
         self.HR_lineResultsPath.textChanged.connect(self.available_space)
         self.HR_lineResultsName.textChanged.connect(self.check_results_ext)
+        self.TB_lineResultsFile.textChanged.connect(self.deduce_network_id)
 
         # lists
         self.DB_listNetworksPaths.currentItemChanged.connect(
@@ -143,6 +149,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.actionClose.triggered.connect(self.close)
         self.actionOnlineDocs.triggered.connect(self.online_docs)
         self.actionAbout.triggered.connect(self.about)
+        self.actionBenchmarkScores.triggered.connect(self.set_tools)
 
         # spin
         self.set_cpu_cores()
@@ -157,7 +164,10 @@ class GsimcliMainWindow(QtGui.QMainWindow):
                          self.SV_labelBatchDecades,
                          self.SA_labelMaxSamples, self.SA_spinMaxSamples,
                          self.HD_groupUserOrder, self.HD_groupTolerance,
-                         self.HC_groupSkewness, self.HC_groupPercentile])
+                         self.HC_groupSkewness, self.HC_groupPercentile,
+                         self.TB_labelSaveCost, self.TB_lineSaveCost,
+                         self.TB_buttonSaveCost,
+                         ])
 
         # default
         self.default_varnames()
@@ -434,6 +444,15 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         elif tree_item == "Results":
             self.stackedWidget.setCurrentWidget(self.HomogenisationResults)
 
+    def set_tools(self):
+        """Connect the Tools menu (QAction) with the panels on the right
+        (QStackedWidget).
+
+        """
+        who = self.sender().objectName().lower()
+        if "scores" in who:
+            self.stackedWidget.setCurrentWidget(self.ToolsBenchmark)
+
     def set_max_nodes(self, i):
         """Sync both spin boxes that handle the maximum number of nodes to be
         found.
@@ -683,6 +702,39 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 
         """
         self.estimate_necessary_space()
+
+    def enable_save_cost(self, toggle):
+        """Hide/unhide widgets related to the SaveCosts checkbox: label, line
+        and button.
+        Connected to the SaveCosts checkbox.
+
+        """
+        self.TB_labelSaveCost.setVisible(toggle)
+        self.TB_lineSaveCost.setVisible(toggle)
+        self.TB_buttonSaveCost.setVisible(toggle)
+
+    def enable_scores_network(self, toggle):
+        """Toggle widgets related to the network scores group: crmse and
+        improvement labels and lines.
+        Connected to the groupNetwork checkbox.
+
+        """
+        self.TB_labelNetworkCRMSE.setEnabled(toggle)
+        self.TB_lineNetworkCRMSE.setEnabled(toggle)
+        self.TB_labelNetworkImprov.setEnabled(toggle)
+        self.TB_lineNetworkImprov.setEnabled(toggle)
+        self.TB_checkSkipMissing.setEnabled(toggle)
+
+    def enable_scores_station(self, toggle):
+        """Toggle widgets related to the station scores group: crmse and
+        improvement labels and lines.
+        Connected to the groupStation checkbox.
+
+        """
+        self.TB_labelStationCRMSE.setEnabled(toggle)
+        self.TB_lineStationCRMSE.setEnabled(toggle)
+        self.TB_labelStationImprov.setEnabled(toggle)
+        self.TB_lineStationImprov.setEnabled(toggle)
 
     def disable_print_status(self, toggle):
         """Connected to the print_status menu action.
@@ -1414,6 +1466,13 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         if self.batch_decades or (self.batch_networks and selected_netw):
             return hmg.find_pset_file(directory, self.header, nvars=5)
 
+    def deduce_network_id(self):
+        """Try to deduce the network ID from the results file.
+        Connected to the ResultsFile line.
+
+        """
+        pass
+
     def current_network(self, current, previous):
         """Control the file preview, if any selected.
 
@@ -1561,6 +1620,34 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.actionGSIMCLI.setEnabled(True)
         self.worker.is_running = False
         self.finish_time = time.time()
+
+    def calculate_scores(self):
+        over_network = self.TB_groupNetwork.isChecked()
+        over_station = self.TB_groupStation.isChecked()
+        
+        kwargs = {
+              'gsimcli_results': str(self.TB_lineResultsFile.text()),
+              'no_data': self.TB_spinNoData.value(),
+              'network_ids': str(self.TB_lineNetworkID.text()),
+              'keys': str(self.TB_lineKeysFile.text()),
+              'costhome_path': str(self.TB_lineSaveCost.text()),
+              'costhome_save': self.TB_checkSaveCost.isChecked(),
+              'orig_path': str(self.TB_lineOrig.text()),
+              'inho_path': str(self.TB_lineInho.text()),
+              'yearly_sum': self.TB_checkAverageYearly.isChecked(),
+              'over_network': self.TB_groupNetwork.isChecked(),
+              'over_station': self.TB_groupStation.isChecked(),
+              'skip_missing': self.TB_checkSkipMissing.isChecked(),
+              'skip_outlier': self.TB_checkSkipOutlier.isChecked(),
+              }
+        results = scores.gsimcli_improvement(**kwargs)
+        
+        if over_network:
+            self.TB_lineNetworkCRMSE.setText(str(results[0][0]))
+            self.TB_lineNetworkImprov.setText(str(results[2][0]))
+        if over_station:
+            self.TB_lineStationCRMSE.setText(str(results[0][int(over_network)]))
+            self.TB_lineStationImprov.setText(str(results[2][int(over_network)]))
 
 
 class Homogenising(QtCore.QObject):

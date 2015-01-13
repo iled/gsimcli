@@ -278,7 +278,7 @@ def gsimcli_improvement(gsimcli_results, no_data=-999.9, network_ids=None,
             raise ValueError("Mismatch between number of results files and "
                              "keys files")
 
-    if costhome_path is None:
+    if costhome_path is None or not bool(costhome_path):
         costhome_path = os.path.join(path_up(gsimcli_results[0], 1)[0],
                                      'gsimcli to costhome')
     if not os.path.exists(costhome_path):
