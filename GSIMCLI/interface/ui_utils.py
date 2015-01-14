@@ -99,8 +99,12 @@ class GuiParam(object):
             self.value = qlist_to_pylist(self.widget)
         if isinstance(self.widget, QtGui.QComboBox):
             self.value = self.widget.currentIndex()
-        if (isinstance(self.widget, QtGui.QCheckBox) or
-                isinstance(self.widget, QtGui.QRadioButton)):
+        if (
+            isinstance(self.widget, QtGui.QCheckBox) or
+            isinstance(self.widget, QtGui.QRadioButton) or
+            (isinstance(self.widget, QtGui.QGroupBox) and
+             self.widget.isCheckable())
+             ):
             self.value = self.widget.isChecked()
 
     def load(self, value):
@@ -119,8 +123,12 @@ class GuiParam(object):
             pylist_to_qlist(value, self.widget)
         elif isinstance(self.widget, QtGui.QComboBox):
             self.widget.setCurrentIndex(int(value))
-        elif (isinstance(self.widget, QtGui.QCheckBox) or
-                isinstance(self.widget, QtGui.QRadioButton)):
+        elif (
+            isinstance(self.widget, QtGui.QCheckBox) or
+            isinstance(self.widget, QtGui.QRadioButton) or
+            (isinstance(self.widget, QtGui.QGroupBox) and
+             self.widget.isCheckable())
+              ):
             self.widget.setChecked(to_bool(value))
 
         self.update()
