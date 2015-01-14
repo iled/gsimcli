@@ -12,7 +12,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Tools :: Benchmark</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -55,11 +55,14 @@
    </item>
    <item>
     <widget class="QTableWidget" name="tableResults">
+     <property name="contextMenuPolicy">
+      <enum>Qt::ActionsContextMenu</enum>
+     </property>
      <property name="toolTip">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Double click a cell in the &lt;span style=&quot; font-style:italic;&quot;&gt;Results files&lt;/span&gt; or &lt;span style=&quot; font-style:italic;&quot;&gt;Keys files&lt;/span&gt; columns in order to browse a file.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="editTriggers">
-      <set>QAbstractItemView::AnyKeyPressed|QAbstractItemView::CurrentChanged|QAbstractItemView::EditKeyPressed</set>
+      <set>QAbstractItemView::AnyKeyPressed|QAbstractItemView::EditKeyPressed|QAbstractItemView::SelectedClicked</set>
      </property>
      <property name="alternatingRowColors">
       <bool>true</bool>
@@ -115,37 +118,6 @@
     </widget>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_29">
-     <item>
-      <widget class="QPushButton" name="buttonAddRows">
-       <property name="text">
-        <string>Add rows</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="buttonRemoveRows">
-       <property name="text">
-        <string>Remove selected rows</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="horizontalSpacer_20">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-    </layout>
-   </item>
-   <item>
     <layout class="QHBoxLayout" name="horizontalLayout_28">
      <item>
       <widget class="QLabel" name="labelNoData">
@@ -195,7 +167,11 @@
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="lineOrig"/>
+      <widget class="QLineEdit" name="lineOrig">
+       <property name="placeholderText">
+        <string>Select the directory with the original data stations (orig).</string>
+       </property>
+      </widget>
      </item>
      <item>
       <widget class="QPushButton" name="buttonOrig">
@@ -216,7 +192,11 @@
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="lineInho"/>
+      <widget class="QLineEdit" name="lineInho">
+       <property name="placeholderText">
+        <string>Select the directory with the inhomogenous data (inho).</string>
+       </property>
+      </widget>
      </item>
      <item>
       <widget class="QPushButton" name="buttonInho">
@@ -250,6 +230,9 @@
       <widget class="QLineEdit" name="lineSaveCost">
        <property name="enabled">
         <bool>true</bool>
+       </property>
+       <property name="placeholderText">
+        <string>Specify the directory to save the converted files.</string>
        </property>
       </widget>
      </item>
