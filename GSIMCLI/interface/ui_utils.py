@@ -97,6 +97,8 @@ class GuiParam(object):
             self.value = self.widget.value()
         if isinstance(self.widget, QtGui.QListWidget):
             self.value = qlist_to_pylist(self.widget)
+        if isinstance(self.widget, QtGui.QTableWidget):
+            self.value = qtable_to_pylist(self.widget)
         if isinstance(self.widget, QtGui.QComboBox):
             self.value = self.widget.currentIndex()
         if (
@@ -121,6 +123,8 @@ class GuiParam(object):
             self.widget.setValue(float(value))
         elif isinstance(self.widget, QtGui.QListWidget):
             pylist_to_qlist(value, self.widget)
+        elif isinstance(self.widget, QtGui.QTableWidget):
+            pylist_to_qtable(value, self.widget)
         elif isinstance(self.widget, QtGui.QComboBox):
             self.widget.setCurrentIndex(int(value))
         elif (
@@ -215,3 +219,58 @@ def pylist_to_qlist(pylist, qlist):
     qlist.addItems(pylist)
 
     return qlist
+
+
+def qtable_to_pylist(qtable):
+    """Convert QTableWidget to Python list.
+
+    Parameters
+    ----------
+    qtable : QtGui.QTableWidget object
+        Target QTableWidget.
+
+    Returns
+    -------
+    items : list
+        List with the items contained in qtable.
+
+    See Also
+    --------
+    pylist_to_qtable : Convert Python list into an existing QTableWidget.
+
+    """
+    table = list()
+    for col in xrange(qtable.columnCount()):
+        column = list()
+        for row in xrange(qtable.rowCount()):
+            item = qtable.item(row, col)
+            if item is not None:
+                column.append(item.text())
+            else:
+                column.append("")
+        table.append(column)
+
+    return table
+
+
+def pylist_to_qtable(pylist, qtable):
+    """Convert Python list into an existing QTableWidget.
+
+    Parameters
+    ----------
+    pylist : list
+        List to be converted.
+    qtable : QtGui.QTableWidget object
+        Existing QTableWidget.
+
+    See Also
+    --------
+    qtable_to_pylist : Convert QTWidget to Python list.
+
+    """
+    for col, column in enumerate(pylist):
+        for row, content in enumerate(column):
+            item = QtGui.QTableWidgetItem(content)
+            qtable.setItem(row, col, item)
+
+    return qtable
