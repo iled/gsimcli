@@ -65,6 +65,10 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.load_recent_settings()
         self.settings.endGroup()
 
+        # pages
+        self.tools_benchmark = benchmark.Scores(self)
+        self.tools_benchmark.hide()
+
         # set params
         self.params = GsimcliParam()
         self.temp_params = NamedTemporaryFile(delete=False, prefix="gsimcli_")
@@ -218,10 +222,10 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         add([data_path, no_data, header, data_name, varnames])
         #    Data / Batch
         gp = "data_batch"
-        batch_networks = ui.GuiParam("batch_networks", group=gp,
-                                     self.DB_checkBatchNetworks)
-        network_paths = ui.GuiParam("networks_paths", group=gp,
-                                    self.DB_listNetworksPaths,
+        batch_networks = ui.GuiParam("batch_networks",
+                                     self.DB_checkBatchNetworks, group=gp)
+        network_paths = ui.GuiParam("networks_paths",
+                                    self.DB_listNetworksPaths, group=gp,
                                     depends=batch_networks)
         batch_decades = ui.GuiParam("batch_decades", self.DB_checkBatchDecades,
                                  group=gp)
@@ -368,6 +372,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
                           gsimcli_name="results_file")
         add([detect_save, sim_purge, r_path, r_name])
 
+        #    Tools / Benchmark
+        add(self.tools_benchmark.guiparams)
+
     def about(self):
         """The About box. """
         title = "About gsimcli"
@@ -412,11 +419,16 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         (QStackedWidget).
 
         """
-        if current.text(0) in ["Data", "Simulation", "Homogenisation"]:
+        if current and current.text(0) in ["Data", "Simulation",
+                                           "Homogenisation"]:
             current.setExpanded(True)
             self.treeWidget.setCurrentItem(current.child(0))
 
-        tree_item = self.treeWidget.currentItem().text(0)
+        if current:
+            tree_item = self.treeWidget.currentItem().text(0)
+        else:
+            tree_item = None
+
         if tree_item == "Load":
             self.stackedWidget.setCurrentWidget(self.DataLoad)
         elif tree_item == "Batch":
@@ -443,6 +455,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         (QStackedWidget).
 
         """
+        self.treeWidget.selectionModel().clear()
         who = self.sender().objectName().lower()
         if "scores" in who:
             self.tools_benchmark = benchmark.Scores(self)
