@@ -68,7 +68,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 
         # set params
         self.params = GsimcliParam()
-        self.temp_params = NamedTemporaryFile(delete=False)
+        self.temp_params = NamedTemporaryFile(delete=False, prefix="gsimcli_")
         self.loaded_params = None
         self.skip_sim = self.SO_checkSkipSim.isChecked()
         self.print_status = self.actionPrintStatus.isChecked()

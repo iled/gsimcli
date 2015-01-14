@@ -15,6 +15,7 @@ Created on 21/01/2014
 
 import os
 import shutil
+import tempfile
 
 import numpy as np
 import pandas as pd
@@ -278,11 +279,8 @@ def gsimcli_improvement(gsimcli_results, no_data=-999.9, network_ids=None,
             raise ValueError("Mismatch between number of results files and "
                              "keys files")
 
-    if costhome_path is None or not bool(costhome_path):
-        costhome_path = os.path.join(path_up(gsimcli_results[0], 1)[0],
-                                     'gsimcli to costhome')
-    if not os.path.exists(costhome_path):
-        os.mkdir(costhome_path)
+    if not bool(costhome_path):
+        costhome_path = tempfile.mkdtemp(prefix="gsimcli_")
 
     yearly_sum = kwargs.pop("yearly_sum")
     for i, results in enumerate(gsimcli_results):
@@ -319,7 +317,7 @@ if __name__ == '__main__':
 
     macpath = '/Users/julio/Desktop/testes/'
     mintpath = '/home/julio/Testes/'
-    basepath = macpath
+    basepath = mintpath
 
     """ # inho syn1
     netw_path = basepath + 'benchmark/inho/precip/syn1'
@@ -373,11 +371,11 @@ if __name__ == '__main__':
     # network_id = '000009'
     kis = [basepath + 'cost-home/rede000005/keys.txt',
            basepath + 'cost-home/rede000009/keys.txt']
-    orig_path = "/Users/julio/Desktop/testes/cost-home/benchmark/orig/precip/sur1"
-    inho_path = "/Users/julio/Desktop/testes/cost-home/benchmark/inho/precip/sur1"
+    orig_path = basepath + "/benchmark/orig/precip/sur1"
+    inho_path = basepath + "/benchmark/inho/precip/sur1"
     # """
 
-    netw_path = basepath + 'benchmark/h011/precip/sur1'
+#    netw_path = basepath + 'benchmark/h011/precip/sur1'
     # network_id = ['000009', '000010']
 #    sub = ch.Submission(netw_path, md, ['000009'])  # , ['000010'])
     # print crmse_submission_(sub, over_station=True, over_network=True,
