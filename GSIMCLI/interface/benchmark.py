@@ -9,7 +9,7 @@ import os
 import sys
 
 from external_libs.pyside_dynamic import loadUi
-from interface.ui_utils import hide
+import interface.ui_utils as ui
 import tools.scores as scores
 
 
@@ -30,6 +30,9 @@ class Scores(QtGui.QWidget):
         # QtGui.QMainWindow.__init__(self, parent)
         loadUi(os.path.join(base, "interface", "tools.benchmark.ui"), self)
 
+        # set params
+        self.set_gui_params()
+
         # buttons
         self.buttonCalculate.clicked.connect(self.calculate_scores)
 
@@ -44,9 +47,8 @@ class Scores(QtGui.QWidget):
         self.set_table_menu()
 
         # hidden widgets by default
-        hide([self.labelSaveCost, self.lineSaveCost,
-              self.buttonSaveCost,
-              ])
+        ui.hide([self.labelSaveCost, self.lineSaveCost, self.buttonSaveCost,
+                 ])
 
     def add_rows_auto(self, row, col):
         """Automatically add a new row after entering data in the last row.
@@ -193,6 +195,27 @@ class Scores(QtGui.QWidget):
         # keep one row
         if not self.tableResults.rowCount():
             self.tableResults.insertRow(0)
+
+    def set_gui_params(self):
+        self.guiparams = list()
+        add = self.guiparams.extend
+
+        gp = "tools_benchmark"
+        table = ui.GuiParam("table_results", self.tableResults, gp)
+        no_data = ui.GuiParam("no_data", self.spinNoData, gp)
+        orig = ui.GuiParam("orig_path", self.lineOrig, gp)
+        inho = ui.GuiParam("inho_path", self.lineInho, gp)
+        save_cost = ui.GuiParam("save_cost", self.checkSaveCost, gp)
+        cost_path = ui.GuiParam("cost_path", self.lineSaveCost, gp, save_cost)
+        over_station = ui.GuiParam("over_station", self.groupStation, gp)
+        over_network = ui.GuiParam("over_network", self.groupNetwork, gp)
+        yearly_sum = ui.GuiParam("yearly_sum", self.checkAverageYearly, gp)
+        skip_missing = ui.GuiParam("skip_missing", self.checkSkipMissing, gp,
+                                   over_network)
+        skip_outlier = ui.GuiParam("skip_outlier", self.checkSkipOutlier, gp)
+
+        add([table, no_data, orig, inho, save_cost, cost_path, over_station,
+             over_network, yearly_sum, skip_missing, skip_outlier])
 
     def set_table_menu(self):
         """Set up the context menu of the tableResults widget, in its cells
