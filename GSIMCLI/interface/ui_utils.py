@@ -4,7 +4,8 @@ Created on 13/01/2015
 
 @author: julio
 """
-from PySide import QtGui
+from PySide import QtGui, QtCore
+import time
 import warnings
 
 from parsers.gsimcli import GsimcliParam
@@ -162,6 +163,113 @@ class GuiParam(object):
         except TypeError:
             it_has = True
         return it_has
+
+
+class Office(QtCore.QObject):
+    """Connect the boss (parent) with the worker doing the job.
+
+    """
+    finished = QtCore.Signal()
+
+    def __init__(self, parent, job, updater=None, **kwargs):
+        super(Office, self).__init__(parent)
+        self.job = job
+        self.jobargs = kwargs
+        # new thread
+        self.thread = QtCore.QThread()
+        # new worker
+        self.worker = Worker(self, self.job, **self.jobargs)
+        # move worker to thread
+        self.worker.moveToThread(self.thread)
+        # connect the thread's started signal to the worker's processing slot
+        self.thread.started.connect(self.worker.run)
+        # fetch results
+        self.worker.results.connect(self.delivery)
+        # clean-up, quit thread, mark worker and thread for deletion
+        self.worker.finished.connect(self.thread.quit)
+        self.thread.finished.connect(self.worker.timer.quit)
+        self.worker.finished.connect(self.worker.deleteLater)
+        self.thread.finished.connect(self.worker.timer.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
+        if updater is not None:
+            updater.connect(self.worker.update_progress.emit)
+
+    def start(self):
+        self.thread.start()
+        # self.result = self.worker.result
+
+    def delivery(self):
+        self.results = self.worker.result
+        self.finished.emit()
+
+
+class Worker(QtCore.QObject):
+    """Handle threads.
+
+    """
+    # signals emmited during the job
+    update_progress = QtCore.Signal(int)
+    time_elapsed = QtCore.Signal(int)
+    results = QtCore.Signal(object)
+    finished = QtCore.Signal()
+
+    def __init__(self, parent, job, **kwargs):
+        # super(Worker, self).__init__(parent)
+        QtCore.QObject.__init__(self)
+        self.job = job
+        self.kwargs = kwargs
+        self.timer = Timer(self)
+        self.timer.time_elapsed.connect(self.time_elapsed.emit)
+        self.is_running = False
+
+    def run(self):
+        self.timer.start(time.time())
+        self.is_running = True
+        self.result = self.job(**self.kwargs)
+        self.done()
+
+    def done(self):
+        self.is_running = False
+        # workaround for the timer QThread removal
+        time.sleep(1)
+        self.results.emit(self.result)
+        self.finished.emit()
+
+
+class Timer(QtCore.QThread):
+    """Timer thread for elapsed time.
+
+    """
+    time_elapsed = QtCore.Signal(int)
+
+    def __init__(self, parent=None):
+        super(Timer, self).__init__(parent)
+        self.time_start = None
+        self.parent = parent
+
+    def start(self, time_start):
+        self.time_start = time_start
+
+        return super(Timer, self).start()
+
+    def run(self):
+        while self.parent.is_running:
+            self.time_elapsed.emit(time.time() - self.time_start)
+            time.sleep(1)
+
+
+class Updater(QtCore.QObject):
+    progress = QtCore.Signal(int)
+
+    def __init__(self, parent=None):
+        super(Updater, self).__init__(parent)
+        self.current = 0
+
+    def reset(self):
+        self.current = 0
+
+    def send(self):
+        self.progress.emit(self.current)
 
 
 def hide(widgets):
