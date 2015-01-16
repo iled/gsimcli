@@ -1474,6 +1474,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         """Launch GSIMCLI process according to the existing ui settings.
         Connected to the GSIMCLI menu action.
 
+        DEPRECATED
         """
         self.apply_settings()
         self.params.path = str(self.params.path)
@@ -1604,7 +1605,7 @@ class Homogenising(QtCore.QObject):
     def __init__(self, parent):
         QtCore.QObject.__init__(self)
         self.gui = parent
-        self.timer = Timer(self)
+        self.timer = ui.Timer(self)
         self.timer.time_elapsed.connect(self.time_elapsed.emit)
         self.is_running = False
 
@@ -1640,28 +1641,6 @@ class Homogenising(QtCore.QObject):
         # this second is a workaround for the timer QThread removal
         time.sleep(1)
         self.finished.emit()
-
-
-class Timer(QtCore.QThread):
-    """Timer thread for elapsed time.
-
-    """
-    time_elapsed = QtCore.Signal(int)
-
-    def __init__(self, parent=None):
-        super(Timer, self).__init__(parent)
-        self.time_start = None
-        self.parent = parent
-
-    def start(self, time_start):
-        self.time_start = time_start
-
-        return super(Timer, self).start()
-
-    def run(self):
-        while self.parent.is_running:
-            self.time_elapsed.emit(time.time() - self.time_start)
-            time.sleep(1)
 
 
 class EmittingStream(QtCore.QObject):
