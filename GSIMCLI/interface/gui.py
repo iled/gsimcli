@@ -14,7 +14,6 @@ import os
 import sys
 from tempfile import NamedTemporaryFile
 import time
-import warnings
 
 base = os.path.dirname(os.path.dirname(__file__))
 sys.path.append(base)
@@ -27,7 +26,7 @@ import pandas as pd
 from parsers.gsimcli import GsimcliParam
 import tools.homog as hmg
 from tools.utils import seconds_convert
-from ui_utils import hide
+import ui_utils as ui
 
 
 class GsimcliMainWindow(QtGui.QMainWindow):
@@ -66,9 +65,13 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.load_recent_settings()
         self.settings.endGroup()
 
+        # pages
+        self.tools_benchmark = benchmark.Scores(self)
+        self.tools_benchmark.hide()
+
         # set params
         self.params = GsimcliParam()
-        self.temp_params = NamedTemporaryFile(delete=False)
+        self.temp_params = NamedTemporaryFile(delete=False, prefix="gsimcli_")
         self.loaded_params = None
         self.skip_sim = self.SO_checkSkipSim.isChecked()
         self.print_status = self.actionPrintStatus.isChecked()
@@ -153,15 +156,15 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.SA_spinMaxNodes.valueChanged.connect(self.set_max_nodes)
 
         # hidden widgets by default
-        hide([
-              self.groupProgress, self.groupStatusInfo, self.groupTime,
-              self.SI_labelNetwork, self.SI_labelStatusNetwork,
-              self.SI_labelDecade, self.SI_labelStatusDecade,
-              self.SV_labelBatchDecades,
-              self.SA_labelMaxSamples, self.SA_spinMaxSamples,
-              self.HD_groupUserOrder, self.HD_groupTolerance,
-              self.HC_groupSkewness, self.HC_groupPercentile,
-              ])
+        ui.hide([
+             self.groupProgress, self.groupStatusInfo, self.groupTime,
+             self.SI_labelNetwork, self.SI_labelStatusNetwork,
+             self.SI_labelDecade, self.SI_labelStatusDecade,
+             self.SV_labelBatchDecades,
+             self.SA_labelMaxSamples, self.SA_spinMaxSamples,
+             self.HD_groupUserOrder, self.HD_groupTolerance,
+             self.HC_groupSkewness, self.HC_groupPercentile,
+                ])
 
         # default
         self.default_varnames()
@@ -182,8 +185,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 
         To add new parameters, follow the model:
 
-        >>> new_par = GuiParam("par name", self.Qt_widget, group, dependencies,
-                           "name in the gsimcli par file")
+        >>> new_par = ui.GuiParam("par name", self.Qt_widget, group,
+                            dependencies, "name in the gsimcli par file")
         >>> add(new_par)
 
         """
@@ -192,181 +195,185 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         add = self.guiparams.extend
         #    Main Window
         #         gp = "main_window"
-        #         size = GuiParam("size", widget=self, group=gp)
-        #         pos = GuiParam("position", widget=self, group=gp)
-        #         state = GuiParam("state", widget=self, group=gp)
+        #         size = ui.GuiParam("size", widget=self, group=gp)
+        #         pos = ui.GuiParam("position", widget=self, group=gp)
+        #         state = ui.GuiParam("state", widget=self, group=gp)
         #                          get_value=self.saveState)
-        #         defaultdir = GuiParam("default_dir", widget=self, group=gp,
+        #         defaultdir = ui.GuiParam("default_dir", widget=self, group=gp,
         #                               get_value=self.default_dir)
-        #         printstatus = GuiParam("print_status", widget=self, group=gp,
+        #         printstatus = ui.GuiParam("print_status", widget=self, group=gp,
         #                                get_value=self.print_status)
-        #         recent_settings = GuiParam("recent_settings", widget=self,
+        #         recent_settings = ui.GuiParam("recent_settings", widget=self,
         #                                    group=gp, otype=list,
         #                                    get_value=self.recent_settings)
         #    Data / Load
         gp = "data_load"
-        data_path = GuiParam("data_path", self.DL_lineDataPath, group=gp,
+        data_path = ui.GuiParam("data_path", self.DL_lineDataPath, group=gp,
                              depends=lambda: not self.batch_decades,
                              gsimcli_name="data")
-        no_data = GuiParam("no_data", self.DL_spinNoData, group=gp,
+        no_data = ui.GuiParam("no_data", self.DL_spinNoData, group=gp,
                            gsimcli_name="no_data")
-        header = GuiParam("header", self.DL_checkHeader, group=gp,
+        header = ui.GuiParam("header", self.DL_checkHeader, group=gp,
                           gsimcli_name="data_header")
-        data_name = GuiParam("data_name", self.DL_lineDataName, group=gp,
+        data_name = ui.GuiParam("data_name", self.DL_lineDataName, group=gp,
                              gsimcli_name="name")
-        varnames = GuiParam("variables", self.DL_listVarNames, group=gp,
+        varnames = ui.GuiParam("variables", self.DL_listVarNames, group=gp,
                             gsimcli_name="variables")
         add([data_path, no_data, header, data_name, varnames])
         #    Data / Batch
         gp = "data_batch"
-        batch_networks = GuiParam("batch_networks", self.DB_checkBatchNetworks,
-                                  group=gp)
-        network_paths = GuiParam("networks_paths", self.DB_listNetworksPaths,
-                                 group=gp, depends=batch_networks)
-        batch_decades = GuiParam("batch_decades", self.DB_checkBatchDecades,
+        batch_networks = ui.GuiParam("batch_networks",
+                                     self.DB_checkBatchNetworks, group=gp)
+        network_paths = ui.GuiParam("networks_paths",
+                                    self.DB_listNetworksPaths, group=gp,
+                                    depends=batch_networks)
+        batch_decades = ui.GuiParam("batch_decades", self.DB_checkBatchDecades,
                                  group=gp)
-        dec_path = GuiParam("decades_path", self.DB_lineDecadesPath, group=gp,
-                            depends=[batch_decades, lambda: not
-                                     self.batch_networks])
-        network_id = GuiParam("network_id", self.DB_lineNetworkID, group=gp,
+        dec_path = ui.GuiParam("decades_path", self.DB_lineDecadesPath,
+                               group=gp, depends=[batch_decades, lambda: not
+                                                  self.batch_networks])
+        network_id = ui.GuiParam("network_id", self.DB_lineNetworkID, group=gp,
                               depends=[batch_decades, lambda: not
                                        self.batch_networks])
-        var_path = GuiParam("variography_path", self.DB_lineVariogPath,
+        var_path = ui.GuiParam("variography_path", self.DB_lineVariogPath,
                             group=gp, depends=[batch_decades, lambda: not
                                                self.batch_networks])
         add([batch_networks, network_paths, batch_decades, dec_path,
              network_id, var_path])
         #    Simulation / Options
         gp = "simulation_options"
-        par_path = GuiParam("par_path", self.SO_lineParPath, group=gp,
+        par_path = ui.GuiParam("par_path", self.SO_lineParPath, group=gp,
                             gsimcli_name="dss_par")
-        exe_path = GuiParam("exe_path", self.SO_lineExePath, group=gp,
+        exe_path = ui.GuiParam("exe_path", self.SO_lineExePath, group=gp,
                             gsimcli_name="dss_exe")
-        n_sims = GuiParam("number_simulations", self.SO_spinNumberSims,
+        n_sims = ui.GuiParam("number_simulations", self.SO_spinNumberSims,
                           group=gp, gsimcli_name="number_simulations")
-        krig_type = GuiParam("krigging_type", self.SO_comboKrigType, group=gp,
-                             gsimcli_name="krig_type")
-        max_nodes = GuiParam("max_search_nodes", self.SO_spinMaxSearchNodes,
+        krig_type = ui.GuiParam("krigging_type", self.SO_comboKrigType,
+                                group=gp, gsimcli_name="krig_type")
+        max_nodes = ui.GuiParam("max_search_nodes", self.SO_spinMaxSearchNodes,
                              group=gp, gsimcli_name="max_search_nodes")
-        cpu_cores = GuiParam("cpu_cores", self.SO_spinCores, group=gp)
-        skip_sim = GuiParam("skip_sim", self.SO_checkSkipSim, group=gp)
+        cpu_cores = ui.GuiParam("cpu_cores", self.SO_spinCores, group=gp)
+        skip_sim = ui.GuiParam("skip_sim", self.SO_checkSkipSim, group=gp)
         add([par_path, exe_path, n_sims, krig_type, max_nodes, cpu_cores,
              skip_sim])
         #    Simulation / Grid
         gp = "simulation_grid"
-        xx_nodes_n = GuiParam("XX_nodes_number", self.SG_spinXXNodes,
+        xx_nodes_n = ui.GuiParam("XX_nodes_number", self.SG_spinXXNodes,
                               group=gp, gsimcli_name="XX_nodes_number",
                               depends=lambda: not self.batch_networks)
-        yy_nodes_n = GuiParam("YY_nodes_number", self.SG_spinYYNodes,
+        yy_nodes_n = ui.GuiParam("YY_nodes_number", self.SG_spinYYNodes,
                               group=gp, gsimcli_name="YY_nodes_number",
                               depends=lambda: not self.batch_networks,)
-        zz_nodes_n = GuiParam("ZZ_nodes_number", self.SG_spinZZNodes,
+        zz_nodes_n = ui.GuiParam("ZZ_nodes_number", self.SG_spinZZNodes,
                               group=gp, gsimcli_name="ZZ_nodes_number",
                               depends=lambda: not self.batch_networks,)
-        xx_min = GuiParam("XX_minimum", self.SG_spinXXOrig, group=gp,
+        xx_min = ui.GuiParam("XX_minimum", self.SG_spinXXOrig, group=gp,
                           depends=lambda: not self.batch_networks,
                           gsimcli_name="XX_minimum")
-        yy_min = GuiParam("YY_minimum", self.SG_spinYYOrig, group=gp,
+        yy_min = ui.GuiParam("YY_minimum", self.SG_spinYYOrig, group=gp,
                           depends=lambda: not self.batch_networks,
                           gsimcli_name="YY_minimum")
-        zz_min = GuiParam("ZZ_minimum", self.SG_spinZZOrig, group=gp,
+        zz_min = ui.GuiParam("ZZ_minimum", self.SG_spinZZOrig, group=gp,
                           depends=lambda: not self.batch_networks,
                           gsimcli_name="ZZ_minimum")
-        xx_spacing = GuiParam("XX_spacing", self.SG_spinXXSize, group=gp,
+        xx_spacing = ui.GuiParam("XX_spacing", self.SG_spinXXSize, group=gp,
                               depends=lambda: not self.batch_networks,
                               gsimcli_name="XX_spacing")
-        yy_spacing = GuiParam("YY_spacing", self.SG_spinYYSize, group=gp,
+        yy_spacing = ui.GuiParam("YY_spacing", self.SG_spinYYSize, group=gp,
                               depends=lambda: not self.batch_networks,
                               gsimcli_name="YY_spacing")
-        zz_spacing = GuiParam("ZZ_spacing", self.SG_spinZZSize, group=gp,
+        zz_spacing = ui.GuiParam("ZZ_spacing", self.SG_spinZZSize, group=gp,
                               depends=lambda: not self.batch_networks,
                               gsimcli_name="ZZ_spacing")
         add([xx_nodes_n, yy_nodes_n, zz_nodes_n, xx_min, yy_min, zz_min,
              xx_spacing, yy_spacing, zz_spacing])
         #    Simulation / Variogram
         gp = "simulation_variogram"
-        varmodel = GuiParam("model", self.SV_comboVarModel, group=gp,
+        varmodel = ui.GuiParam("model", self.SV_comboVarModel, group=gp,
                             depends=lambda: not self.batch_decades,
                             gsimcli_name="model")
-        nugget = GuiParam("nugget", self.SV_spinNugget, group=gp,
+        nugget = ui.GuiParam("nugget", self.SV_spinNugget, group=gp,
                           depends=lambda: not self.batch_decades,
                           gsimcli_name="nugget")
-        sill = GuiParam("sill", self.SV_spinSill, group=gp,
+        sill = ui.GuiParam("sill", self.SV_spinSill, group=gp,
                         depends=lambda: not self.batch_decades,
                         gsimcli_name="sill")
-        ranges = GuiParam("ranges", self.SV_lineRanges, group=gp,
+        ranges = ui.GuiParam("ranges", self.SV_lineRanges, group=gp,
                           depends=lambda: not self.batch_decades,
                           gsimcli_name="ranges")
-        varangles = GuiParam("angles", self.SV_lineAngles, group=gp,
+        varangles = ui.GuiParam("angles", self.SV_lineAngles, group=gp,
                              depends=lambda: not self.batch_decades,
                              gsimcli_name="angles")
         add([varmodel, nugget, sill, ranges, varangles])
         #    Simulation / Advanced
         gp = "simulation_advanced"
-        strategy = GuiParam("search_strategy", self.SA_comboStrategy, group=gp,
-                            gsimcli_name="search_strategy")
-        min_data = GuiParam("min_data", self.SA_spinMinData, group=gp,
+        strategy = ui.GuiParam("search_strategy", self.SA_comboStrategy,
+                               group=gp, gsimcli_name="search_strategy")
+        min_data = ui.GuiParam("min_data", self.SA_spinMinData, group=gp,
                             gsimcli_name="min_data")
-        max_samples = GuiParam("max_search_samples", self.SA_spinMaxSamples,
+        max_samples = ui.GuiParam("max_search_samples", self.SA_spinMaxSamples,
                                group=gp, gsimcli_name="max_search_samples",
                                depends=lambda: strategy.widget.
                                currentText().lower() == "two-part search")
-        search_radius = GuiParam("search_radius", self.SA_lineRadius, group=gp,
-                                 gsimcli_name="search_radius")
-        search_angles = GuiParam("search_angles", self.SA_lineAngles, group=gp,
-                                 gsimcli_name="search_angles")
+        search_radius = ui.GuiParam("search_radius", self.SA_lineRadius,
+                                    group=gp, gsimcli_name="search_radius")
+        search_angles = ui.GuiParam("search_angles", self.SA_lineAngles,
+                                    group=gp, gsimcli_name="search_angles")
         add([strategy, min_data, max_samples, search_radius, search_angles])
         #    Homogenisation / Detection
         gp = "homogenisation_detection"
-        station_order = GuiParam("station_order", self.HD_comboStationOrder,
+        station_order = ui.GuiParam("station_order", self.HD_comboStationOrder,
                                  group=gp, gsimcli_name="st_order")
-        user_order = GuiParam("user_order", self.HD_listUserOrder, group=gp,
+        user_order = ui.GuiParam("user_order", self.HD_listUserOrder, group=gp,
                               gsimcli_name="st_user",
                               depends=lambda: station_order.widget.
                               currentText().lower() == "user")
-        ascending = GuiParam("ascending", self.HD_checkAscending, group=gp,
+        ascending = ui.GuiParam("ascending", self.HD_checkAscending, group=gp,
                              gsimcli_name="ascending",
                              depends=lambda: not station_order.widget.
                              currentText().lower() == "user")
-        md_last = GuiParam("md_last", self.HD_checkMDLast, group=gp,
+        md_last = ui.GuiParam("md_last", self.HD_checkMDLast, group=gp,
                            gsimcli_name="md_last",
                            depends=lambda: not station_order.widget.
                            currentText().lower() == "user")
-        detect_prob = GuiParam("detect_prob", self.HD_spinProb, group=gp,
+        detect_prob = ui.GuiParam("detect_prob", self.HD_spinProb, group=gp,
                                gsimcli_name="detect_prob")
-        tolerance = GuiParam("tolerance", self.HD_checkTolerance, group=gp,
+        tolerance = ui.GuiParam("tolerance", self.HD_checkTolerance, group=gp,
                              gsimcli_name="tolerance")
-        radius = GuiParam("radius", self.HD_spinTolerance, group=gp,
+        radius = ui.GuiParam("radius", self.HD_spinTolerance, group=gp,
                           depends=tolerance, gsimcli_name="radius")
-        dist_units = GuiParam("distance_units", self.HD_radioDistance,
+        dist_units = ui.GuiParam("distance_units", self.HD_radioDistance,
                               group=gp, depends=tolerance,
                               gsimcli_name="distance_units")
         add([station_order, user_order, ascending, md_last, detect_prob,
              tolerance, radius, dist_units])
         #    Homogenisation / Correction
         gp = "homogenisation_correction"
-        correct = GuiParam("correct_method", self.HC_comboCorrectionMethod,
+        correct = ui.GuiParam("correct_method", self.HC_comboCorrectionMethod,
                            group=gp, gsimcli_name="correct_method")
-        skew = GuiParam("skewness", self.HC_spinSkewness, group=gp,
+        skew = ui.GuiParam("skewness", self.HC_spinSkewness, group=gp,
                         depends=lambda: correct.widget.
                         currentText().lower() == "skewness",
                         gsimcli_name="skewness")
-        perc = GuiParam("percentile", self.HC_spinPercentile, group=gp,
+        perc = ui.GuiParam("percentile", self.HC_spinPercentile, group=gp,
                         depends=lambda: correct.widget.
                         currentText().lower() == "percentile",
                         gsimcli_name="percentile")
         add([correct, skew, perc])
         #    Homogenisation / Results
         gp = "homogenisation_results"
-        detect_save = GuiParam("detect_save", self.HR_checkSaveInter, group=gp,
-                               gsimcli_name="detect_save")
-        sim_purge = GuiParam("sim_purge", self.HR_checkPurgeSims, group=gp,
+        detect_save = ui.GuiParam("detect_save", self.HR_checkSaveInter,
+                                  group=gp, gsimcli_name="detect_save")
+        sim_purge = ui.GuiParam("sim_purge", self.HR_checkPurgeSims, group=gp,
                              gsimcli_name="sim_purge")
-        r_path = GuiParam("results_path", self.HR_lineResultsPath, group=gp,
+        r_path = ui.GuiParam("results_path", self.HR_lineResultsPath, group=gp,
                           gsimcli_name="results")
-        r_name = GuiParam("results_name", self.HR_lineResultsName, group=gp,
+        r_name = ui.GuiParam("results_name", self.HR_lineResultsName, group=gp,
                           gsimcli_name="results_file")
         add([detect_save, sim_purge, r_path, r_name])
+
+        #    Tools / Benchmark
+        add(self.tools_benchmark.guiparams)
 
     def about(self):
         """The About box. """
@@ -412,11 +419,16 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         (QStackedWidget).
 
         """
-        if current.text(0) in ["Data", "Simulation", "Homogenisation"]:
+        if current and current.text(0) in ["Data", "Simulation",
+                                           "Homogenisation"]:
             current.setExpanded(True)
             self.treeWidget.setCurrentItem(current.child(0))
 
-        tree_item = self.treeWidget.currentItem().text(0)
+        if current:
+            tree_item = self.treeWidget.currentItem().text(0)
+        else:
+            tree_item = None
+
         if tree_item == "Load":
             self.stackedWidget.setCurrentWidget(self.DataLoad)
         elif tree_item == "Batch":
@@ -443,6 +455,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         (QStackedWidget).
 
         """
+        self.treeWidget.selectionModel().clear()
         who = self.sender().objectName().lower()
         if "scores" in who:
             self.tools_benchmark = benchmark.Scores(self)
@@ -713,7 +726,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         reset_stations pushbutton.
 
         """
-        pylist_to_qlist(qlist=self.HD_listUserOrder,
+        ui.pylist_to_qlist(qlist=self.HD_listUserOrder,
                         pylist=map(str, self.find_stations_ids().
                                    stations.items()[0][1]))
 
@@ -740,7 +753,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             else:
                 enable_user = True
                 disable_checks = True
-                pylist_to_qlist(qlist=self.HD_listUserOrder,
+                ui.pylist_to_qlist(qlist=self.HD_listUserOrder,
                     pylist=map(str, self.find_stations_ids().
                                stations.items()[0][1]))
         elif st_order == "Random":
@@ -1010,7 +1023,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.DL_checkHeader.setChecked(self.params.data_header)
         try:
             self.DL_lineDataName.setText(self.params.name)
-            pylist_to_qlist(self.params.variables, self.DL_listVarNames)
+            ui.pylist_to_qlist(self.params.variables, self.DL_listVarNames)
         except(AttributeError):
             # ignore if attributes are not present
             pass
@@ -1062,7 +1075,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
                                   self.HD_comboStationOrder.findText(st_order,
                                                      QtCore.Qt.MatchContains))
         if st_order == "user":
-            pylist_to_qlist(self.params.st_user, self.HD_listUserOrder)
+            ui.pylist_to_qlist(self.params.st_user, self.HD_listUserOrder)
         else:
             self.HD_checkAscending.setChecked(self.params.ascending)
             self.HD_checkMDLast.setChecked(self.params.md_last)
@@ -1244,7 +1257,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 
         TODO: feature not implemented yet.
         """
-        pylist_to_qlist(["x", "y", "time", "station", "clim"],
+        ui.pylist_to_qlist(["x", "y", "time", "station", "clim"],
                         self.DL_listVarNames)
 
     def on_exit(self):
@@ -1297,13 +1310,13 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             # use all stations or a user-given list
             user_order = (self.HD_comboStationOrder.currentText() == "User")
             if user_order:
-                stations_list = qlist_to_pylist(self.HD_listUserOrder)
+                stations_list = ui.qlist_to_pylist(self.HD_listUserOrder)
             else:
                 stations_list = self.find_stations_ids()
             # per network
             if self.batch_networks:
                 count = 0
-                for network in qlist_to_pylist(self.DB_listNetworksPaths):
+                for network in ui.qlist_to_pylist(self.DB_listNetworksPaths):
                     network_id = os.path.basename(network)
                     # number of decades
                     decades = self.count_decades(network)
@@ -1381,12 +1394,12 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             secdir = self.wildcard_decade
         else:
             secdir = None
-        varnames = qlist_to_pylist(self.DL_listVarNames)
+        varnames = ui.qlist_to_pylist(self.DL_listVarNames)
         if self.batch_networks:
             stations_list, total = hmg.list_networks_stations(
-                           networks=qlist_to_pylist(self.DB_listNetworksPaths),
-                           variables=varnames,
-                           secdir=secdir, header=self.header, nvars=5)
+                       networks=ui.qlist_to_pylist(self.DB_listNetworksPaths),
+                       variables=varnames,
+                       secdir=secdir, header=self.header, nvars=5)
         else:
             data_path = self.DL_lineDataPath.text()
             stations_list = dict()
@@ -1441,7 +1454,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         """Check if there is a decades folder in every network.
 
         """
-        for network in qlist_to_pylist(self.DB_listNetworksPaths):
+        for network in ui.qlist_to_pylist(self.DB_listNetworksPaths):
             if not glob.glob(os.path.join(network, self.wildcard_decade)):
                 return False
         return True
@@ -1461,6 +1474,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         """Launch GSIMCLI process according to the existing ui settings.
         Connected to the GSIMCLI menu action.
 
+        DEPRECATED
         """
         self.apply_settings()
         self.params.path = str(self.params.path)
@@ -1468,7 +1482,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         cores = self.SO_spinCores.value()
 
         if self.batch_networks:
-            networks_list = qlist_to_pylist(self.DB_listNetworksPaths)
+            networks_list = ui.qlist_to_pylist(self.DB_listNetworksPaths)
             # workaround for unicode/bytes issues
             networks_list = map(str, networks_list)
             method_classic.batch_networks(par_path=self.params.path,
@@ -1591,7 +1605,7 @@ class Homogenising(QtCore.QObject):
     def __init__(self, parent):
         QtCore.QObject.__init__(self)
         self.gui = parent
-        self.timer = Timer(self)
+        self.timer = ui.Timer(self)
         self.timer.time_elapsed.connect(self.time_elapsed.emit)
         self.is_running = False
 
@@ -1601,7 +1615,7 @@ class Homogenising(QtCore.QObject):
         cores = self.gui.SO_spinCores.value()
 
         if self.gui.batch_networks:
-            networks_list = qlist_to_pylist(self.gui.DB_listNetworksPaths)
+            networks_list = ui.qlist_to_pylist(self.gui.DB_listNetworksPaths)
             # workaround for unicode/bytes issues
             networks_list = map(str, networks_list)
             method_classic.batch_networks(par_path=self.gui.params.path,
@@ -1629,28 +1643,6 @@ class Homogenising(QtCore.QObject):
         self.finished.emit()
 
 
-class Timer(QtCore.QThread):
-    """Timer thread for elapsed time.
-
-    """
-    time_elapsed = QtCore.Signal(int)
-
-    def __init__(self, parent=None):
-        super(Timer, self).__init__(parent)
-        self.time_start = None
-        self.parent = parent
-
-    def start(self, time_start):
-        self.time_start = time_start
-
-        return super(Timer, self).start()
-
-    def run(self):
-        while self.parent.is_running:
-            self.time_elapsed.emit(time.time() - self.time_start)
-            time.sleep(1)
-
-
 class EmittingStream(QtCore.QObject):
     """Report written data with a QT Signal.
 
@@ -1663,196 +1655,6 @@ class EmittingStream(QtCore.QObject):
     def flush(self):
         sys.__stdout__.flush()
 
-
-class GuiParam(object):
-    """Hold the necessary settings to manage each GUI parameter.
-
-    """
-    def __init__(self, name, widget, group, depends=None, gsimcli_name=None):
-        """Constructor to initialise a GUI parameter.
-
-        Parameters
-        ----------
-        name : string
-            Name of the parameter that will be used to store its value in the
-            GUI settings file.
-        widget : QObject
-            Qt widget instance related to the parameter.
-        group : string
-            Settings group that the parameter belongs to.
-        depends : list of function or list of GuiParam instance, optional
-            Functions to retrieve values from other widgets, or GuiParam
-            instances, that the parameter depends on.
-        gsimcli_name : string, optional
-            Name of the parameter in the GsimcliParam class. If given, it will
-            check if it exists in the class definition and it will warn if it
-            does not exist.
-
-        """
-        self.name = name
-        self.widget = widget
-        self.group = group
-        if isinstance(depends, list) or depends is None:
-            self.depends = depends
-        else:
-            self.depends = [depends]
-        self.gsimcli_name = gsimcli_name
-
-        if gsimcli_name:
-            self.check_gsimcli_params()
-
-        self.update()
-
-    def check_dependencies(self):
-        """A widget may depend on the value of another widget. This method
-        checks if all the parameter dependencies are met. Returns True if all
-        dependencies are satisfied or if it has no dependencies.
-
-        Only boolean values are supported for the dependencies.
-
-        """
-        if self.depends:
-            for dependency in self.depends:
-                if isinstance(dependency, GuiParam):
-                    dep = dependency.value
-                elif callable(dependency):
-                    dep = dependency()
-                else:
-                    raise TypeError("dependencies must be callables or "
-                                    "instances of GuiParam, got {} instead."
-                                    .format(type(dependency)))
-                if not dep:
-                    return False
-        return True
-
-    def check_gsimcli_params(self):
-        """Check if the parameter is included in the GsimcliParam class
-        docstring. A warn message will be thrown if it is not included, as a
-        reminder.
-
-        """
-        if self.gsimcli_name in GsimcliParam.__doc__:
-            return True
-        else:
-            warnings.warn("The parameter {} is not properly configured in "
-                          "GsimcliParam class. Please check if it is included "
-                          "in the docstring and in the fields or optional "
-                          "lists.".format(self.name))
-            return False
-
-    def update(self):
-        if isinstance(self.widget, GsimcliMainWindow):
-            pass
-        if isinstance(self.widget, QtGui.QLineEdit):
-            self.value = self.widget.text()
-        if isinstance(self.widget, QtGui.QSpinBox):
-            self.value = self.widget.value()
-        if isinstance(self.widget, QtGui.QDoubleSpinBox):
-            self.value = self.widget.value()
-        if isinstance(self.widget, QtGui.QListWidget):
-            self.value = qlist_to_pylist(self.widget)
-        if isinstance(self.widget, QtGui.QComboBox):
-            self.value = self.widget.currentIndex()
-        if (isinstance(self.widget, QtGui.QCheckBox) or
-                isinstance(self.widget, QtGui.QRadioButton)):
-            self.value = self.widget.isChecked()
-
-    def load(self, value):
-        def to_bool(u):
-            return u in ["true", "True", True]
-
-        if isinstance(self.widget, GsimcliMainWindow):
-            pass
-        elif isinstance(self.widget, QtGui.QLineEdit):
-            self.widget.setText(str(value))
-        elif isinstance(self.widget, QtGui.QSpinBox):
-            self.widget.setValue(int(value))
-        elif isinstance(self.widget, QtGui.QDoubleSpinBox):
-            self.widget.setValue(float(value))
-        elif isinstance(self.widget, QtGui.QListWidget):
-            pylist_to_qlist(value, self.widget)
-        elif isinstance(self.widget, QtGui.QComboBox):
-            self.widget.setCurrentIndex(int(value))
-        elif (isinstance(self.widget, QtGui.QCheckBox) or
-                isinstance(self.widget, QtGui.QRadioButton)):
-            self.widget.setChecked(to_bool(value))
-
-        self.update()
-
-    def save(self):
-        """Provide an interface to save the parameter value in QSettings.
-
-        """
-        self.update()
-        return (self.name, self.value)
-
-    def save_gsimcli(self):
-        """Provide an interface to save the parameter value in the gsimcli
-        parameters file.
-
-        """
-        self.update()
-        return (self.gsimcli_name, self.value)
-
-    def has_data(self):
-        """Return True if the widget's value is has some data (it's not empty).
-
-        """
-        self.update()
-        try:
-            it_has = bool(len(self.value))
-        except TypeError:
-            it_has = True
-        return it_has
-
-
-def qlist_to_pylist(qlist):
-    """Convert QListWidget to Python list.
-
-    Parameters
-    ----------
-    qlist : QtGui.QListWidget object
-        Target QListWidget.
-
-    Returns
-    -------
-    items : list
-        List with the items contained in qlist.
-
-    See Also
-    --------
-    pylist_to_qlist : Convert Python list into an existing QListWidget.
-
-    """
-    items = list()
-    for item_row in xrange(qlist.count()):
-        items.append(qlist.item(item_row).text())
-
-    return items
-
-
-def pylist_to_qlist(pylist, qlist):
-    """Convert Python list into an existing QListWidget.
-
-    Parameters
-    ----------
-    pylist : list
-        List to be converted.
-    qlist : QtGui.QListWidget object
-        Existing QListWidget.
-
-    See Also
-    --------
-    qlist_to_pylist : Convert QListWidget to Python list.
-
-    """
-    if not isinstance(pylist, list):
-        pylist = [pylist]
-
-    qlist.clear()
-    qlist.addItems(pylist)
-
-    return qlist
 
 # def loadUiWidget(uifilename, parent=None):
 #     loader = QtUiTools.QUiLoader()

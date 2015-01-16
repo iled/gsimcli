@@ -15,12 +15,16 @@ Created on 21/01/2014
 
 import os
 import shutil
+import tempfile
 
 import numpy as np
 import pandas as pd
 import parsers.costhome as ch
+from interface.ui_utils import Updater
 from parsers.spreadsheet import xls2costhome
-from utils import path_up
+
+
+update = Updater()
 
 
 def crmse(homog, orig, skip_years=None, centered=True):
@@ -190,12 +194,18 @@ def crmse_submission(submission, over_station=True, over_network=True,
             network_crmses.loc[network.id] = crmse_network(network,
                                                            skip_missing,
                                                            skip_outlier)
+            # send update
+            update.current += 1
+            update.send()
 
         if over_station:
             network.setup()
             for station in network.stations:
                 loc = station.id, network.id
                 station_crmses.loc[loc] = crmse_station(station, skip_outlier)
+                # send update
+                update.current += 1
+                update.send()
 
     results = list()
     if over_network:
@@ -248,6 +258,10 @@ def improvement(submission, **kwargs):
     inho_crmse = crmse_submission(inho_sub, **kwargs)
 
     improve = list(np.array(homog_crmse) / np.array(inho_crmse))
+    # send update
+    update.current += 1
+    update.send()
+
     return homog_crmse, inho_crmse, improve
 
 
@@ -278,11 +292,8 @@ def gsimcli_improvement(gsimcli_results, no_data=-999.9, network_ids=None,
             raise ValueError("Mismatch between number of results files and "
                              "keys files")
 
-    if costhome_path is None or not bool(costhome_path):
-        costhome_path = os.path.join(path_up(gsimcli_results[0], 1)[0],
-                                     'gsimcli to costhome')
-    if not os.path.exists(costhome_path):
-        os.mkdir(costhome_path)
+    if not bool(costhome_path):
+        costhome_path = tempfile.mkdtemp(prefix="gsimcli_")
 
     yearly_sum = kwargs.pop("yearly_sum")
     for i, results in enumerate(gsimcli_results):
@@ -300,6 +311,9 @@ def gsimcli_improvement(gsimcli_results, no_data=-999.9, network_ids=None,
                      network_id=network_id, status='ho', variable='rr',
                      resolution='y', content='d', ftype='data', keys_path=key,
                      yearly_sum=yearly_sum, **kwargs)
+        # send update
+        update.current += 1
+        update.send()
 
     submission = ch.Submission(costhome_path, no_data, network_ids)
     orig_path = kwargs.pop("orig_path")
@@ -311,6 +325,7 @@ def gsimcli_improvement(gsimcli_results, no_data=-999.9, network_ids=None,
     if not costhome_save:
         shutil.rmtree(costhome_path)
 
+    update.reset()
     return results
 
 
@@ -319,7 +334,7 @@ if __name__ == '__main__':
 
     macpath = '/Users/julio/Desktop/testes/'
     mintpath = '/home/julio/Testes/'
-    basepath = macpath
+    basepath = mintpath
 
     """ # inho syn1
     netw_path = basepath + 'benchmark/inho/precip/syn1'
@@ -373,11 +388,11 @@ if __name__ == '__main__':
     # network_id = '000009'
     kis = [basepath + 'cost-home/rede000005/keys.txt',
            basepath + 'cost-home/rede000009/keys.txt']
-    orig_path = "/Users/julio/Desktop/testes/cost-home/benchmark/orig/precip/sur1"
-    inho_path = "/Users/julio/Desktop/testes/cost-home/benchmark/inho/precip/sur1"
+    orig_path = basepath + "/benchmark/orig/precip/sur1"
+    inho_path = basepath + "/benchmark/inho/precip/sur1"
     # """
 
-    netw_path = basepath + 'benchmark/h011/precip/sur1'
+#    netw_path = basepath + 'benchmark/h011/precip/sur1'
     # network_id = ['000009', '000010']
 #    sub = ch.Submission(netw_path, md, ['000009'])  # , ['000010'])
     # print crmse_submission_(sub, over_station=True, over_network=True,

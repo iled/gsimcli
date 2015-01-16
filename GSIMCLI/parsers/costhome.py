@@ -140,7 +140,7 @@ class Station(object):
             The given file was not parsed as a `data` file.
 
         """
-        if ((isinstance(path, str) or isinstance(path, unicode)) and 
+        if ((isinstance(path, str) or isinstance(path, unicode)) and
                 os.path.isfile(path) and content):
             if content == 'd':
                 self.data = pc.datafile(path, self.resolution, self.no_data)
@@ -176,7 +176,7 @@ class Station(object):
         The `breakpoints` file name must end with *detected.txt*.
 
         """
-        if ((isinstance(path, str) or isinstance(path, unicode) and
+        if ((isinstance(path, str) or isinstance(path, unicode)) and
                 os.path.isfile(path)):
             detected_file = path
         else:
@@ -386,7 +386,7 @@ class Network(object):
         self.stations_number = 0
 
         if path:
-            if ((isinstance(path, str) or isinstance(path, unicode) and
+            if ((isinstance(path, str) or isinstance(path, unicode)) and
                     os.path.isdir(path)):
                 parsed = pc.directory_walk_v1(path)
                 selected = pc.files_select(parsed, ftype='data', content='d')
@@ -616,7 +616,7 @@ class Network(object):
             File path or Series containing ID's and the corresponding keys.
 
         """
-        if ((isinstance(keys, str) or isinstance(keys, unicode) and
+        if ((isinstance(keys, str) or isinstance(keys, unicode)) and
                 os.path.isfile(keys)):
             keys = ss.read_keys(keys)
         for i, station in enumerate(self.stations):
