@@ -48,6 +48,7 @@ class Scores(QtGui.QWidget):
 
         # hidden widgets by default
         ui.hide([self.labelSaveCost, self.lineSaveCost, self.buttonSaveCost,
+                 self.progressBar
                  ])
 
     def add_rows_auto(self, row, col):
@@ -97,16 +98,15 @@ class Scores(QtGui.QWidget):
         Connected to the buttonCalculate widget.
 
         """
-        over_network = self.groupNetwork.isChecked()
-        over_station = self.groupStation.isChecked()
-
-        results, network_ids, keys = self.extract_results()
+        self.show_status(True)
+        self.extract_results()
+        self.set_progress_max()
 
         kwargs = {
-              'gsimcli_results': results,
+              'gsimcli_results': self.gsimcli_results,
               'no_data': self.spinNoData.value(),
-              'network_ids': network_ids,
-              'keys': keys,
+              'network_ids': self.network_ids,
+              'keys': self.keys,
               'costhome_path': self.lineSaveCost.text(),
               'costhome_save': self.checkSaveCost.isChecked(),
               'orig_path': self.lineOrig.text(),
@@ -117,14 +117,33 @@ class Scores(QtGui.QWidget):
               'skip_missing': self.checkSkipMissing.isChecked(),
               'skip_outlier': self.checkSkipOutlier.isChecked(),
                 }
-        results = scores.gsimcli_improvement(**kwargs)
 
-        if over_network:
-            self.lineNetworkCRMSE.setText(str(results[0][0]))
-            self.lineNetworkImprov.setText(str(results[2][0]))
-        if over_station:
-            self.lineStationCRMSE.setText(str(results[0][int(over_network)]))
-            self.lineStationImprov.setText(str(results[2][int(over_network)]))
+        # set up the job
+        job = scores.gsimcli_improvement
+        updater = scores.update.progress
+        self.office = ui.Office(self, job, updater=updater, **kwargs)
+        # self.office.worker.time_elapsed.connect(self.set_time)
+        self.office.worker.update_progress.connect(self.set_progress)
+        self.office.finished.connect(self.print_results)
+        self.office.start()
+
+    def count_stations(self):
+        """Try to find the total number of stations in the submission from the
+        keys files.
+
+        """
+        rows = self.tableResults.rowCount()
+        keys = list()
+        for row in xrange(rows):
+            item = self.tableResults.item(row, 2)
+            if item is not None:
+                keys.append(item.text())
+
+        stations = 0
+        for key in keys:
+            stations += sum(1 for line in open(key)) - 1  # @UnusedVariable
+
+        return stations
 
     def enable_save_cost(self, toggle):
         """Hide/unhide widgets related to the SaveCosts checkbox: label, line
@@ -180,7 +199,27 @@ class Scores(QtGui.QWidget):
             if key and key.text():
                 keys.append(key.text())
 
-        return results, network_ids, keys
+        self.gsimcli_results = results
+        self.network_ids = network_ids
+        self.keys = keys
+
+    def print_results(self):
+        over_network = self.groupNetwork.isChecked()
+        over_station = self.groupStation.isChecked()
+        self.results = self.office.results
+
+        if over_network:
+            network_crmse = str(self.results[0][0])
+            network_improvement = str(self.results[2][0])
+            self.lineNetworkCRMSE.setText(network_crmse)
+            self.lineNetworkImprov.setText(network_improvement)
+        if over_station:
+            station_crmse = str(self.results[0][int(over_network)])
+            station_improvement = str(self.results[2][int(over_network)])
+            self.lineStationCRMSE.setText(station_crmse)
+            self.lineStationImprov.setText(station_improvement)
+
+        self.show_status(False)
 
     def remove_rows(self):
         """Remove the selected rows from the table.
@@ -217,6 +256,24 @@ class Scores(QtGui.QWidget):
         add([table, no_data, orig, inho, save_cost, cost_path, over_station,
              over_network, yearly_sum, skip_missing, skip_outlier])
 
+    def set_progress(self, current):
+        progress = 100 * current / self.total
+        self.progressBar.setValue(progress)
+
+    def set_progress_max(self):
+        over_network = self.groupNetwork.isChecked()
+        over_station = self.groupStation.isChecked()
+
+        networks = len(self.gsimcli_results)
+        stations = self.count_stations()
+        total = networks + 1
+        if over_network:
+            total += networks * 2
+        if over_station:
+            total += stations * 2
+
+        self.total = total
+
     def set_table_menu(self):
         """Set up the context menu of the tableResults widget, in its cells
         and vertical header.
@@ -234,6 +291,11 @@ class Scores(QtGui.QWidget):
         vheader = self.tableResults.verticalHeader()
         vheader.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
         vheader.addAction(del_row)
+
+    def show_status(self, toggle):
+        self.progressBar.setValue(0)
+        self.progressBar.setVisible(toggle)
+        self.buttonCalculate.setEnabled(not toggle)
 
 
 if __name__ == '__main__':
