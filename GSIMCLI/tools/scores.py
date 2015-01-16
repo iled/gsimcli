@@ -20,8 +20,11 @@ import tempfile
 import numpy as np
 import pandas as pd
 import parsers.costhome as ch
+from interface.ui_utils import Updater
 from parsers.spreadsheet import xls2costhome
-from utils import path_up
+
+
+update = Updater()
 
 
 def crmse(homog, orig, skip_years=None, centered=True):
@@ -191,12 +194,18 @@ def crmse_submission(submission, over_station=True, over_network=True,
             network_crmses.loc[network.id] = crmse_network(network,
                                                            skip_missing,
                                                            skip_outlier)
+            # send update
+            update.current += 1
+            update.send()
 
         if over_station:
             network.setup()
             for station in network.stations:
                 loc = station.id, network.id
                 station_crmses.loc[loc] = crmse_station(station, skip_outlier)
+                # send update
+                update.current += 1
+                update.send()
 
     results = list()
     if over_network:
@@ -249,6 +258,10 @@ def improvement(submission, **kwargs):
     inho_crmse = crmse_submission(inho_sub, **kwargs)
 
     improve = list(np.array(homog_crmse) / np.array(inho_crmse))
+    # send update
+    update.current += 1
+    update.send()
+
     return homog_crmse, inho_crmse, improve
 
 
@@ -298,6 +311,9 @@ def gsimcli_improvement(gsimcli_results, no_data=-999.9, network_ids=None,
                      network_id=network_id, status='ho', variable='rr',
                      resolution='y', content='d', ftype='data', keys_path=key,
                      yearly_sum=yearly_sum, **kwargs)
+        # send update
+        update.current += 1
+        update.send()
 
     submission = ch.Submission(costhome_path, no_data, network_ids)
     orig_path = kwargs.pop("orig_path")
@@ -309,6 +325,7 @@ def gsimcli_improvement(gsimcli_results, no_data=-999.9, network_ids=None,
     if not costhome_save:
         shutil.rmtree(costhome_path)
 
+    update.reset()
     return results
 
 
