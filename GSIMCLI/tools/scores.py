@@ -114,10 +114,13 @@ def crmse_station(station, skip_outliers=True, yearly=True):
 
     st_crmse = crmse(homog, orig, skip_years)
 
+    if not yearly:
+        st_crmse = st_crmse.mean()
+
     return st_crmse
 
 
-def crmse_network(network, skip_missing=False, skip_outlier=True):
+def crmse_network(network, skip_missing=False, skip_outlier=True, yearly=True):
     """Calculate Network CRMSE.
 
     Parameters
@@ -130,6 +133,8 @@ def crmse_network(network, skip_missing=False, skip_outlier=True):
     skip_outlier : boolean, default True
         Do not consider the years in which any station in the network has
         outlier values.
+    yearly : boolean, default True
+        Average monthly data to yearly data.
 
     Returns
     -------
@@ -143,17 +148,20 @@ def crmse_network(network, skip_missing=False, skip_outlier=True):
 
     """
     network.setup()
-    homog, orig = network.average(orig=True)
+    homog, orig = network.average(orig=True, yearly=yearly)
 
     skip_years = network.skip_years(skip_missing, skip_outlier)
 
     netw_crmse = crmse(homog, orig, skip_years)
 
+    if not yearly:
+        netw_crmse = netw_crmse.mean()
+
     return netw_crmse
 
 
 def crmse_submission(submission, over_station=True, over_network=True,
-                     skip_missing=False, skip_outlier=True):
+                     skip_missing=False, skip_outlier=True, yearly=True):
     """Calculate the average CRMSE of a benchmark submission.
 
     The average can be calculated over all the stations and/or over the
@@ -173,6 +181,8 @@ def crmse_submission(submission, over_station=True, over_network=True,
     skip_outlier : boolean, default True
         Do not consider the years in which any station in the network has
         outlier values.
+    yearly : boolean, default True
+        Average monthly data to yearly data.
 
     Returns
     -------
@@ -193,7 +203,8 @@ def crmse_submission(submission, over_station=True, over_network=True,
         if over_network:
             network_crmses.loc[network.id] = crmse_network(network,
                                                            skip_missing,
-                                                           skip_outlier)
+                                                           skip_outlier,
+                                                           yearly)
             # send update
             update.current += 1
             update.send()
@@ -202,7 +213,8 @@ def crmse_submission(submission, over_station=True, over_network=True,
             network.setup()
             for station in network.stations:
                 loc = station.id, network.id
-                station_crmses.loc[loc] = crmse_station(station, skip_outlier)
+                station_crmses.loc[loc] = crmse_station(station, skip_outlier,
+                                                        yearly)
                 # send update
                 update.current += 1
                 update.send()
@@ -237,6 +249,8 @@ def improvement(submission, **kwargs):
     skip_outlier : boolean, default True
         Do not consider the years in which any station in the network has
         outlier values.
+    yearly : boolean, default True
+        Average monthly data to yearly data.
 
     Returns
     -------
@@ -367,8 +381,9 @@ if __name__ == '__main__':
     variable = None  # 'tn'
     # """
 
-    """ # MASH Marinova precip
-    # st 3.6 0.56 netw 1.6 0.69
+    # """ # MASH Marinova precip
+    # yearly: st 3.6 0.56 netw 1.6 0.69
+    # monthly: st 8.5 0.84 netw 3.8 1.03
     netw_path = basepath + 'benchmark/h009/precip/sur1'
     orig_path = basepath + 'benchmark/orig/precip/sur1'
     inho_path = basepath + 'benchmark/inho/precip/sur1'
@@ -380,7 +395,19 @@ if __name__ == '__main__':
     netw_path = basepath + 'benchmark/h002/precip/sur14'
     # """
 
-    # """ # GSIMCLI
+    """ # GSIMCLI yearly
+    # gsimcli_results = basepath + 'cost-home/rede000010/gsimcli_results.xls'
+    # gsimcli_results = basepath + 'cost-home/500_dflt_16_allvar_vmedia/rede000009/gsimcli_results.xls'
+    gsimcli_results = [basepath + 'cost-home/rede000005/gsimcli_results.xls',
+                       basepath + 'cost-home/rede000009/gsimcli_results.xls']
+    # network_id = '000009'
+    kis = [basepath + 'cost-home/rede000005/keys.txt',
+           basepath + 'cost-home/rede000009/keys.txt']
+    orig_path = basepath + "/benchmark/orig/precip/sur1"
+    inho_path = basepath + "/benchmark/inho/precip/sur1"
+    # """
+
+    """ # GSIMCLI monthly
     # gsimcli_results = basepath + 'cost-home/rede000010/gsimcli_results.xls'
     # gsimcli_results = basepath + 'cost-home/500_dflt_16_allvar_vmedia/rede000009/gsimcli_results.xls'
     gsimcli_results = [basepath + 'cost-home/rede000005/gsimcli_results.xls',
@@ -394,13 +421,12 @@ if __name__ == '__main__':
 
 #    netw_path = basepath + 'benchmark/h011/precip/sur1'
     # network_id = ['000009', '000010']
-#    sub = ch.Submission(netw_path, md, ['000009'])  # , ['000010'])
-    # print crmse_submission_(sub, over_station=True, over_network=True,
-    #                          skip_missing=False, skip_outlier=True)
-#    print improvement(sub, over_station=True, over_network=True,
-#                      skip_missing=False, skip_outlier=True)
+    sub = ch.Submission(netw_path, md, ['000009', '000005'],
+                        orig_path=orig_path, inho_path=inho_path)  # , ['000010'])
+    print improvement(sub, over_station=True, over_network=True,
+                      skip_missing=False, skip_outlier=True, yearly=False)
 
-    print gsimcli_improvement(gsimcli_results, costhome_save=True, yearly_sum=True,
-                              keys=kis, orig_path=orig_path, inho_path=inho_path)
+#    print gsimcli_improvement(gsimcli_results, costhome_save=True, yearly_sum=True,
+#                              keys=kis, orig_path=orig_path, inho_path=inho_path)
 
     print 'done'

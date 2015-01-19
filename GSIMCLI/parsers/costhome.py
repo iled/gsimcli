@@ -431,7 +431,7 @@ class Network(object):
         self.stations_path.append(station.path)
         self.stations_number += 1
 
-    def average(self, orig=False):
+    def average(self, orig=False, yearly=True):
         """Calculate the average climate variable value per year of all
         stations in the network.
 
@@ -439,6 +439,8 @@ class Network(object):
         ----------
         orig : boolean, default False
             Calculate the same average for the corresponding original data.
+        yearly : boolean, default True
+            Average monthly data to yearly data.
 
         Returns
         -------
@@ -450,20 +452,30 @@ class Network(object):
         first = True
         for station in self.stations:
             station.setup()
+
+            if yearly:
+                homog_data = station.data.mean(axis=1)
+                if orig:
+                    orig_data = station.orig.data.mean(axis=1)
+            else:
+                homog_data = station.data
+                if orig:
+                    orig_data = station.orig.data
+
             if first:
                 # netw_average = np.zeros(station.data.shape[0])
-                netw_average = station.data.mean(axis=1)
+                netw_average = homog_data
                 if orig:
-                    orig_average = station.orig.data.mean(axis=1)
+                    orig_average = orig_data
                 first = False
                 continue
-            netw_average += station.data.mean(axis=1)
+            netw_average += homog_data
             if orig:
-                orig_average += station.orig.data.mean(axis=1)
+                orig_average += orig_data
 
-        netw_result = netw_average / len(self.stations)
+        netw_result = netw_average / self.stations_number
         if orig:
-            result = [netw_result, orig_average / len(self.stations)]
+            result = [netw_result, orig_average / self.stations_number]
         else:
             result = netw_result
 
