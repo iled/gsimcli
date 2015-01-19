@@ -169,7 +169,7 @@
      <item>
       <widget class="QLineEdit" name="lineOrig">
        <property name="placeholderText">
-        <string>Select the directory with the original data stations (orig).</string>
+        <string>Select the directory with the original data (orig).</string>
        </property>
       </widget>
      </item>
@@ -232,7 +232,7 @@
         <bool>true</bool>
        </property>
        <property name="placeholderText">
-        <string>Specify the directory to save the converted files.</string>
+        <string>Select the directory to save the converted files.</string>
        </property>
       </widget>
      </item>

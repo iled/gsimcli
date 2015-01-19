@@ -32,9 +32,16 @@ class Scores(QtGui.QWidget):
 
         # set params
         self.set_gui_params()
+        if hasattr(self.parent, "default_dir"):
+            self.default_dir = self.parent.default_dir
+        else:
+            self.default_dir = os.path.expanduser('~/')
 
         # buttons
         self.buttonCalculate.clicked.connect(self.calculate_scores)
+        self.buttonOrig.clicked.connect(self.browse_folder)
+        self.buttonInho.clicked.connect(self.browse_folder)
+        self.buttonSaveCost.clicked.connect(self.browse_folder)
 
         # check boxes
         self.checkSaveCost.toggled.connect(self.enable_save_cost)
@@ -78,11 +85,13 @@ class Scores(QtGui.QWidget):
         # open file
         if col in [0, 2]:
             caption = "Select {} file".format(target)
-            filepath = QtGui.QFileDialog.getOpenFileName(self, caption)
+            filepath = QtGui.QFileDialog.getOpenFileName(self, caption,
+                                                         dir=self.default_dir)
 
             if filepath[0]:
                 item = QtGui.QTableWidgetItem(filepath[0])
                 self.tableResults.setItem(row, col, item)
+                self.default_dir = filepath[0]
 
     def browse_file_action(self):
         """Wrapper to call browse_file from the tableResults' context menu.
@@ -91,6 +100,31 @@ class Scores(QtGui.QWidget):
         row = self.tableResults.currentRow()
         col = self.tableResults.currentColumn()
         self.browse_file(row, col)
+
+    def browse_folder(self):
+        """Interface to browse a folder.
+        Connected to the browse buttons of: orig data; inho data; cost-home
+        files directory.
+
+        """
+        who = self.sender().objectName().lower()
+        if "orig" in who:
+            what = "with the original data (separated by networks)"
+            target = self.lineOrig
+        elif "inho" in who:
+            what = "with the inhomogenous data (separated by networks)"
+            target = self.lineInho
+        elif "savecost" in who:
+            what = "to save the converted files"
+            target = self.lineSaveCost
+
+        caption = "Select the directory {}".format(what)
+        filepath = QtGui.QFileDialog.getExistingDirectory(self, caption,
+                                                          dir=self.default_dir)
+
+        if filepath:
+            target.setText(filepath)
+            self.default_dir = os.path.dirname(filepath)
 
     def calculate_scores(self):
         """Gather the necessary arguments and call the function to calculate
