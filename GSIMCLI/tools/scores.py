@@ -27,7 +27,7 @@ from parsers.spreadsheet import xls2costhome
 update = Updater()
 
 
-def crmse(homog, orig, skip_years=None, centered=True):
+def crmse(homog, orig, skip_years=None, centered=True, crop=None):
     """Calculate the Centred Root-Mean-Square Error (CRMSE) between any pair of
     homogenised and original data sets.
 
@@ -38,9 +38,11 @@ def crmse(homog, orig, skip_years=None, centered=True):
     orig : array_like
         Original station data.
     skip_years : array_like, optional
-        Years not to consider.
+        Years not to be considered.
     centered : boolean, default True
         Return RMSE or the centred RMSE.
+    crop : int, optional
+        Do not consider the first and the last `crop` years.
 
     Returns
     -------
@@ -63,9 +65,13 @@ def crmse(homog, orig, skip_years=None, centered=True):
     if skip_years:
         orig = orig.select(lambda x: x not in skip_years)
 
+    if crop is not None:
+        homog = homog[crop:-crop]
+        orig = orig[crop:-crop]
+
     if centered:  # FIXME: something's wrong here
-        homog -= homog.mean()
-        orig -= orig.mean()
+        homog -= homog.mean().mean()
+        orig -= orig.mean().mean()
 #    diff = (homog - orig).std()
 
     diff = np.sqrt(np.power((homog - orig), 2).mean())
@@ -381,7 +387,7 @@ if __name__ == '__main__':
     variable = None  # 'tn'
     # """
 
-    # """ # MASH Marinova precip
+    """ # MASH Marinova precip
     # yearly: st 3.6 0.56 netw 1.6 0.69
     # monthly: st 8.5 0.84 netw 3.8 1.03
     netw_path = basepath + 'benchmark/h009/precip/sur1'
@@ -392,7 +398,9 @@ if __name__ == '__main__':
 
     """ # PRODIGE main precip
     # st 4.7 0.63 netw 3.3 1.07
-    netw_path = basepath + 'benchmark/h002/precip/sur14'
+    netw_path = basepath + 'benchmark/h002/precip/sur1'
+    orig_path = basepath + 'benchmark/orig/precip/sur1'
+    inho_path = basepath + 'benchmark/inho/precip/sur1'
     # """
 
     """ # GSIMCLI yearly
@@ -407,9 +415,7 @@ if __name__ == '__main__':
     inho_path = basepath + "/benchmark/inho/precip/sur1"
     # """
 
-    """ # GSIMCLI monthly
-    # gsimcli_results = basepath + 'cost-home/rede000010/gsimcli_results.xls'
-    # gsimcli_results = basepath + 'cost-home/500_dflt_16_allvar_vmedia/rede000009/gsimcli_results.xls'
+    # """ # GSIMCLI monthly
     gsimcli_results = [basepath + 'cost-home/rede000005/gsimcli_results.xls',
                        basepath + 'cost-home/rede000009/gsimcli_results.xls']
     # network_id = '000009'
@@ -421,12 +427,12 @@ if __name__ == '__main__':
 
 #    netw_path = basepath + 'benchmark/h011/precip/sur1'
     # network_id = ['000009', '000010']
-    sub = ch.Submission(netw_path, md, ['000009', '000005'],
-                        orig_path=orig_path, inho_path=inho_path)  # , ['000010'])
-    print improvement(sub, over_station=True, over_network=True,
-                      skip_missing=False, skip_outlier=True, yearly=False)
+#     sub = ch.Submission(netw_path, md,  # ['000009', '000005'],
+#                         orig_path=orig_path, inho_path=inho_path)  # , ['000010'])
+#     print improvement(sub, over_station=True, over_network=True,
+#                       skip_missing=False, skip_outlier=True, yearly=False)
 
-#    print gsimcli_improvement(gsimcli_results, costhome_save=True, yearly_sum=True,
-#                              keys=kis, orig_path=orig_path, inho_path=inho_path)
+    print gsimcli_improvement(gsimcli_results, costhome_save=True, yearly_sum=True,
+                              keys=kis, orig_path=orig_path, inho_path=inho_path)
 
     print 'done'
