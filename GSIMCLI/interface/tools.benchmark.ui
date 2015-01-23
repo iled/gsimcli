@@ -7,8 +7,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>659</width>
-    <height>701</height>
+    <width>695</width>
+    <height>734</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -54,12 +54,83 @@
     </widget>
    </item>
    <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QLabel" name="labelResolution">
+       <property name="toolTip">
+        <string>Select the temporal resolution in each file.</string>
+       </property>
+       <property name="text">
+        <string>Temporal resolution</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="comboResolution">
+       <property name="currentIndex">
+        <number>1</number>
+       </property>
+       <item>
+        <property name="text">
+         <string>Monthly</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Yearly</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_3">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="labelFormat">
+       <property name="text">
+        <string>Files format</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="comboFormat">
+       <property name="editable">
+        <bool>false</bool>
+       </property>
+       <property name="currentIndex">
+        <number>1</number>
+       </property>
+       <item>
+        <property name="text">
+         <string>COST-HOME</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>gsimcli</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
     <widget class="QTableWidget" name="tableResults">
      <property name="contextMenuPolicy">
       <enum>Qt::ActionsContextMenu</enum>
      </property>
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Double click a cell in the &lt;span style=&quot; font-style:italic;&quot;&gt;Results files&lt;/span&gt; or &lt;span style=&quot; font-style:italic;&quot;&gt;Keys files&lt;/span&gt; columns in order to browse a file.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>Double click a cell in the Results or Keys columns in order to browse a file or directory.</string>
      </property>
      <property name="editTriggers">
       <set>QAbstractItemView::AnyKeyPressed|QAbstractItemView::EditKeyPressed|QAbstractItemView::SelectedClicked</set>
@@ -102,17 +173,17 @@
      <row/>
      <column>
       <property name="text">
-       <string>Results files</string>
+       <string>Results file</string>
       </property>
      </column>
      <column>
       <property name="text">
-       <string>Network IDs</string>
+       <string>Network ID</string>
       </property>
      </column>
      <column>
       <property name="text">
-       <string>Keys files</string>
+       <string>Keys file</string>
       </property>
      </column>
     </widget>

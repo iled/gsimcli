@@ -5,6 +5,7 @@ Created on 13/01/2015
 @author: julio
 """
 from PySide import QtGui, QtCore
+import glob2
 import os
 import sys
 
@@ -36,6 +37,7 @@ class Scores(QtGui.QWidget):
             self.default_dir = self.parent.default_dir
         else:
             self.default_dir = os.path.expanduser('~/')
+        self.time_resolution()
 
         # buttons
         self.buttonCalculate.clicked.connect(self.calculate_scores)
@@ -48,9 +50,13 @@ class Scores(QtGui.QWidget):
         self.groupNetwork.toggled.connect(self.enable_scores_network)
         self.groupStation.toggled.connect(self.enable_scores_station)
 
+        # combo boxes
+        self.comboResolution.currentIndexChanged.connect(self.time_resolution)
+        self.comboFormat.currentIndexChanged.connect(self.file_format)
+
         # table
         self.tableResults.cellChanged.connect(self.add_rows_auto)
-        self.tableResults.cellDoubleClicked.connect(self.browse_file)
+        self.tableResults.cellDoubleClicked.connect(self.browse_cell)
         self.set_table_menu()
 
         # hidden widgets by default
@@ -66,6 +72,22 @@ class Scores(QtGui.QWidget):
         rows = self.tableResults.rowCount()
         if row == rows - 1:
             self.tableResults.insertRow(row + 1)
+
+    def browse_cell(self, row, col):
+        if self.resolution == "yearly" or col != 0:
+            self.browse_file(row, col)
+        elif self.resolution == "monthly":
+            self.browse_dir(row, col)
+
+    def browse_dir(self, row, col):
+        caption = "Select homogenisation results directory"
+        filepath = QtGui.QFileDialog.getExistingDirectory(self, caption,
+                                                          dir=self.default_dir)
+
+        if filepath:
+            item = QtGui.QTableWidgetItem(filepath)
+            self.tableResults.setItem(row, col, item)
+            self.default_dir = filepath
 
     def browse_file(self, row, col):
         """Interface to browse a file.
@@ -233,9 +255,31 @@ class Scores(QtGui.QWidget):
             if key and key.text():
                 keys.append(key.text())
 
-        self.gsimcli_results = results
+        if self.resolution == "yearly":
+            self.gsimcli_results = results
+        elif self.resolution == "monthly":
+            networks = list()
+            for month in results:
+                networks.append(self.find_results(month))
+            self.gsimcli_results = networks
         self.network_ids = network_ids
         self.keys = keys
+
+    def file_format(self):
+        fformat = self.comboFormat.currentText()
+        if fformat == "gsimcli":
+            toggle_save = True
+        elif fformat == "COST-HOME":
+            toggle_save = False
+
+        self.enable_save_cost(toggle_save and self.checkSaveCost.isChecked())
+        self.checkSaveCost.setEnabled(toggle_save)
+
+    def find_results(self, path):
+        """Find gsimcli results files.
+
+        """
+        return glob2.glob(os.path.join(path, '**/*.xls'))
 
     def print_results(self):
         over_network = self.groupNetwork.isChecked()
@@ -330,6 +374,21 @@ class Scores(QtGui.QWidget):
         self.progressBar.setValue(0)
         self.progressBar.setVisible(toggle)
         self.buttonCalculate.setEnabled(not toggle)
+
+    def time_resolution(self):
+        resolution = self.comboResolution.currentText()
+
+        if resolution == "Monthly":
+            label = "Results directory"
+            toggle_sum = False
+            self.resolution = "monthly"
+        elif resolution == "Yearly":
+            label = "Results file"
+            toggle_sum = True
+            self.resolution = "yearly"
+
+        self.tableResults.horizontalHeaderItem(0).setText(label)
+        self.checkAverageYearly.setEnabled(toggle_sum)
 
 
 if __name__ == '__main__':
