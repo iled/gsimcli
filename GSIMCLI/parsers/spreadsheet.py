@@ -133,6 +133,8 @@ def xls2costhome(xlspath, outpath=None, no_data=-999.9, sheet=None,
     """Convert a file in GSIMCLI format (XLS with a particular structure) to a
     network of the COST-HOME format.
 
+    DEPRECATED
+
     Parameters
     ----------
     xlspath : string
@@ -194,8 +196,7 @@ def xls2costhome(xlspath, outpath=None, no_data=-999.9, sheet=None,
     network = ch.Network(no_data=no_data, network_id=network_id)
     stations = [label for label in xlstable.columns if '_clim' in label]
 
-    if ((isinstance(keys_path, str) or isinstance(keys_path, unicode)) and
-            os.path.isfile(keys_path)):
+    if keys_path is not None and os.path.isfile(keys_path):
         keys = read_keys(keys_path)
         # station.id = keys.loc[station.id]
         # self.stations_id[i] = station.id
@@ -225,6 +226,8 @@ def xls2costhome(xlspath, outpath=None, no_data=-999.9, sheet=None,
 
 def read_keys(path):
     """Read a TSV file with the keys to the converted station IDs.
+
+    DEPRECATED
 
     Parameters
     ----------
