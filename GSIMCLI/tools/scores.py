@@ -13,15 +13,10 @@ Created on 21/01/2014
 @author: julio
 """
 
-import os
-import shutil
-import tempfile
-
 import numpy as np
 import pandas as pd
 import parsers.costhome as ch
 from interface.ui_utils import Updater
-from parsers.spreadsheet import xls2costhome
 
 
 update = Updater()
@@ -285,65 +280,65 @@ def improvement(submission, **kwargs):
     return homog_crmse, inho_crmse, improve
 
 
-def gsimcli_improvement(gsimcli_results, no_data=-999.9, network_ids=None,
-                        keys=None, costhome_path=None, costhome_save=False,
-                        **kwargs):
+def gsimcli_improvement(gsimcli_results, no_data=-999.9, keys_path=None,
+                        costhome_path=None, yearly=True, **kwargs):
     """Calculate the improvement of a GSIMCLI process.
 
-    It is just a wrapper around `improvement` and `xls2costhome`.
+    Parameters
+    ----------
+    gsimcli_results : dict
+        List of results files per network organised in a dictionary. Example:
+            { '000005' : ['1.xls', '2.xls'],
+              '000009' : ['1.xls', '2.xls', '3.xls'] }
+    no_data : number, default -999.9
+        Missing data value.
+    keys_path : string, optional
+        Path to the file containing the keys which converted the stations IDs.
+    costhome_path : string, optional
+        Provide a path to a directory if you want to save the results files
+        converted into the COST-HOME format.
+    yearly : boolean, default True
+        The results are in a yearly scale, opposed to monthly.
 
     """
     # accept str or list of str
-    if (isinstance(gsimcli_results, str) or
-            isinstance(gsimcli_results, unicode)):
-        gsimcli_results = [gsimcli_results]
-    if isinstance(network_ids, str) or isinstance(network_ids, unicode):
-        network_ids = [network_ids]
-    if isinstance(keys, str) or isinstance(keys, unicode):
-        keys = [keys]
+    if isinstance(keys_path, str) or isinstance(keys_path, unicode):
+        keys_path = [keys_path]
 
-    if network_ids is not None:
-        if len(network_ids) != len(gsimcli_results):
+    if keys_path is not None:
+        if len(keys_path) != len(gsimcli_results):
             raise ValueError("Mismatch between number of results files and "
-                             "networks ID's")
-
-    if keys is not None:
-        if len(keys) != len(gsimcli_results):
-            raise ValueError("Mismatch between number of results files and "
-                             "keys files")
-
-    if not bool(costhome_path):
-        costhome_path = tempfile.mkdtemp(prefix="gsimcli_")
+                             "keys_path files")
 
     yearly_sum = kwargs.pop("yearly_sum")
-    for i, results in enumerate(gsimcli_results):
-        if network_ids is None:
-            # FIXME: only working for "redeXXXXXX"
-            network_id = os.path.basename(os.path.dirname(results))[4:]
+
+    submission = ch.Submission(no_data=no_data)
+
+    for i, network_id in enumerate(gsimcli_results.keys()):
+        network = ch.Network(no_data=no_data, network_id=network_id)
+
+        if keys_path is not None:
+            key = keys_path[i]
         else:
-            network_id = network_ids[i]
+            key = None
 
-        if keys is not None:
-            key = keys[i]
+        for results in gsimcli_results[network_id]:
+            network.load_gsimcli(path=results, keys_path=key,
+                                 yearly_sum=yearly_sum, yearly=yearly)
+            # send update
+            update.current += 1
+            update.send()
 
-        xls2costhome(xlspath=results, outpath=costhome_path,
-                     sheet='All stations', header=False, skip_rows=None,
-                     network_id=network_id, status='ho', variable='rr',
-                     resolution='y', content='d', ftype='data', keys_path=key,
-                     yearly_sum=yearly_sum, **kwargs)
-        # send update
-        update.current += 1
-        update.send()
+        submission.add(network)
 
-    submission = ch.Submission(costhome_path, no_data, network_ids)
     orig_path = kwargs.pop("orig_path")
     inho_path = kwargs.pop("inho_path")
     submission.setup(orig_path, inho_path)
 
     results = improvement(submission, **kwargs)
 
-    if not costhome_save:
-        shutil.rmtree(costhome_path)
+    if costhome_path:
+        submission.save(costhome_path)
 
     update.reset()
     return results
@@ -416,9 +411,12 @@ if __name__ == '__main__':
     # """
 
     # """ # GSIMCLI monthly
-    gsimcli_results = [basepath + 'cost-home/rede000005/gsimcli_results.xls',
-                       basepath + 'cost-home/rede000009/gsimcli_results.xls']
-    # network_id = '000009'
+    import glob
+
+    rede5 = glob.glob('/home/julio/Dropbox/ISEGI/cost-home/resultados mensais/rede000005/d0.975, c0.950/' + '*.xls')
+    rede9 = glob.glob('/home/julio/Dropbox/ISEGI/cost-home/resultados mensais/rede000009/d0.950, c0.975/' + '*.xls')
+    gsimcli_results = {'000005': rede5, '000009': rede9}
+
     kis = [basepath + 'cost-home/rede000005/keys.txt',
            basepath + 'cost-home/rede000009/keys.txt']
     orig_path = basepath + "/benchmark/orig/precip/sur1"
@@ -433,6 +431,7 @@ if __name__ == '__main__':
 #                       skip_missing=False, skip_outlier=True, yearly=False)
 
     print gsimcli_improvement(gsimcli_results, costhome_save=True, yearly_sum=True,
-                              keys=kis, orig_path=orig_path, inho_path=inho_path)
+                              keys_path=kis, orig_path=orig_path, inho_path=inho_path,
+                              yearly=False)
 
     print 'done'

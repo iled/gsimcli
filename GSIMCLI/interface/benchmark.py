@@ -161,12 +161,11 @@ class Scores(QtGui.QWidget):
         kwargs = {
               'gsimcli_results': self.gsimcli_results,
               'no_data': self.spinNoData.value(),
-              'network_ids': self.network_ids,
-              'keys': self.keys,
+              'keys_path': self.keys,
               'costhome_path': self.lineSaveCost.text(),
-              'costhome_save': self.checkSaveCost.isChecked(),
               'orig_path': self.lineOrig.text(),
               'inho_path': self.lineInho.text(),
+              'yearly': self.resolution == 'yearly',
               'yearly_sum': self.checkAverageYearly.isChecked(),
               'over_network': self.groupNetwork.isChecked(),
               'over_station': self.groupStation.isChecked(),
@@ -256,12 +255,13 @@ class Scores(QtGui.QWidget):
                 keys.append(key.text())
 
         if self.resolution == "yearly":
-            self.gsimcli_results = results
+            gsimcli_results = results
         elif self.resolution == "monthly":
             networks = list()
             for month in results:
                 networks.append(self.find_results(month))
-            self.gsimcli_results = networks
+            gsimcli_results = networks
+        self.gsimcli_results = dict(zip(network_ids, gsimcli_results))
         self.network_ids = network_ids
         self.keys = keys
 
