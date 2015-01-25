@@ -20,12 +20,12 @@ Created on 28/01/2014
 import glob
 import itertools
 import os
+import re
 import warnings
 
 import numpy as np
 import pandas as pd
 import parsers.cost as pc
-import parsers.spreadsheet as ss
 import tools.grid as gr
 import tools.utils as ut
 
@@ -105,8 +105,7 @@ class Station(object):
         """
         self.no_data = no_data
 
-        if ((isinstance(path, str) or isinstance(path, unicode)) and
-                os.path.isfile(path)):
+        if path is not None and os.path.isfile(path):
             self.path = path
             self.network_id = os.path.basename(os.path.dirname(path))
             spec = pc.filename_parse(path)
@@ -140,8 +139,7 @@ class Station(object):
             The given file was not parsed as a `data` file.
 
         """
-        if ((isinstance(path, str) or isinstance(path, unicode)) and
-                os.path.isfile(path) and content):
+        if path is not None and os.path.isfile(path) and content:
             if content == 'd':
                 self.data = pc.datafile(path, self.resolution, self.no_data)
             elif content == 'f':
@@ -176,8 +174,7 @@ class Station(object):
         The `breakpoints` file name must end with *detected.txt*.
 
         """
-        if ((isinstance(path, str) or isinstance(path, unicode)) and
-                os.path.isfile(path)):
+        if path is not None and os.path.isfile(path):
             detected_file = path
         else:
             path = os.path.dirname(self.path)
@@ -426,8 +423,9 @@ class Network(object):
 
         self.stations.append(station)
         self.stations_id.append(station.id)
-        self.stations_spec += [station.ftype, station.status, station.variable,
-                               station.resolution, station.id, station.content]
+        self.stations_spec.append([station.ftype, station.status,
+                                   station.variable, station.resolution,
+                                   station.id, station.content])
         self.stations_path.append(station.path)
         self.stations_number += 1
 
@@ -553,6 +551,68 @@ class Network(object):
         for station in self.stations:
             station.save(path)
 
+    def load_gsimcli(self, path, keys_path=None, ftype='data', status='xx',
+                     variable='rr', resolution='r', content='c', yearly=True,
+                     yearly_sum=False):
+        """Load stations data from a file in the gsimcli format.
+
+        """
+        if not yearly:
+            month = extract_month(path)
+
+        if yearly and yearly_sum:
+            div = 12.0
+        else:
+            div = 1.0
+
+        xlsfile = pd.ExcelFile(path)
+        xlstable = xlsfile.parse(sheetname='All stations', header=False,
+                                 na_values=self.no_data, index_col=0)
+
+        # filter out FLAG columns
+        data_cols = [label for label in xlstable.columns if '_clim' in label]
+        st_labels = [label.split('_')[0] for label in data_cols]
+
+        # convert station ID keys
+        if keys_path is not None and os.path.isfile(keys_path):
+            self.load_keys(keys_path)
+            station_ids = [str(self.keys.loc[int(stid)].values[0])
+                           for stid in st_labels]
+        else:
+            station_ids = st_labels
+
+        for i, station_col in enumerate(data_cols):
+            stid = station_ids[i]
+            data = pd.DataFrame(xlstable[station_col] / div)
+            if not yearly:
+                data.columns = [month]
+            if stid in self.stations_id:
+                st = self.station(stid)
+                st.data = st.data.join(data)
+            else:
+                st = Station(no_data=self.no_data)
+                st.path = None
+                st.network_id = self.id
+                st.ftype = ftype
+                st.status = status
+                st.variable = variable
+                st.resolution = resolution
+                st.content = content
+                st.id = stid
+                st.data = data
+                self.add(st)
+
+    def load_keys(self, path):
+        """Read a TSV file with the keys to the converted station IDs.
+
+        Parameters
+        ----------
+        path : string
+            File path.
+
+        """
+        self.keys = pd.read_csv(path, sep='\t', index_col=0)
+
     def load_pointset(self, path, header=True, ftype='data', status='xx',
                       variable='vv', resolution='r', content='c',
                       year_col='year', station_col='est_id', var_col='value'):
@@ -616,7 +676,15 @@ class Network(object):
             st.network_id = self.id
             self.stations.append(st)
 
-    def update_ids(self, keys):
+    def station(self, stid):
+        """Return the existing Station instance with the given ``stid`` ID.
+
+        """
+        for st in self.stations:
+            if st.id == stid:
+                return st
+
+    def update_ids(self, keys_path=None):
         """Update every station ID according to the given keys.
 
         Useful when stations' ID's were replaced with a different number (for
@@ -624,15 +692,14 @@ class Network(object):
 
         Parameters
         ----------
-        keys : string or pandas.Series
+        keys_path : string or pandas.Series, optional
             File path or Series containing ID's and the corresponding keys.
 
         """
-        if ((isinstance(keys, str) or isinstance(keys, unicode)) and
-                os.path.isfile(keys)):
-            keys = ss.read_keys(keys)
+        if keys_path is not None and os.path.isfile(keys_path):
+            self.load_keys(keys_path)
         for i, station in enumerate(self.stations):
-            station.id = keys.loc[station.id]
+            station.id = self.keys.loc[station.id]
             self.stations_id[i] = station.id
 
 
@@ -667,15 +734,15 @@ class Submission(object):
         Directory where the inhomogeneous station files are located.
 
     """
-    def __init__(self, path, no_data, networks_id=None, orig_path=None,
-                 inho_path=None):
+    def __init__(self, path=None, no_data=-999.9, networks_id=None,
+                 orig_path=None, inho_path=None):
         """Initialise a Submission instance.
 
         Parameters
         ----------
-        path : string
+        path : string, optional
             Folder path.
-        no_data : number
+        no_data : number, default -999.9
             Missing data value.
         networks_id : list of int, optional
             Network ID numbers contained in the submission.
@@ -690,34 +757,68 @@ class Submission(object):
         with content `d`.
 
         """
-        self.path = path
         self.no_data = no_data
-        self.name = os.path.basename(os.path.dirname(path))
-        self.signal = os.path.basename(path)
-        parsed = pc.directory_walk_v1(path)
-        selected = pc.files_select(parsed, network=networks_id, ftype='data',
-                                   content='d')
-        grouped = pc.agg_network(selected)
         self.networks = list()
         self.networks_id = list()
         self.stations_number = 0
         self.stations_id = list()
 
-        for network in grouped:
-            self.networks_id.append(network[0][1][0])
-            self.networks.append(Network(network, no_data))
-            self.stations_number += self.networks[-1].stations_number
-            self.stations_id.extend(self.networks[-1].stations_id)
-
-        self.stations_id = list(np.unique(self.stations_id))
+        if path is not None:
+            self.load_dir(path, networks_id)
 
         self.orig_path = orig_path
         self.inho_path = inho_path
 
+    def add(self, network):
+        """Add a network to the submission.
+
+        Parameters
+        ----------
+        network : Network instance
+            Network to be added to the submission.
+
+        """
+        self.networks.append(network)
+        self.networks_id.append(network.id)
+        self.stations_number += network.stations_number
+        self.stations_id.extend(network.stations_id)
+        self.stations_id = list(set(self.stations_id))
+
     def load(self):
-        """Load all networks included in the submission. """
+        """Load all networks included in the submission.
+
+        """
         for network in self.networks:
-            network.load_stations()
+            network.setup()
+
+    def load_dir(self, path, networks_id=None):
+        """Load submission from a directory containing all the included
+        networks, one per folder. The data files should be in the COST-HOME
+        format.
+
+        Parameters
+        ----------
+        path : string
+            Folder path.
+        networks_id : list of int, optional
+            Network ID numbers contained in the submission.
+
+        """
+        self.path = path
+        self.name = os.path.basename(os.path.dirname(path))
+        self.signal = os.path.basename(path)
+        parsed = pc.directory_walk_v1(path)
+        selected = pc.files_select(parsed, network=networks_id,
+                                   ftype='data', content='d')
+        grouped = pc.agg_network(selected)
+
+        for network in grouped:
+            self.networks_id.append(network[0][1][0])
+            self.networks.append(Network(network, self.no_data))
+            self.stations_number += self.networks[-1].stations_number
+            self.stations_id.extend(self.networks[-1].stations_id)
+
+        self.stations_id = list(np.unique(self.stations_id))
 
     def save(self, path):
         """Write all networks included in the submission, according to the
@@ -773,6 +874,21 @@ class Submission(object):
                         inho_file = glob.glob(inho_netw + file_pattern)[0]
                         station.match_inho(inho_file)
                     station.setup()
+
+
+def extract_month(path):
+    """Try to guess the month of a monthly gsimcli results file.
+    Will recognize text abbreviatures (e.g., apr, oct) and numeric indexes
+    (e.g., 04, 10).
+
+    """
+    months = set(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'])
+    filename = os.path.splitext(os.path.basename(path))[0]
+    names = re.split('\W+|_', filename)
+    names = set([name.capitalize() for name in names])
+
+    return list(months & names)[0]
 
 
 def match_sub(path, sub, level=3):
