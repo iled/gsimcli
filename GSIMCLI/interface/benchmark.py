@@ -37,7 +37,6 @@ class Scores(QtGui.QWidget):
             self.default_dir = self.parent.default_dir
         else:
             self.default_dir = os.path.expanduser('~/')
-        self.time_resolution()
 
         # buttons
         self.buttonCalculate.clicked.connect(self.calculate_scores)
@@ -63,6 +62,8 @@ class Scores(QtGui.QWidget):
         ui.hide([self.labelSaveCost, self.lineSaveCost, self.buttonSaveCost,
                  self.progressBar
                  ])
+
+        self.time_resolution()
 
     def add_rows_auto(self, row, col):
         """Automatically add a new row after entering data in the last row.
@@ -258,8 +259,8 @@ class Scores(QtGui.QWidget):
             gsimcli_results = results
         elif self.resolution == "monthly":
             networks = list()
-            for month in results:
-                networks.append(self.find_results(month))
+            for network in results:
+                networks.append(self.find_results(network))
             gsimcli_results = networks
         self.gsimcli_results = dict(zip(network_ids, gsimcli_results))
         self.network_ids = network_ids
@@ -365,10 +366,32 @@ class Scores(QtGui.QWidget):
         # cells
         self.tableResults.addAction(browse_file)
         self.tableResults.addAction(del_row)
+        # extra option for monthly data
+        # if self.resolution == "monthly":
+        show_months = QtGui.QAction("Show included files", self)
+        show_months.triggered.connect(self.show_months)
+        self.tableResults.addAction(show_months)
         # vertical header
         vheader = self.tableResults.verticalHeader()
         vheader.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
         vheader.addAction(del_row)
+
+    def show_months(self):
+        """Launch a widget to show the monthly files included in the selected
+        directory.
+
+        """
+        row = self.tableResults.currentRow()
+        item = self.tableResults.item(row, 0)
+        popup = QtGui.QListWidget(self)
+        if item and item.text():
+            network = item.text()
+            files = self.find_results(network)
+            ui.pylist_to_qlist(files, popup)
+            popup.setWindowFlags(QtCore.Qt.Window)
+            popup.setWindowTitle("Files with monthly results")
+            popup.setMinimumWidth(popup.sizeHintForColumn(0) + 15)
+            popup.show()
 
     def show_status(self, toggle):
         self.progressBar.setValue(0)
@@ -381,13 +404,18 @@ class Scores(QtGui.QWidget):
         if resolution == "Monthly":
             label = "Results directory"
             toggle_sum = False
+            toggle_show = True
             self.resolution = "monthly"
         elif resolution == "Yearly":
             label = "Results file"
             toggle_sum = True
+            toggle_show = False
             self.resolution = "yearly"
 
         self.tableResults.horizontalHeaderItem(0).setText(label)
+        for action in self.tableResults.actions():
+            if action.text().startswith("Show included"):
+                action.setVisible(toggle_show)
         self.checkAverageYearly.setEnabled(toggle_sum)
 
 
