@@ -281,7 +281,7 @@ def improvement(submission, **kwargs):
 
 
 def gsimcli_improvement(gsimcli_results, no_data=-999.9, keys_path=None,
-                        costhome_path=None, yearly=True, **kwargs):
+                        costhome_path=None, **kwargs):
     """Calculate the improvement of a GSIMCLI process.
 
     Parameters
@@ -297,8 +297,6 @@ def gsimcli_improvement(gsimcli_results, no_data=-999.9, keys_path=None,
     costhome_path : string, optional
         Provide a path to a directory if you want to save the results files
         converted into the COST-HOME format.
-    yearly : boolean, default True
-        The results are in a yearly scale, opposed to monthly.
 
     """
     # accept str or list of str
@@ -324,7 +322,8 @@ def gsimcli_improvement(gsimcli_results, no_data=-999.9, keys_path=None,
 
         for results in gsimcli_results[network_id]:
             network.load_gsimcli(path=results, keys_path=key,
-                                 yearly_sum=yearly_sum, yearly=yearly)
+                                 yearly_sum=yearly_sum,
+                                 yearly=kwargs['yearly'])
             # send update
             update.current += 1
             update.send()
