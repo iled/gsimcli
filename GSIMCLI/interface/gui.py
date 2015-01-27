@@ -67,7 +67,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 
         # pages
         self.tools_benchmark = benchmark.Scores(self)
-        self.tools_benchmark.hide()
+        self.stackedWidget.addWidget(self.tools_benchmark)
 
         # set params
         self.params = GsimcliParam()
@@ -458,8 +458,6 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.treeWidget.selectionModel().clear()
         who = self.sender().objectName().lower()
         if "scores" in who:
-            self.tools_benchmark = benchmark.Scores(self)
-            self.stackedWidget.addWidget(self.tools_benchmark)
             self.stackedWidget.setCurrentWidget(self.tools_benchmark)
 
     def set_max_nodes(self, i):
