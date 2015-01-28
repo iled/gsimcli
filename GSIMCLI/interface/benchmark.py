@@ -10,6 +10,7 @@ import os
 import sys
 
 from external_libs.pyside_dynamic import loadUi
+from external_libs.ui import CheckBoxDelegate
 import interface.ui_utils as ui
 import tools.scores as scores
 
@@ -48,6 +49,7 @@ class Scores(QtGui.QWidget):
         self.checkSaveCost.toggled.connect(self.enable_save_cost)
         self.groupNetwork.toggled.connect(self.enable_scores_network)
         self.groupStation.toggled.connect(self.enable_scores_station)
+        self.checkUseAll.toggled.connect(self.set_use_all)
 
         # combo boxes
         self.comboResolution.currentIndexChanged.connect(self.time_resolution)
@@ -57,6 +59,12 @@ class Scores(QtGui.QWidget):
         self.tableResults.cellChanged.connect(self.add_rows_auto)
         self.tableResults.cellDoubleClicked.connect(self.browse_cell)
         self.set_table_menu()
+        self.tableResults.setItemDelegateForColumn(3, CheckBoxDelegate(self))
+        self.hheader = self.tableResults.horizontalHeader()
+        self.hheader.setResizeMode(0, QtGui.QHeaderView.Stretch)
+        self.hheader.setResizeMode(1, QtGui.QHeaderView.ResizeToContents)
+        self.hheader.setResizeMode(2, QtGui.QHeaderView.Stretch)
+        self.hheader.setResizeMode(3, QtGui.QHeaderView.ResizeToContents)
 
         # hidden widgets by default
         ui.hide([self.labelSaveCost, self.lineSaveCost, self.buttonSaveCost,
@@ -314,6 +322,14 @@ class Scores(QtGui.QWidget):
         if not self.tableResults.rowCount():
             self.tableResults.insertRow(0)
 
+    def set_use_column(self):
+        """Initialise the Use column of the table widget, inserting checkboxes
+        in each row.
+
+        """
+        for row in range(self.tableResults.rowCount()):
+            self.insert_use_checkbox(row)
+
     def set_gui_params(self):
         self.guiparams = list()
         add = self.guiparams.extend
@@ -375,6 +391,16 @@ class Scores(QtGui.QWidget):
         vheader = self.tableResults.verticalHeader()
         vheader.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
         vheader.addAction(del_row)
+
+    def set_use_all(self, toggle):
+        """Select all or none of the rows to be used.
+        Connected to Use all checkbox.
+
+        """
+        for row in range(self.tableResults.rowCount()):
+            # self.tableResults.item(row, 3).setChecked(toggle)
+            pass
+        pass
 
     def show_months(self):
         """Launch a widget to show the monthly files included in the selected
