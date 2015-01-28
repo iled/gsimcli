@@ -13,6 +13,7 @@ from external_libs.pyside_dynamic import loadUi
 from external_libs.ui import CheckBoxDelegate
 import interface.ui_utils as ui
 import tools.scores as scores
+from tools.utils import path_up
 
 
 base = os.path.dirname(os.path.dirname(__file__))
@@ -44,6 +45,7 @@ class Scores(QtGui.QWidget):
         self.buttonOrig.clicked.connect(self.browse_folder)
         self.buttonInho.clicked.connect(self.browse_folder)
         self.buttonSaveCost.clicked.connect(self.browse_folder)
+        self.buttonSaveResults.clicked.connect(self.save_results)
 
         # check boxes
         self.checkSaveCost.toggled.connect(self.enable_save_cost)
@@ -122,7 +124,7 @@ class Scores(QtGui.QWidget):
             if filepath[0]:
                 item = QtGui.QTableWidgetItem(filepath[0])
                 self.tableResults.setItem(row, col, item)
-                self.default_dir = filepath[0]
+                self.default_dir = os.path.dirname(filepath[0])
 
     def browse_file_action(self):
         """Wrapper to call browse_file from the tableResults' context menu.
@@ -307,6 +309,7 @@ class Scores(QtGui.QWidget):
             self.lineStationImprov.setText(station_improvement)
 
         self.show_status(False)
+        self.buttonSaveResults.setEnabled(True)
 
     def remove_rows(self):
         """Remove the selected rows from the table.
@@ -321,6 +324,22 @@ class Scores(QtGui.QWidget):
         # keep one row
         if not self.tableResults.rowCount():
             self.tableResults.insertRow(0)
+
+    def save_results(self):
+        """Save the calculated results to a simple text file (TSV).
+        Connected to the SaveResults button.
+
+        """
+        caption = "Select file to save the results"
+        tag = path_up(self.tableResults.item(0, 0).text(), 2)[1]
+        default_name = " ".join(["scores"] + tag.split(os.sep)) + ".txt"
+        default_path = os.path.join(self.default_dir, default_name)
+
+        filepath = QtGui.QFileDialog.getSaveFileName(self, caption,
+                                                     dir=default_path)
+
+        if filepath[0]:
+            self.default_dir = os.path.dirname(filepath[0])
 
     def set_use_column(self):
         """Initialise the Use column of the table widget, inserting checkboxes
