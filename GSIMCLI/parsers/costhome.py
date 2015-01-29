@@ -18,7 +18,6 @@ Created on 28/01/2014
 """
 
 import glob
-import itertools
 import os
 import re
 import warnings
@@ -186,8 +185,9 @@ class Station(object):
                                format(path))
 
         detected = pc.breakpointsfile(detected_file)
-        self.outliers = detected[((self.id in str(detected.Station)) &
-                                  (detected.Type == 'OUTLIE'))].ix[:, 2:]
+        select_station = detected["Station"].map(lambda x: self.id in x)
+        select_outlier = detected["Type"] == "OUTLIE"
+        self.outliers = detected[select_station & select_outlier].ix[:, 2:]
 
     def match_orig(self, path=None):
         """Try to fetch the matching original station data.
@@ -330,6 +330,24 @@ class Station(object):
         self.data.to_csv(os.path.join(path, filename), sep='\t', header=False,
                          float_format='%6.1f')
 
+    def skip_outliers(self, yearly=True):
+        """Replaced by NaN the values marked as outliers in the original data.
+
+        If working with yearly data, it will delete the corresponding rows
+        instead.
+
+        """
+        self.orig.load_outliers()
+        orig = self.orig.data
+        if yearly:
+            skip = list(np.unique(self.orig.outliers.Year))
+            orig = orig.select(lambda x: x not in skip)
+        else:
+            skip = self.orig.outliers
+            skip['Month'] = ut.number_to_month(skip['Month'])
+            for date in skip.itertuples(index=False):
+                orig.loc[date] = np.nan
+
 
 class Network(object):
     """Network container.
@@ -449,7 +467,7 @@ class Network(object):
 
         first = True
         for station in self.stations:
-            station.setup()
+            # station.setup()
 
             if yearly:
                 homog_data = station.data.mean(axis=1)
@@ -469,6 +487,7 @@ class Network(object):
                 continue
             netw_average += homog_data
             if orig:
+                # this will preserve missing data
                 orig_average += orig_data
 
         netw_result = netw_average / self.stations_number
@@ -479,50 +498,22 @@ class Network(object):
 
         return result
 
-    def skip_years(self, missing=False, outlier=True, orig_path=None):
-        """List of the years in which any station in the network has missing
-        data and/or has an outlier.
-
-        Missing data and outliers are both retrieved from the station's
-        corresponding original data.
+    def skip_outliers(self, orig_path=None, yearly=True):
+        """Opt out the values marked as outliers in the original data, in each
+        station.
 
         Parameters
         ----------
-        missing : boolean, default False
-            List years where any station in the network has missing data.
-        outlier : boolean, default True
-            List years where any station in the network has an outlier.
         orig_path : string, optional
             Path to the original station file.
-
-        Returns
-        -------
-        list
+        yearly : boolean, default True
+            Average monthly data to yearly data.
 
         """
         self.setup()
-        missing_list = list()
-        outlier_list = list()
         for station in self.stations:
             station.setup(orig_path=orig_path)
-            if missing:
-                station.orig.load()
-                orig = station.orig.data
-                missing_list.append(orig[orig.isnull().any(axis=1)].index)
-            if outlier:
-                station.orig.load_outliers()
-                outlier_list.append(list(np.unique(station.
-                                                   orig.outliers.Year)))
-
-        years_list = list()
-        if missing:
-            years_list.append(list(np.unique(itertools.chain.
-                                             from_iterable(missing_list))))
-        if outlier:
-            years_list.append(list(np.unique(itertools.chain.
-                                             from_iterable(outlier_list))))
-
-        return list(itertools.chain.from_iterable(years_list))
+            station.skip_outliers(yearly)
 
     def setup(self):
         """Load all stations in the network.
