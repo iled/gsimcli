@@ -22,7 +22,7 @@ from interface.ui_utils import Updater
 update = Updater()
 
 
-def crmse(homog, orig, skip_years=None, centered=True, crop=None):
+def crmse(homog, orig, centered=True, crop=None):
     """Calculate the Centred Root-Mean-Square Error (CRMSE) between any pair of
     homogenised and original data sets.
 
@@ -32,8 +32,6 @@ def crmse(homog, orig, skip_years=None, centered=True, crop=None):
         Homogenised station data.
     orig : array_like
         Original station data.
-    skip_years : array_like, optional
-        Years not to be considered.
     centered : boolean, default True
         Return RMSE or the centred RMSE.
     crop : int, optional
@@ -57,19 +55,16 @@ def crmse(homog, orig, skip_years=None, centered=True, crop=None):
         (\hat{\\theta})} = \sqrt{\operatorname{E}((\hat{\\theta}-\\theta)^2)}.
 
     """
-    if skip_years:
-        orig = orig.select(lambda x: x not in skip_years)
-
     if crop is not None:
         homog = homog[crop:-crop]
         orig = orig[crop:-crop]
 
-    if centered:  # FIXME: something's wrong here
+    if centered:
         homog -= homog.mean().mean()
         orig -= orig.mean().mean()
 #    diff = (homog - orig).std()
 
-    diff = np.sqrt(np.power((homog - orig), 2).mean())
+    diff = np.sqrt(np.power((homog - orig), 2).mean().mean())
 
     return diff
 
@@ -91,8 +86,6 @@ def crmse_station(station, skip_outliers=True, yearly=True):
     st_crmse : ndarray
         Station CRMSE.
 
-    TODO: handle skip_outliers when resolution != 'y'
-
     See Also
     --------
     crmse_cl : Calculate CRMSE between any pair of homogenised and original
@@ -101,6 +94,9 @@ def crmse_station(station, skip_outliers=True, yearly=True):
     """
     station.setup()
 
+    if skip_outliers:
+        station.skip_outliers(yearly)
+
     if yearly:
         homog = station.yearly('mean')
         orig = station.orig.yearly('mean')
@@ -108,15 +104,7 @@ def crmse_station(station, skip_outliers=True, yearly=True):
         homog = station.data
         orig = station.orig.data
 
-    skip_years = list()
-    if skip_outliers:
-        station.orig.load_outliers()
-        skip_years = list(np.unique(station.orig.outliers.Year))
-
-    st_crmse = crmse(homog, orig, skip_years)
-
-    if not yearly:
-        st_crmse = st_crmse.mean()
+    st_crmse = crmse(homog, orig)
 
     return st_crmse
 
@@ -149,14 +137,11 @@ def crmse_network(network, skip_missing=False, skip_outlier=True, yearly=True):
 
     """
     network.setup()
+    if skip_outlier:
+        network.skip_outliers(yearly=yearly)
     homog, orig = network.average(orig=True, yearly=yearly)
 
-    skip_years = network.skip_years(skip_missing, skip_outlier)
-
-    netw_crmse = crmse(homog, orig, skip_years)
-
-    if not yearly:
-        netw_crmse = netw_crmse.mean()
+    netw_crmse = crmse(homog, orig)
 
     return netw_crmse
 
@@ -224,7 +209,8 @@ def crmse_submission(submission, over_station=True, over_network=True,
     if over_network:
         results.append(network_crmses.mean())
     if over_station:
-        results.append(station_crmses.mean().mean())
+        st_crmse = station_crmses.sum().sum() / submission.stations_number
+        results.append(st_crmse)
 
     return results
 
@@ -381,7 +367,7 @@ if __name__ == '__main__':
     variable = None  # 'tn'
     # """
 
-    """ # MASH Marinova precip
+    # """ # MASH Marinova precip
     # yearly: st 3.6 0.56 netw 1.6 0.69
     # monthly: st 8.5 0.84 netw 3.8 1.03
     netw_path = basepath + 'benchmark/h009/precip/sur1'
@@ -409,11 +395,11 @@ if __name__ == '__main__':
     inho_path = basepath + "/benchmark/inho/precip/sur1"
     # """
 
-    # """ # GSIMCLI monthly
+    """ # GSIMCLI monthly
     import glob
 
-    rede5 = glob.glob('/home/julio/Dropbox/ISEGI/cost-home/resultados mensais/rede000005/d0.975, c0.950/' + '*.xls')
-    rede9 = glob.glob('/home/julio/Dropbox/ISEGI/cost-home/resultados mensais/rede000009/d0.950, c0.975/' + '*.xls')
+    rede5 = glob.glob('/home/julio/Área de Trabalho/testes 5+9/d095c095_xls/5/' + '*.xls')
+    rede9 = glob.glob('/home/julio/Área de Trabalho/testes 5+9/d095c095_xls/9/' + '*.xls')
     gsimcli_results = {'000005': rede5, '000009': rede9}
 
     kis = [basepath + 'cost-home/rede000005/keys.txt',
@@ -424,13 +410,13 @@ if __name__ == '__main__':
 
 #    netw_path = basepath + 'benchmark/h011/precip/sur1'
     # network_id = ['000009', '000010']
-#     sub = ch.Submission(netw_path, md,  # ['000009', '000005'],
-#                         orig_path=orig_path, inho_path=inho_path)  # , ['000010'])
-#     print improvement(sub, over_station=True, over_network=True,
-#                       skip_missing=False, skip_outlier=True, yearly=False)
+    sub = ch.Submission(netw_path, md,  # ['000009', '000005'],
+                        orig_path=orig_path, inho_path=inho_path)  # , ['000010'])
+    print improvement(sub, over_station=True, over_network=True,
+                      skip_missing=False, skip_outlier=True, yearly=False)
 
-    print gsimcli_improvement(gsimcli_results, costhome_save=True, yearly_sum=True,
-                              keys_path=kis, orig_path=orig_path, inho_path=inho_path,
-                              yearly=False)
+#     print gsimcli_improvement(gsimcli_results, yearly_sum=True,
+#                               keys_path=kis, orig_path=orig_path, inho_path=inho_path,
+#                               yearly=False)
 
     print 'done'
