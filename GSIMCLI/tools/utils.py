@@ -215,3 +215,24 @@ def seconds_convert(seconds):
     h_str = str(datetime.timedelta(seconds=seconds))
 
     return m_str + d_str + h_str
+
+
+def number_to_month(months):
+    """Convert numbers from 1 to 12 to the corresponding month in the
+    abbreviated written form (e.g, ``3`` corresponds to ``'Mar'``).
+
+    Parameters
+    ----------
+    months : list
+        Numbers to convert to
+
+    Returns
+    -------
+    list
+        The corresponding months.
+
+    """
+    month = {1: "Jan", 2: "Fev", 3: "Mar", 4: "Apr", 5: "May", 6: "Jun",
+             7: "Jul", 8: "Aug", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dec"}
+
+    return [month[m] for m in months]
