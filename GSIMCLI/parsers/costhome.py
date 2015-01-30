@@ -113,6 +113,16 @@ class Station(object):
             (self.ftype, self.status, self.variable, self.resolution,
              self.id, self.content) = spec
 
+    def check_monthly_order(self):
+        """Make sure the data is stored in the correct monthly order.
+
+        """
+        months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+        if all([month in months for month in self.data.columns]):
+            self.data = self.data.reindex_axis(months, axis=1)
+
     def load(self, path=None, content=None):
         """Load station data file.
 
@@ -327,6 +337,7 @@ class Station(object):
         self.load()
         filename = (self.status + self.variable + self.resolution + self.id +
                     self.content + '.txt')
+        self.check_monthly_order()
         self.data.to_csv(os.path.join(path, filename), sep='\t', header=False,
                          float_format='%6.1f')
 
