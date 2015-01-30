@@ -298,15 +298,15 @@ class Scores(QtGui.QWidget):
         self.results = self.office.results
 
         if over_network:
-            network_crmse = str(self.results[0][0])
-            network_improvement = str(self.results[2][0])
-            self.lineNetworkCRMSE.setText(network_crmse)
-            self.lineNetworkImprov.setText(network_improvement)
+            self.network_crmse = str(self.results[0][0])
+            self.network_improvement = str(self.results[2][0])
+            self.lineNetworkCRMSE.setText(self.network_crmse)
+            self.lineNetworkImprov.setText(self.network_improvement)
         if over_station:
-            station_crmse = str(self.results[0][int(over_network)])
-            station_improvement = str(self.results[2][int(over_network)])
-            self.lineStationCRMSE.setText(station_crmse)
-            self.lineStationImprov.setText(station_improvement)
+            self.station_crmse = str(self.results[0][int(over_network)])
+            self.station_improvement = str(self.results[2][int(over_network)])
+            self.lineStationCRMSE.setText(self.station_crmse)
+            self.lineStationImprov.setText(self.station_improvement)
 
         self.show_status(False)
         self.buttonSaveResults.setEnabled(True)
@@ -340,6 +340,15 @@ class Scores(QtGui.QWidget):
 
         if filepath[0]:
             self.default_dir = os.path.dirname(filepath[0])
+            text = ("gsimcli :: benchmark scores\n" +
+                    "*" * 27 + "\n"
+                    "\t\tStation\t\tNetwork\n"
+                    "CRMSE:\t\t{}\t{}\n".format(self.station_crmse,
+                                              self.network_crmse) +
+                    "Improvement:\t{}\t{}".format(self.station_improvement,
+                                                  self.network_improvement))
+            with open(filepath[0], 'w') as afile:
+                afile.write(text)
 
     def set_use_column(self):
         """Initialise the Use column of the table widget, inserting checkboxes
@@ -418,6 +427,7 @@ class Scores(QtGui.QWidget):
         """Select all or none of the rows to be used.
         Connected to Use all checkbox.
 
+        TODO: wip
         """
         for row in range(self.tableResults.rowCount()):
             # self.tableResults.item(row, 3).setChecked(toggle)
