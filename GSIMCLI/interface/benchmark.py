@@ -354,6 +354,8 @@ class Scores(QtGui.QWidget):
         add = self.guiparams.extend
 
         gp = "tools_benchmark"
+        res = ui.GuiParam("temporal_resolution", self.comboResolution, gp)
+        fformat = ui.GuiParam("file_format", self.comboFormat, gp)
         table = ui.GuiParam("table_results", self.tableResults, gp)
         no_data = ui.GuiParam("no_data", self.spinNoData, gp)
         orig = ui.GuiParam("orig_path", self.lineOrig, gp)
@@ -367,8 +369,9 @@ class Scores(QtGui.QWidget):
                                    over_network)
         skip_outlier = ui.GuiParam("skip_outlier", self.checkSkipOutlier, gp)
 
-        add([table, no_data, orig, inho, save_cost, cost_path, over_station,
-             over_network, yearly_sum, skip_missing, skip_outlier])
+        add([res, fformat, table, no_data, orig, inho, save_cost, cost_path,
+             over_station, over_network, yearly_sum, skip_missing,
+             skip_outlier])
 
     def set_progress(self, current):
         progress = 100 * current / self.total
