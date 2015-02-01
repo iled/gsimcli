@@ -2574,6 +2574,7 @@
      <string>&amp;Tools</string>
     </property>
     <addaction name="actionBenchmarkScores"/>
+    <addaction name="actionInstallDataSet"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -2715,6 +2716,11 @@
    </property>
    <property name="shortcut">
     <string>F8</string>
+   </property>
+  </action>
+  <action name="actionInstallDataSet">
+   <property name="text">
+    <string>Install bechmark data set</string>
    </property>
   </action>
  </widget>

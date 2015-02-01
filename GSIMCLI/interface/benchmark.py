@@ -152,12 +152,12 @@ class Scores(QtGui.QWidget):
             target = self.lineSaveCost
 
         caption = "Select the directory {}".format(what)
-        filepath = QtGui.QFileDialog.getExistingDirectory(self, caption,
-                                                          dir=self.default_dir)
+        path = QtGui.QFileDialog.getExistingDirectory(self, caption,
+                                                      dir=self.default_dir)
 
-        if filepath:
-            target.setText(filepath)
-            self.default_dir = os.path.dirname(filepath)
+        if path:
+            target.setText(path)
+            self.default_dir = os.path.abspath(path)
 
     def calculate_scores(self):
         """Gather the necessary arguments and call the function to calculate
@@ -344,7 +344,7 @@ class Scores(QtGui.QWidget):
                     "*" * 27 + "\n"
                     "\t\tStation\t\tNetwork\n"
                     "CRMSE:\t\t{}\t{}\n".format(self.station_crmse,
-                                              self.network_crmse) +
+                                                self.network_crmse) +
                     "Improvement:\t{}\t{}".format(self.station_improvement,
                                                   self.network_improvement))
             with open(filepath[0], 'w') as afile:
@@ -475,7 +475,14 @@ class Scores(QtGui.QWidget):
             if action.text().startswith("Show included"):
                 action.setVisible(toggle_show)
         self.checkAverageYearly.setEnabled(toggle_sum)
-
+        
+    def update_bench(self):
+        benchmark_path = self.sender().benchmark_path
+        precip = os.path.join("precip", "sur1")
+        if not self.lineOrig.text():
+            self.lineOrig.setText(os.path.join(benchmark_path, "orig", precip))
+        if not self.lineInho.text():
+            self.lineInho.setText(os.path.join(benchmark_path, "inho", precip))
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
