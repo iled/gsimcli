@@ -14,6 +14,7 @@ import os
 import sys
 from tempfile import NamedTemporaryFile
 import time
+from interface.install_dataset import InstallDialog
 
 base = os.path.dirname(os.path.dirname(__file__))
 sys.path.append(base)
@@ -87,10 +88,11 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.set_gui_params()
 
         # buttons
-        self.buttonBox.button(QtGui.QDialogButtonBox.
-                              Apply).clicked.connect(self.apply_settings)
-        self.buttonBox.button(QtGui.QDialogButtonBox.
-                          RestoreDefaults).clicked.connect(self.reset_settings)
+        button_apply = self.buttonBox.button(QtGui.QDialogButtonBox.Apply)
+        button_apply.clicked.connect(self.apply_settings)
+        button_restore = self.buttonBox.button(QtGui.QDialogButtonBox.
+                                               RestoreDefaults)
+        button_restore.clicked.connect(self.reset_settings)
         self.DL_buttonDataPath.clicked.connect(self.browse_data_file)
         self.DB_buttonAddNetworks.clicked.connect(self.browse_networks)
         self.DB_buttonRemoveNetworks.clicked.connect(self.remove_networks)
@@ -116,15 +118,14 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.HR_checkPurgeSims.toggled.connect(self.enable_purge_sims)
 
         # combo boxes
-        self.SA_comboStrategy.currentIndexChanged.connect(
-                                                      self.enable_maxsamples)
-        self.HD_comboStationOrder.currentIndexChanged.connect(
-                                                  self.change_station_order)
-        self.HC_comboCorrectionMethod.currentIndexChanged.connect(
-                                                         self.enable_skewness)
-        self.HC_comboCorrectionMethod.currentIndexChanged.connect(
-                                                     self.enable_percentile)
-
+        index_strategy = self.SA_comboStrategy.currentIndexChanged
+        index_strategy.connect(self.enable_maxsamples)
+        index_station_order = self.HD_comboStationOrder.currentIndexChanged
+        index_station_order.connect(self.change_station_order)
+        index_correction = self.HC_comboCorrectionMethod.currentIndexChanged
+        index_correction.connect(self.enable_skewness)
+        index_correction.connect(self.enable_percentile)
+        
         # line edits
         self.DL_lineDataPath.textChanged.connect(self.preview_data_file)
         self.DB_lineDecadesPath.textChanged.connect(self.changed_decades_path)
@@ -132,12 +133,13 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.HR_lineResultsName.textChanged.connect(self.check_results_ext)
 
         # lists
-        self.DB_listNetworksPaths.currentItemChanged.connect(
-                                                     self.current_network)
+        item_networks_paths = self.DB_listNetworksPaths.currentItemChanged
+        item_networks_paths.connect(self.current_network)
 
         # menu
-        self.actionRestoreLastSession.triggered.connect(partial(
-                            self.open_settings, self.settings.fileName()))
+        action_restore_session = self.actionRestoreLastSession.triggered
+        action_restore_session.connect(partial(self.open_settings,
+                                               self.settings.fileName()))
         # self.actionOpen.triggered.connect(self.open_gsimcli_params)
         self.actionOpenSettingsFile.triggered.connect(self.browse_settings)
         self.actionSaveSettings.triggered.connect(self.save_settings)
@@ -149,6 +151,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.actionOnlineDocs.triggered.connect(self.online_docs)
         self.actionAbout.triggered.connect(self.about)
         self.actionBenchmarkScores.triggered.connect(self.set_tools)
+        self.actionInstallDataSet.triggered.connect(self.install_dataset)
 
         # spin
         self.set_cpu_cores()
@@ -157,14 +160,14 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 
         # hidden widgets by default
         ui.hide([
-             self.groupProgress, self.groupStatusInfo, self.groupTime,
-             self.SI_labelNetwork, self.SI_labelStatusNetwork,
-             self.SI_labelDecade, self.SI_labelStatusDecade,
-             self.SV_labelBatchDecades,
-             self.SA_labelMaxSamples, self.SA_spinMaxSamples,
-             self.HD_groupUserOrder, self.HD_groupTolerance,
-             self.HC_groupSkewness, self.HC_groupPercentile,
-                ])
+            self.groupProgress, self.groupStatusInfo, self.groupTime,
+            self.SI_labelNetwork, self.SI_labelStatusNetwork,
+            self.SI_labelDecade, self.SI_labelStatusDecade,
+            self.SV_labelBatchDecades,
+            self.SA_labelMaxSamples, self.SA_spinMaxSamples,
+            self.HD_groupUserOrder, self.HD_groupTolerance,
+            self.HC_groupSkewness, self.HC_groupPercentile,
+            ])
 
         # default
         self.default_varnames()
@@ -209,16 +212,16 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         #    Data / Load
         gp = "data_load"
         data_path = ui.GuiParam("data_path", self.DL_lineDataPath, group=gp,
-                             depends=lambda: not self.batch_decades,
-                             gsimcli_name="data")
+                                depends=lambda: not self.batch_decades,
+                                gsimcli_name="data")
         no_data = ui.GuiParam("no_data", self.DL_spinNoData, group=gp,
-                           gsimcli_name="no_data")
+                              gsimcli_name="no_data")
         header = ui.GuiParam("header", self.DL_checkHeader, group=gp,
-                          gsimcli_name="data_header")
+                             gsimcli_name="data_header")
         data_name = ui.GuiParam("data_name", self.DL_lineDataName, group=gp,
-                             gsimcli_name="name")
+                                gsimcli_name="name")
         varnames = ui.GuiParam("variables", self.DL_listVarNames, group=gp,
-                            gsimcli_name="variables")
+                               gsimcli_name="variables")
         add([data_path, no_data, header, data_name, varnames])
         #    Data / Batch
         gp = "data_batch"
@@ -228,30 +231,30 @@ class GsimcliMainWindow(QtGui.QMainWindow):
                                     self.DB_listNetworksPaths, group=gp,
                                     depends=batch_networks)
         batch_decades = ui.GuiParam("batch_decades", self.DB_checkBatchDecades,
-                                 group=gp)
+                                    group=gp)
         dec_path = ui.GuiParam("decades_path", self.DB_lineDecadesPath,
                                group=gp, depends=[batch_decades, lambda: not
                                                   self.batch_networks])
         network_id = ui.GuiParam("network_id", self.DB_lineNetworkID, group=gp,
-                              depends=[batch_decades, lambda: not
-                                       self.batch_networks])
+                                 depends=[batch_decades, lambda: not
+                                          self.batch_networks])
         var_path = ui.GuiParam("variography_path", self.DB_lineVariogPath,
-                            group=gp, depends=[batch_decades, lambda: not
-                                               self.batch_networks])
+                               group=gp, depends=[batch_decades, lambda: not
+                                                  self.batch_networks])
         add([batch_networks, network_paths, batch_decades, dec_path,
              network_id, var_path])
         #    Simulation / Options
         gp = "simulation_options"
         par_path = ui.GuiParam("par_path", self.SO_lineParPath, group=gp,
-                            gsimcli_name="dss_par")
+                               gsimcli_name="dss_par")
         exe_path = ui.GuiParam("exe_path", self.SO_lineExePath, group=gp,
-                            gsimcli_name="dss_exe")
+                               gsimcli_name="dss_exe")
         n_sims = ui.GuiParam("number_simulations", self.SO_spinNumberSims,
-                          group=gp, gsimcli_name="number_simulations")
+                             group=gp, gsimcli_name="number_simulations")
         krig_type = ui.GuiParam("krigging_type", self.SO_comboKrigType,
                                 group=gp, gsimcli_name="krig_type")
         max_nodes = ui.GuiParam("max_search_nodes", self.SO_spinMaxSearchNodes,
-                             group=gp, gsimcli_name="max_search_nodes")
+                                group=gp, gsimcli_name="max_search_nodes")
         cpu_cores = ui.GuiParam("cpu_cores", self.SO_spinCores, group=gp)
         skip_sim = ui.GuiParam("skip_sim", self.SO_checkSkipSim, group=gp)
         add([par_path, exe_path, n_sims, krig_type, max_nodes, cpu_cores,
@@ -259,62 +262,62 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         #    Simulation / Grid
         gp = "simulation_grid"
         xx_nodes_n = ui.GuiParam("XX_nodes_number", self.SG_spinXXNodes,
-                              group=gp, gsimcli_name="XX_nodes_number",
-                              depends=lambda: not self.batch_networks)
+                                 group=gp, gsimcli_name="XX_nodes_number",
+                                 depends=lambda: not self.batch_networks)
         yy_nodes_n = ui.GuiParam("YY_nodes_number", self.SG_spinYYNodes,
-                              group=gp, gsimcli_name="YY_nodes_number",
-                              depends=lambda: not self.batch_networks,)
+                                 group=gp, gsimcli_name="YY_nodes_number",
+                                 depends=lambda: not self.batch_networks,)
         zz_nodes_n = ui.GuiParam("ZZ_nodes_number", self.SG_spinZZNodes,
-                              group=gp, gsimcli_name="ZZ_nodes_number",
-                              depends=lambda: not self.batch_networks,)
+                                 group=gp, gsimcli_name="ZZ_nodes_number",
+                                 depends=lambda: not self.batch_networks,)
         xx_min = ui.GuiParam("XX_minimum", self.SG_spinXXOrig, group=gp,
-                          depends=lambda: not self.batch_networks,
-                          gsimcli_name="XX_minimum")
+                             depends=lambda: not self.batch_networks,
+                             gsimcli_name="XX_minimum")
         yy_min = ui.GuiParam("YY_minimum", self.SG_spinYYOrig, group=gp,
-                          depends=lambda: not self.batch_networks,
-                          gsimcli_name="YY_minimum")
+                             depends=lambda: not self.batch_networks,
+                             gsimcli_name="YY_minimum")
         zz_min = ui.GuiParam("ZZ_minimum", self.SG_spinZZOrig, group=gp,
-                          depends=lambda: not self.batch_networks,
-                          gsimcli_name="ZZ_minimum")
+                             depends=lambda: not self.batch_networks,
+                             gsimcli_name="ZZ_minimum")
         xx_spacing = ui.GuiParam("XX_spacing", self.SG_spinXXSize, group=gp,
-                              depends=lambda: not self.batch_networks,
-                              gsimcli_name="XX_spacing")
+                                 depends=lambda: not self.batch_networks,
+                                 gsimcli_name="XX_spacing")
         yy_spacing = ui.GuiParam("YY_spacing", self.SG_spinYYSize, group=gp,
-                              depends=lambda: not self.batch_networks,
-                              gsimcli_name="YY_spacing")
+                                 depends=lambda: not self.batch_networks,
+                                 gsimcli_name="YY_spacing")
         zz_spacing = ui.GuiParam("ZZ_spacing", self.SG_spinZZSize, group=gp,
-                              depends=lambda: not self.batch_networks,
-                              gsimcli_name="ZZ_spacing")
+                                 depends=lambda: not self.batch_networks,
+                                 gsimcli_name="ZZ_spacing")
         add([xx_nodes_n, yy_nodes_n, zz_nodes_n, xx_min, yy_min, zz_min,
              xx_spacing, yy_spacing, zz_spacing])
         #    Simulation / Variogram
         gp = "simulation_variogram"
         varmodel = ui.GuiParam("model", self.SV_comboVarModel, group=gp,
-                            depends=lambda: not self.batch_decades,
-                            gsimcli_name="model")
+                               depends=lambda: not self.batch_decades,
+                               gsimcli_name="model")
         nugget = ui.GuiParam("nugget", self.SV_spinNugget, group=gp,
-                          depends=lambda: not self.batch_decades,
-                          gsimcli_name="nugget")
-        sill = ui.GuiParam("sill", self.SV_spinSill, group=gp,
-                        depends=lambda: not self.batch_decades,
-                        gsimcli_name="sill")
-        ranges = ui.GuiParam("ranges", self.SV_lineRanges, group=gp,
-                          depends=lambda: not self.batch_decades,
-                          gsimcli_name="ranges")
-        varangles = ui.GuiParam("angles", self.SV_lineAngles, group=gp,
                              depends=lambda: not self.batch_decades,
-                             gsimcli_name="angles")
+                             gsimcli_name="nugget")
+        sill = ui.GuiParam("sill", self.SV_spinSill, group=gp,
+                           depends=lambda: not self.batch_decades,
+                           gsimcli_name="sill")
+        ranges = ui.GuiParam("ranges", self.SV_lineRanges, group=gp,
+                             depends=lambda: not self.batch_decades,
+                             gsimcli_name="ranges")
+        varangles = ui.GuiParam("angles", self.SV_lineAngles, group=gp,
+                                depends=lambda: not self.batch_decades,
+                                gsimcli_name="angles")
         add([varmodel, nugget, sill, ranges, varangles])
         #    Simulation / Advanced
         gp = "simulation_advanced"
         strategy = ui.GuiParam("search_strategy", self.SA_comboStrategy,
                                group=gp, gsimcli_name="search_strategy")
         min_data = ui.GuiParam("min_data", self.SA_spinMinData, group=gp,
-                            gsimcli_name="min_data")
+                               gsimcli_name="min_data")
         max_samples = ui.GuiParam("max_search_samples", self.SA_spinMaxSamples,
-                               group=gp, gsimcli_name="max_search_samples",
-                               depends=lambda: strategy.widget.
-                               currentText().lower() == "two-part search")
+                                  group=gp, gsimcli_name="max_search_samples",
+                                  depends=lambda: strategy.widget.
+                                  currentText().lower() == "two-part search")
         search_radius = ui.GuiParam("search_radius", self.SA_lineRadius,
                                     group=gp, gsimcli_name="search_radius")
         search_angles = ui.GuiParam("search_angles", self.SA_lineAngles,
@@ -323,53 +326,53 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         #    Homogenisation / Detection
         gp = "homogenisation_detection"
         station_order = ui.GuiParam("station_order", self.HD_comboStationOrder,
-                                 group=gp, gsimcli_name="st_order")
+                                    group=gp, gsimcli_name="st_order")
         user_order = ui.GuiParam("user_order", self.HD_listUserOrder, group=gp,
-                              gsimcli_name="st_user",
-                              depends=lambda: station_order.widget.
-                              currentText().lower() == "user")
+                                 gsimcli_name="st_user",
+                                 depends=lambda: station_order.widget.
+                                 currentText().lower() == "user")
         ascending = ui.GuiParam("ascending", self.HD_checkAscending, group=gp,
-                             gsimcli_name="ascending",
-                             depends=lambda: not station_order.widget.
-                             currentText().lower() == "user")
+                                gsimcli_name="ascending",
+                                depends=lambda: not station_order.widget.
+                                currentText().lower() == "user")
         md_last = ui.GuiParam("md_last", self.HD_checkMDLast, group=gp,
-                           gsimcli_name="md_last",
-                           depends=lambda: not station_order.widget.
-                           currentText().lower() == "user")
+                              gsimcli_name="md_last",
+                              depends=lambda: not station_order.widget.
+                              currentText().lower() == "user")
         detect_prob = ui.GuiParam("detect_prob", self.HD_spinProb, group=gp,
-                               gsimcli_name="detect_prob")
+                                  gsimcli_name="detect_prob")
         tolerance = ui.GuiParam("tolerance", self.HD_checkTolerance, group=gp,
-                             gsimcli_name="tolerance")
+                                gsimcli_name="tolerance")
         radius = ui.GuiParam("radius", self.HD_spinTolerance, group=gp,
-                          depends=tolerance, gsimcli_name="radius")
+                             depends=tolerance, gsimcli_name="radius")
         dist_units = ui.GuiParam("distance_units", self.HD_radioDistance,
-                              group=gp, depends=tolerance,
-                              gsimcli_name="distance_units")
+                                 group=gp, depends=tolerance,
+                                 gsimcli_name="distance_units")
         add([station_order, user_order, ascending, md_last, detect_prob,
              tolerance, radius, dist_units])
         #    Homogenisation / Correction
         gp = "homogenisation_correction"
         correct = ui.GuiParam("correct_method", self.HC_comboCorrectionMethod,
-                           group=gp, gsimcli_name="correct_method")
+                              group=gp, gsimcli_name="correct_method")
         skew = ui.GuiParam("skewness", self.HC_spinSkewness, group=gp,
-                        depends=lambda: correct.widget.
-                        currentText().lower() == "skewness",
-                        gsimcli_name="skewness")
+                           depends=lambda: correct.widget.
+                           currentText().lower() == "skewness",
+                           gsimcli_name="skewness")
         perc = ui.GuiParam("percentile", self.HC_spinPercentile, group=gp,
-                        depends=lambda: correct.widget.
-                        currentText().lower() == "percentile",
-                        gsimcli_name="percentile")
+                           depends=lambda: correct.widget.
+                           currentText().lower() == "percentile",
+                           gsimcli_name="percentile")
         add([correct, skew, perc])
         #    Homogenisation / Results
         gp = "homogenisation_results"
         detect_save = ui.GuiParam("detect_save", self.HR_checkSaveInter,
                                   group=gp, gsimcli_name="detect_save")
         sim_purge = ui.GuiParam("sim_purge", self.HR_checkPurgeSims, group=gp,
-                             gsimcli_name="sim_purge")
+                                gsimcli_name="sim_purge")
         r_path = ui.GuiParam("results_path", self.HR_lineResultsPath, group=gp,
-                          gsimcli_name="results")
+                             gsimcli_name="results")
         r_name = ui.GuiParam("results_name", self.HR_lineResultsName, group=gp,
-                          gsimcli_name="results_file")
+                             gsimcli_name="results_file")
         add([detect_save, sim_purge, r_path, r_name])
 
         #    Tools / Benchmark
@@ -460,6 +463,16 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         if "scores" in who:
             self.stackedWidget.setCurrentWidget(self.tools_benchmark)
 
+    def install_dataset(self):
+        """Pop up the dialog to download and install the benchmark data set.
+        Connected to the actionInstallDataset.
+
+        """
+        self.install_dialog = InstallDialog(self)
+        self.install_dialog.accepted.connect(self.tools_benchmark.update_bench)
+        self.benchmark_path = self.install_dialog.benchmark_path
+        self.install_dialog.open()
+
     def set_max_nodes(self, i):
         """Sync both spin boxes that handle the maximum number of nodes to be
         found.
@@ -522,8 +535,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             count = sum("recent_settings" in child for
                         child in self.settings.childKeys())
             for i in xrange(count):
-                self.recent_settings.append(
-                            self.settings.value("recent_settings_" + str(i)))
+                recent = self.settings.value("recent_settings_" + str(i))
+                self.recent_settings.append(recent)
         self.set_recent_settings()
 
     def set_cpu_cores(self):
@@ -638,8 +651,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         # if batching networks, check if each network has a decades directory
         if self.batch_networks and not self.check_decades_dir():
             self.DB_checkBatchDecades.setChecked(False)
-            self.DB_checkBatchDecades.setToolTip(("There are networks "
-              "directories without the necessary decades directory inside."))
+            tooltip = ("There are networks directories without the necessary "
+                       "decades directory inside.")
+            self.DB_checkBatchDecades.setToolTip(tooltip)
             return self
         else:
             self.DB_checkBatchDecades.setToolTip(None)
@@ -648,7 +662,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         # self.SimulationVariogram.setDisabled(toggle)
         # self.SV_labelBatchDecades.setVisible(toggle)
         tree_item = self.treeWidget.findItems("Variogram",
-                         QtCore.Qt.MatchRecursive, QtCore.Qt.MatchExactly)[0]
+                                              QtCore.Qt.MatchRecursive,
+                                              QtCore.Qt.MatchExactly)[0]
         tree_item.setDisabled(toggle)
         if toggle:
             tool_tip = ("Batch mode for decades is enabled, variograms "
@@ -725,8 +740,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 
         """
         ui.pylist_to_qlist(qlist=self.HD_listUserOrder,
-                        pylist=map(str, self.find_stations_ids().
-                                   stations.items()[0][1]))
+                           pylist=map(str, self.find_stations_ids().
+                                      stations.items()[0][1]))
 
     def change_station_order(self, index=None):
         """Handle the different options to the candidate stations order.
@@ -752,8 +767,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
                 enable_user = True
                 disable_checks = True
                 ui.pylist_to_qlist(qlist=self.HD_listUserOrder,
-                    pylist=map(str, self.find_stations_ids().
-                               stations.items()[0][1]))
+                                   pylist=map(str, self.find_stations_ids().
+                                              stations.items()[0][1]))
         elif st_order == "Random":
             enable_user = False
             disable_checks = True
@@ -813,9 +828,10 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         Update data file preview and header related widgets.
 
         """
+        caption = "Select data file"
         filepath = QtGui.QFileDialog.getOpenFileName(self,
-                                     caption="Select data file",
-                                     dir=self.default_dir)
+                                                     caption=caption,
+                                                     dir=self.default_dir)
         if filepath[0]:
             self.DL_lineDataPath.setText(filepath[0])
             self.preview_data_file()
@@ -835,10 +851,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         dialog.setDirectory(self.default_dir)
         dialog.setOption(QtGui.QFileDialog.ShowDirsOnly, True)
         dialog.setOption(QtGui.QFileDialog.DontUseNativeDialog, True)
-        dialog.findChild(QtGui.QListView, "listView").setSelectionMode(
-                               QtGui.QAbstractItemView.ExtendedSelection)
-        dialog.findChild(QtGui.QTreeView).setSelectionMode(
-                               QtGui.QAbstractItemView.ExtendedSelection)
+        selmode = QtGui.QAbstractItemView.ExtendedSelection
+        dialog.findChild(QtGui.QListView, "listView").setSelectionMode(selmode)
+        dialog.findChild(QtGui.QTreeView).setSelectionMode(selmode)
         if dialog.exec_():
             self.DB_listNetworksPaths.addItems(dialog.selectedFiles())
             self.default_dir = dialog.selectedFiles()[-1]
@@ -853,8 +868,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 
         """
         for path in self.DB_listNetworksPaths.selectedItems():
-            self.DB_listNetworksPaths.takeItem(
-                                           self.DB_listNetworksPaths.row(path))
+            item = self.DB_listNetworksPaths.row(path)
+            self.DB_listNetworksPaths.takeItem(item)
         # update stations order
         self.change_station_order()
 
@@ -863,9 +878,10 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         to the browse decade pushbutton.
 
         """
+        caption = "Select decades directory",
         dirpath = QtGui.QFileDialog.getExistingDirectory(self,
-                                    caption="Select decades directory",
-                                    dir=self.default_dir)
+                                                         caption=caption,
+                                                         dir=self.default_dir)
         if dirpath:
             self.DB_lineDecadesPath.setText(dirpath)
             self.default_dir = dirpath
@@ -875,10 +891,12 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         to batch decades. Connected to the browse variography pushbutton.
 
         """
+        caption = "Select variography file"
+        filter_ext = "Text CSV (*.csv)"
         filepath = QtGui.QFileDialog.getOpenFileName(self,
-                                     caption="Select variography file",
-                                     dir=self.default_dir,
-                                     filter="Text CSV (*.csv)")
+                                                     caption=caption,
+                                                     dir=self.default_dir,
+                                                     filter=filter_ext)
         if filepath[0]:
             self.DB_lineVariogPath.setText(filepath[0])
             self.default_dir = os.path.dirname(filepath[0])
@@ -888,10 +906,12 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         Connected to the browse executable file pushbutton.
 
         """
+        caption = "Select executable file"
+        filter_ext = "Executable (*.exe)"
         filepath = QtGui.QFileDialog.getOpenFileName(self,
-                                     caption="Select executable file",
-                                     dir=self.default_dir,
-                                     filter="Executable (*.exe)")
+                                                     caption=caption,
+                                                     dir=self.default_dir,
+                                                     filter=filter_ext)
         if filepath[0]:
             self.SO_lineExePath.setText(filepath[0])
             self.default_dir = os.path.dirname(filepath[0])
@@ -901,15 +921,19 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         if batch decades is enabled.
 
         """
+        ddir = self.default_dir
         if self.batch_networks:
+            caption = "Select results directory"
             filepath = QtGui.QFileDialog.getExistingDirectory(self,
-                                         caption="Select results directory",
-                                         dir=self.default_dir)
+                                                              caption=caption,
+                                                              dir=ddir)
         else:
+            caption = "Select results file"
+            filter_ext = "XLS Spreadsheet (*.xls"
             fullpath = QtGui.QFileDialog.getSaveFileName(self,
-                                         caption="Select results file",
-                                         dir=self.default_dir,
-                                         filter="XLS Spreadsheet (*.xls")[0]
+                                                         caption=caption,
+                                                         dir=ddir,
+                                                         filter=filter_ext)[0]
 
             filepath, filename = os.path.split(fullpath)
             if filename:
@@ -942,8 +966,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 
         """
         # guess network_id
-        self.DB_lineNetworkID.setText(os.path.basename(os.path.dirname(
-                                           self.DB_lineDecadesPath.text())))
+        decades_path = self.DB_lineDecadesPath.text()
+        network_id = os.path.basename(os.path.dirname(decades_path))
+        self.DB_lineNetworkID.setText(network_id)
         # try to find a data file
         self.preview_data_file(self.find_data_file())
 
@@ -1191,17 +1216,18 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         native qsettings format.
 
         """
+        caption = "Export GSIMCLI settings"
+        filter_ext = "Settings files (*{0})".format(self.settings_ext)
         filepath = QtGui.QFileDialog.getSaveFileName(self,
-                         caption="Export GSIMCLI settings",
-                         dir=self.default_dir,
-                         filter="Settings files (*{0})".
-                         format(self.settings_ext))
+                                                     caption=caption,
+                                                     dir=self.default_dir,
+                                                     filter=filter_ext)
         if filepath[0]:
             filepath = os.path.splitext(filepath[0])[0] + self.settings_ext
             exported = QtCore.QSettings(filepath,
                                         QtCore.QSettings.NativeFormat)
             exported.setIniCodec("UTF-8")
-            # clear existing settings on the file
+            # clear existing settings in the file
             exported.clear()
             self.save_settings(exported)
             exported.sync()
@@ -1229,11 +1255,12 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         OpenSettingsFile menu action.
 
         """
+        caption = "Open GSIMCLI settings file"
+        filter_ext = "Settings files (*{0})".format(self.settings_ext)
         filepath = QtGui.QFileDialog.getOpenFileName(self,
-                                     caption="Open GSIMCLI settings file",
-                                     dir=self.default_dir,
-                                     filter="Settings files (*{0})".
-                                     format(self.settings_ext))
+                                                     caption=caption,
+                                                     dir=self.default_dir,
+                                                     filter=filter_ext)
         if filepath[0]:
             self.open_settings(filepath[0])
             self.add_recent_settings(filepath[0])
@@ -1256,7 +1283,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         TODO: feature not implemented yet.
         """
         ui.pylist_to_qlist(["x", "y", "time", "station", "clim"],
-                        self.DL_listVarNames)
+                           self.DL_listVarNames)
 
     def on_exit(self):
         """Act on application exit. Connected to mainwindow.
@@ -1270,8 +1297,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         """
         self.free_space = fs.disk_usage(self.HR_lineResultsPath.text().
                                         encode('utf-8')).free
-        self.HR_labelAvailableDiskValue.setText(
-                                            fs.bytes2human(self.free_space))
+        free_space = fs.bytes2human(self.free_space)
+        self.HR_labelAvailableDiskValue.setText(free_space)
         self.compare_space()
 
     def count_decades(self, network):
@@ -1279,8 +1306,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         of decades in that network.
 
         """
-        variogram_file = os.path.join(network, glob.glob(
-                             os.path.join(network, self.wildcard_variog))[0])
+        variog_name = glob.glob(os.path.join(network, self.wildcard_variog))[0]
+        variogram_file = os.path.join(network, variog_name)
         variograms = pd.read_csv(variogram_file)
         return variograms.shape[0]
 
@@ -1319,8 +1346,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
                     # number of decades
                     decades = self.count_decades(network)
                     # simulation grid
-                    specf = os.path.join(network, glob.glob(
-                                os.path.join(network, self.wildcard_grid))[0])
+                    g = glob.glob(os.path.join(network, self.wildcard_grid))[0]
+                    specf = os.path.join(network, g)
                     spec = hmg.read_specfile(specf)
                     each_map = (14 * spec.xnodes * spec.ynodes *
                                 self.SG_spinZZNodes.value()).values[0]
@@ -1360,8 +1387,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.total_sims *= self.SO_spinNumberSims.value() * decades
 
         self.needed_space = sims_size
-        self.HR_labelEstimatedDiskValue.setText(
-                                        fs.bytes2human((self.needed_space)))
+        needed_space = fs.bytes2human((self.needed_space))
+        self.HR_labelEstimatedDiskValue.setText(needed_space)
         self.compare_space()
 
     def compare_space(self):
@@ -1395,16 +1422,16 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         varnames = ui.qlist_to_pylist(self.DL_listVarNames)
         if self.batch_networks:
             stations_list, total = hmg.list_networks_stations(
-                       networks=ui.qlist_to_pylist(self.DB_listNetworksPaths),
-                       variables=varnames,
-                       secdir=secdir, header=self.header, nvars=5)
+                networks=ui.qlist_to_pylist(self.DB_listNetworksPaths),
+                variables=varnames,
+                secdir=secdir, header=self.header, nvars=5)
         else:
             data_path = self.DL_lineDataPath.text()
             stations_list = dict()
             if data_path:
                 if self.batch_decades:
                     pset_file = hmg.find_pset_file(directory=data_path,
-                                                  header=self.header, nvars=5)
+                                                   header=self.header, nvars=5)
                 else:
                     pset_file = data_path
                 stations = hmg.list_stations(pset_file, self.header,
@@ -1427,8 +1454,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             directory = selected_netw.text()
         elif self.batch_decades and self.batch_networks and selected_netw:
             network_dir = selected_netw.text()
-            directory = os.path.join(network_dir,
-                 glob.glob(os.path.join(network_dir, self.wildcard_decade))[0])
+            dec = glob.glob(os.path.join(network_dir, self.wildcard_decade))[0]
+            directory = os.path.join(network_dir, dec)
 
         if self.batch_decades or (self.batch_networks and selected_netw):
             return hmg.find_pset_file(directory, self.header, nvars=5)
