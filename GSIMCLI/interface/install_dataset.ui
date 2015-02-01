@@ -6,12 +6,18 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>463</width>
-    <height>386</height>
+    <width>476</width>
+    <height>454</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Install benchmark data set</string>
+  </property>
+  <property name="sizeGripEnabled">
+   <bool>false</bool>
+  </property>
+  <property name="modal">
+   <bool>true</bool>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -30,7 +36,7 @@
    <item>
     <widget class="QLabel" name="label_2">
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;The data set will be installed in the same directory where &lt;span style=&quot; font-weight:600;&quot;&gt;gsimcli&lt;/span&gt; is located. Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Path&lt;/span&gt; field to install it in a different directory.&lt;/p&gt;&lt;p align=&quot;justify&quot;&gt;If you already have the data set on your computer, you can also use this field to use it instead.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;The data set will be installed in the same directory where &lt;span style=&quot; font-weight:600;&quot;&gt;gsimcli&lt;/span&gt; is located. Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Path&lt;/span&gt; field to install it in a different directory.&lt;/p&gt;&lt;p align=&quot;justify&quot;&gt;If you already have the data set on your computer, you can also use this field to locate it.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
@@ -39,6 +45,13 @@
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QLabel" name="label_3">
+       <property name="text">
+        <string>Path</string>
+       </property>
+      </widget>
+     </item>
      <item>
       <widget class="QLineEdit" name="lineDatasetPath">
        <property name="inputMask">
@@ -97,6 +110,12 @@
       <widget class="QProgressBar" name="progressBar">
        <property name="value">
         <number>24</number>
+       </property>
+       <property name="textVisible">
+        <bool>true</bool>
+       </property>
+       <property name="invertedAppearance">
+        <bool>false</bool>
        </property>
       </widget>
      </item>
@@ -207,6 +226,12 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>buttonBox</tabstop>
+  <tabstop>lineDatasetPath</tabstop>
+  <tabstop>buttonDatasetPath</tabstop>
+  <tabstop>buttonDownload</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>
