@@ -187,6 +187,7 @@ class Office(QtCore.QObject):
         # fetch results
         self.worker.results.connect(self.delivery)
         # clean-up, quit thread, mark worker and thread for deletion
+        self.worker.finished.connect(self.finished.emit)
         self.worker.finished.connect(self.thread.quit)
         self.thread.finished.connect(self.worker.timer.quit)
         # self.worker.finished.connect(self.worker.deleteLater)
