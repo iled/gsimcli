@@ -170,6 +170,7 @@ class Office(QtCore.QObject):
 
     """
     finished = QtCore.Signal()
+    progress = QtCore.Signal(int)
 
     def __init__(self, parent, job, updater=None, **kwargs):
         super(Office, self).__init__(parent)
@@ -188,7 +189,7 @@ class Office(QtCore.QObject):
         # clean-up, quit thread, mark worker and thread for deletion
         self.worker.finished.connect(self.thread.quit)
         self.thread.finished.connect(self.worker.timer.quit)
-        self.worker.finished.connect(self.worker.deleteLater)
+        # self.worker.finished.connect(self.worker.deleteLater)
         self.thread.finished.connect(self.worker.timer.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)
         if updater is not None:
@@ -196,7 +197,6 @@ class Office(QtCore.QObject):
 
     def start(self):
         self.thread.start()
-        # self.result = self.worker.result
 
     def delivery(self):
         self.results = self.worker.result
@@ -232,7 +232,8 @@ class Worker(QtCore.QObject):
         self.is_running = False
         # workaround for the timer QThread removal
         time.sleep(1)
-        self.results.emit(self.result)
+        if self.result is not None:
+            self.results.emit(self.result)
         self.finished.emit()
 
 
