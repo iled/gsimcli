@@ -4,14 +4,13 @@ Created on 31/01/2015
 
 @author: julio
 """
+from PySide import QtGui
 import hashlib
 import os
 import sys
 import tempfile
 import urllib2
 from zipfile import ZipFile
-
-from PySide import QtGui
 
 from external_libs.pyside_dynamic import loadUi
 from interface.ui_utils import Office, Updater, hide
@@ -36,12 +35,14 @@ class InstallDialog(QtGui.QDialog):
         loadUi(os.path.join(base, "interface", "install_dataset.ui"), self)
         self.temp_file = os.path.join(tempfile.gettempdir(), 'benchmark.zip')
         self.benchmark_path = None
-        
+        self.downloading = False
+        self.installing = False
+
         if hasattr(self.parent, "default_dir"):
             self.default_dir = self.parent.default_dir
         else:
             self.default_dir = os.path.expanduser('~/')
-            
+
         # action
         button_ok = self.buttonBox.button(QtGui.QDialogButtonBox.Ok)
         button_ok.clicked.connect(self.accept)
@@ -62,7 +63,7 @@ class InstallDialog(QtGui.QDialog):
         elif user_path and os.path.isdir(user_path):
             self.benchmark_path = user_path
         self.done(QtGui.QDialog.Accepted)
-        
+
     def browse_path(self):
         caption = "Select the directory with the benchmark data set"
         path = QtGui.QFileDialog.getExistingDirectory(self, caption,
@@ -102,11 +103,13 @@ class InstallDialog(QtGui.QDialog):
         if set_status:
             self.set_status(status)
         return ok
-    
+
     def completed_install(self):
         self.set_status("Completed")
         self.show_progress(False)
         self.lineDatasetPath.setText(self.path)
+        self.downloading = False
+        self.installing = False
 
     def download(self, file_url=None):
         if file_url is None:
@@ -127,8 +130,6 @@ class InstallDialog(QtGui.QDialog):
                 f.write(buffering)
                 self.update.current += block_size
                 self.update.send()
-        self.set_status("Download completed")
-        self.show_progress(False)
 
     def get_install_path(self):
         user_path = self.lineDatasetPath.text()
@@ -153,11 +154,12 @@ class InstallDialog(QtGui.QDialog):
                 self.update.send()
 
     def set_progress(self, value):
-        who = self.sender().job.__name__
-        if who == "download":
+        if self.downloading and not self.installing:
             total = self.file_size
-        elif who == "install":
+        elif self.installing and not self.downloading:
             total = self.zip_items
+        else:
+            raise Exception("unexpected error")
         progress = 100 * value / total
         self.progressBar.setValue(progress)
 
@@ -167,12 +169,14 @@ class InstallDialog(QtGui.QDialog):
             self.labelStatus.setVisible(True)
         else:
             self.labelStatus.setVisible(False)
-            
+
     def show_progress(self, show):
         self.progressBar.setValue(0)
         self.progressBar.setVisible(show)
 
     def start_download(self, **kwargs):
+        self.downloading = True
+        self.installing = False
         download = True
         if self.check_zip_exists():
             # FIXME: label not showing up
@@ -185,17 +189,19 @@ class InstallDialog(QtGui.QDialog):
             self.show_progress(True)
             self.office = Office(self, self.download, self.update.progress,
                                  **kwargs)
-            self.office.worker.update_progress.connect(self.set_progress)
+            self.office.progress.connect(self.set_progress)
             self.office.finished.connect(self.start_install)
             self.office.start()
         else:
             self.start_install()
 
     def start_install(self):
+        self.downloading = False
+        self.installing = True
         self.set_status("Installing...")
         self.show_progress(True)
         self.office = Office(self, self.install, self.update.progress)
-        self.office.worker.update_progress.connect(self.set_progress)
+        self.office.progress.connect(self.set_progress)
         self.office.finished.connect(self.completed_install)
         self.office.start()
 

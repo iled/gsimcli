@@ -194,7 +194,8 @@ class Office(QtCore.QObject):
         self.thread.finished.connect(self.worker.timer.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)
         if updater is not None:
-            updater.connect(self.worker.update_progress.emit)
+            updater.connect(self.progress.emit)
+            # updater.connect(self.worker.update_progress.emit)
 
     def start(self):
         self.thread.start()
@@ -267,10 +268,15 @@ class Updater(QtCore.QObject):
         super(Updater, self).__init__(parent)
         self.current = 0
 
+    def add(self, i):
+        self.current += i
+
     def reset(self):
         self.current = 0
 
-    def send(self):
+    def send(self, i=None):
+        if i is not None:
+            self.current = i
         self.progress.emit(self.current)
 
 
