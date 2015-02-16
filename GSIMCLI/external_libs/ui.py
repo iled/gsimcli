@@ -1,18 +1,19 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Created on 27/01/2015
 
 @author: julio
-'''
+
+Adapted from:
+    https://gist.github.com/MarshallChris/6029919
+"""
+
 from PySide import QtGui, QtCore
 
 
 class CheckBoxDelegate(QtGui.QStyledItemDelegate):
     """A delegate that places a fully functioning QCheckBox in every cell of
     the column to which it's applied.
-
-    Adapted from:
-    https://gist.github.com/MarshallChris/6029919
 
     """
     def __init__(self, parent=None):
@@ -47,7 +48,6 @@ class CheckBoxDelegate(QtGui.QStyledItemDelegate):
 
         QtGui.QApplication.style().drawControl(QtGui.QStyle.CE_CheckBox,
                                                check_box_style_option, painter)
-        self.checked = checked
 
     def editorEvent(self, event, model, option, index):
         """Change the data in the model and the state of the checkbox if the
@@ -83,7 +83,6 @@ class CheckBoxDelegate(QtGui.QStyledItemDelegate):
         """
         newValue = not bool(index.model().data(index, QtCore.Qt.DisplayRole))
         model.setData(index, newValue, QtCore.Qt.EditRole)
-        self.checked = newValue
 
     def getCheckBoxRect(self, option):
         check_box_style_option = QtGui.QStyleOptionButton()
@@ -98,8 +97,3 @@ class CheckBoxDelegate(QtGui.QStyledItemDelegate):
                                         check_box_rect.height() / 2)
         return QtCore.QRect(check_box_point, check_box_rect.size())
 
-    def isChecked(self):
-        return self.checked
-
-    def setChecked(self, toggle):
-        self.checked = toggle

@@ -12,11 +12,103 @@ import sys
 from external_libs.pyside_dynamic import loadUi
 from external_libs.ui import CheckBoxDelegate
 import interface.ui_utils as ui
+import pandas as pd
 import tools.scores as scores
 from tools.utils import path_up
 
 
 base = os.path.dirname(os.path.dirname(__file__))
+
+
+class TableModel(QtCore.QAbstractTableModel):
+    dataChanged = QtCore.Signal(QtCore.QModelIndex, QtCore.QModelIndex)
+
+    def __init__(self, checkbox_col, parent=None):
+        super(TableModel, self).__init__(parent)
+        self.table = None
+        self.header = None
+        self.checkbox_col = checkbox_col
+
+    def addItem(self, item):
+        count = self.rowCount()
+        self.beginInsertRows(QtCore.QModelIndex(), count, count)
+        self.table.loc[count] = item
+        self.endInsertRows()
+
+    def columnCount(self, parent=QtCore.QModelIndex()):
+        if self.table is not None:
+            return self.table.shape[1]
+
+    def data(self, index, role=QtCore.Qt.DisplayRole):
+        if role == QtCore.Qt.DisplayRole:
+            i = index.row()
+            j = index.column()
+            if j == self.checkbox_col:
+                return self.table.iloc[i, j]
+            else:
+                return unicode(self.table.iloc[i, j])
+
+    def flags(self, index):
+        if index.column() == self.checkbox_col:
+            return QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled
+        else:
+            return QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled  # @IgnorePep8
+
+    def headerData(self, col, orientation, role):
+        if (orientation == QtCore.Qt.Horizontal and
+                role == QtCore.Qt.DisplayRole):
+            return str(self.header[col])
+
+    def removeRows(self, row, count, parent=QtCore.QModelIndex()):
+        if row < 0 or row > self.rowCount():
+            return False
+
+        self.beginRemoveRows(parent, row, row)
+        self.table.drop(row, axis=0, inplace=True)
+        self.table.reset_index(drop=True, inplace=True)
+        self.endRemoveRows()
+        return True
+
+    def rowCount(self, parent=QtCore.QModelIndex()):
+        if self.table is not None:
+            return self.table.shape[0]
+
+    def setChecked(self, index, value, role=QtCore.Qt.EditRole):
+        if role == QtCore.Qt.EditRole:
+            self.table.iloc[index.row(), self.checkbox_col] = value
+            self.dataChanged.emit(index, index)
+            return True
+        return False
+
+    def setData(self, index, value, role=QtCore.Qt.EditRole):
+        if role == QtCore.Qt.EditRole:
+            i = index.row()
+            j = index.column()
+            self.table.iloc[i, j] = value
+            self.dataChanged.emit(index, index)
+            return True
+        return False
+
+    def update(self, data_in):
+        self.table = data_in
+        headers = data_in.columns
+        self.header = [str(field) for field in headers]
+
+
+class TableView(QtGui.QTableView):
+    def __init__(self, checkbox_col, parent=None):
+        super(TableView, self).__init__(parent)
+        self.setAlternatingRowColors(True)
+        self.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
+        act = QtGui.QAction("Delete selected row(s)", self)
+        act.triggered.connect(self.onTriggered)
+        self.addAction(act)
+        self.setItemDelegateForColumn(checkbox_col, CheckBoxDelegate(self))
+
+    def onTriggered(self):
+        self.model().removeRows(self.currentIndex().row(), 1)
+        if self.model().rowCount() < 1:
+            self.model().addItem(['', '', '', True])
 
 
 class Scores(QtGui.QWidget):
@@ -58,11 +150,20 @@ class Scores(QtGui.QWidget):
         self.comboFormat.currentIndexChanged.connect(self.file_format)
 
         # table
-        self.tableResults.cellChanged.connect(self.add_rows_auto)
-        self.tableResults.cellDoubleClicked.connect(self.browse_cell)
-        self.set_table_menu()
-        self.tableResults.setItemDelegateForColumn(3, CheckBoxDelegate(self))
-        self.hheader = self.tableResults.horizontalHeader()
+        self.tableResultsModel = TableModel(3, self)
+        self.tableResultsView = TableView(3, self)
+        columns = ['Results file', 'Network ID', 'Keys file', 'Use']
+        table = pd.DataFrame(index=range(5), columns=columns)
+        table.fillna('', inplace=True)
+        table['Use'] = True
+        self.tableResultsModel.update(table)
+        self.tableResults.close()
+        self.tableResultsView.setModel(self.tableResultsModel)
+        self.layout().insertWidget(3, self.tableResultsView)
+        self.hheader = self.tableResultsView.horizontalHeader()
+        self.tableResultsModel.dataChanged.connect(self.add_rows_auto)
+        self.tableResultsView.doubleClicked.connect(self.browse_cell)
+        # self.set_table_menu()
         self.hheader.setResizeMode(0, QtGui.QHeaderView.Stretch)
         self.hheader.setResizeMode(1, QtGui.QHeaderView.ResizeToContents)
         self.hheader.setResizeMode(2, QtGui.QHeaderView.Stretch)
@@ -75,36 +176,39 @@ class Scores(QtGui.QWidget):
 
         self.time_resolution()
 
-    def add_rows_auto(self, row, col):
+    def add_rows_auto(self, index):
         """Automatically add a new row after entering data in the last row.
         Connected to the tableResults widget.
 
         """
-        rows = self.tableResults.rowCount()
-        if row == rows - 1:
-            self.tableResults.insertRow(row + 1)
+        row = index.row()
+        rows = self.tableResultsModel.rowCount()
+        row_content = self.tableResultsModel.table.values[row, :-1]
+        if row == rows - 1 and all(row_content):
+            self.tableResultsModel.addItem(['', '', '', True])
 
-    def browse_cell(self, row, col):
+    def browse_cell(self, index):
+        col = index.column()
         if self.resolution == "yearly" or col != 0:
-            self.browse_file(row, col)
+            self.browse_file(index)
         elif self.resolution == "monthly":
-            self.browse_dir(row, col)
+            self.browse_dir(index)
 
-    def browse_dir(self, row, col):
+    def browse_dir(self, index):
         caption = "Select homogenisation results directory"
         filepath = QtGui.QFileDialog.getExistingDirectory(self, caption,
                                                           dir=self.default_dir)
 
         if filepath:
-            item = QtGui.QTableWidgetItem(filepath)
-            self.tableResults.setItem(row, col, item)
+            self.tableResultsModel.setData(index, filepath)
             self.default_dir = filepath
 
-    def browse_file(self, row, col):
+    def browse_file(self, index):
         """Interface to browse a file.
         Connected to the tableResults widget.
 
         """
+        col = index.column()
         # open results file
         if col == 0:
             target = "homogenisation results"
@@ -122,8 +226,7 @@ class Scores(QtGui.QWidget):
                                                          dir=self.default_dir)
 
             if filepath[0]:
-                item = QtGui.QTableWidgetItem(filepath[0])
-                self.tableResults.setItem(row, col, item)
+                self.tableResultsModel.setData(index, filepath[0])
                 self.default_dir = os.path.dirname(filepath[0])
 
     def browse_file_action(self):
@@ -350,14 +453,6 @@ class Scores(QtGui.QWidget):
             with open(filepath[0], 'w') as afile:
                 afile.write(text)
 
-    def set_use_column(self):
-        """Initialise the Use column of the table widget, inserting checkboxes
-        in each row.
-
-        """
-        for row in range(self.tableResults.rowCount()):
-            self.insert_use_checkbox(row)
-
     def set_gui_params(self):
         self.guiparams = list()
         add = self.guiparams.extend
@@ -425,14 +520,12 @@ class Scores(QtGui.QWidget):
 
     def set_use_all(self, toggle):
         """Select all or none of the rows to be used.
-        Connected to Use all checkbox.
+        Connected to the Use all checkbox.
 
-        TODO: wip
         """
-        for row in range(self.tableResults.rowCount()):
-            # self.tableResults.item(row, 3).setChecked(toggle)
-            pass
-        pass
+        for row in range(self.tableResultsModel.rowCount()):
+            index = self.tableResultsModel.index(row, 3)
+            self.tableResultsModel.setData(index, toggle)
 
     def show_months(self):
         """Launch a widget to show the monthly files included in the selected
@@ -475,7 +568,7 @@ class Scores(QtGui.QWidget):
             if action.text().startswith("Show included"):
                 action.setVisible(toggle_show)
         self.checkAverageYearly.setEnabled(toggle_sum)
-        
+
     def update_bench(self):
         benchmark_path = self.sender().benchmark_path
         precip = os.path.join("precip", "sur1")
