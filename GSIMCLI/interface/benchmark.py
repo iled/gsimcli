@@ -59,6 +59,14 @@ class TableModel(QtCore.QAbstractTableModel):
                 role == QtCore.Qt.DisplayRole):
             return str(self.header[col])
 
+    def getKey(self, key, filter_selected=False):
+        if filter_selected:
+            values = self.table.query(self.checkbox_key)[key]
+        else:
+            values = self.table[key]
+
+        return values
+
     def removeRows(self, row, count, parent=QtCore.QModelIndex()):
         if row < 0 or row > self.rowCount():
             return False
@@ -89,10 +97,17 @@ class TableModel(QtCore.QAbstractTableModel):
             return True
         return False
 
+    def setHeaderData(self, section, value, orientation=QtCore.Qt.Horizontal,
+                      role=QtCore.Qt.EditRole):
+        if role == QtCore.Qt.EditRole and orientation == QtCore.Qt.Horizontal:
+            self.header[section] = value
+            self.headerDataChanged.emit(orientation, section, section)
+
     def update(self, data_in):
         self.table = data_in
         headers = data_in.columns
         self.header = [str(field) for field in headers]
+        self.checkbox_key = self.table.columns[self.checkbox_col]
 
 
 class TableView(QtGui.QTableView):
@@ -178,7 +193,7 @@ class Scores(QtGui.QWidget):
 
     def add_rows_auto(self, index):
         """Automatically add a new row after entering data in the last row.
-        Connected to the tableResults widget.
+        Connected to the tableResults Model.
 
         """
         row = index.row()
@@ -205,7 +220,7 @@ class Scores(QtGui.QWidget):
 
     def browse_file(self, index):
         """Interface to browse a file.
-        Connected to the tableResults widget.
+        Connected to the tableResults Model.
 
         """
         col = index.column()
@@ -233,8 +248,9 @@ class Scores(QtGui.QWidget):
         """Wrapper to call browse_file from the tableResults' context menu.
 
         """
-        row = self.tableResults.currentRow()
-        col = self.tableResults.currentColumn()
+        index = self.tableResultsView.currentIndex()
+        row = index.row()
+        col = index.column()
         self.browse_file(row, col)
 
     def browse_folder(self):
@@ -301,12 +317,14 @@ class Scores(QtGui.QWidget):
         keys files.
 
         """
-        rows = self.tableResults.rowCount()
-        keys = list()
-        for row in xrange(rows):
-            item = self.tableResults.item(row, 2)
-            if item is not None:
-                keys.append(item.text())
+#         rows = self.tableResultsModel.rowCount()
+#         keys = list()
+#         for row in xrange(rows):
+#             item = self.tableResults.item(row, 2)
+#             if item is not None:
+#                 keys.append(item.text())
+
+        keys = self.tableResultsModel.getKey("Keys file")
 
         stations = 0
         for key in keys:
@@ -349,24 +367,28 @@ class Scores(QtGui.QWidget):
 
     def extract_results(self):
         """Extract the results files, network ids and keys files from the
-        tableResults widget.
+        tableResults Model.
 
         """
-        results = list()
-        network_ids = list()
-        keys = list()
+#         results = list()
+#         network_ids = list()
+#         keys = list()
+#
+#         for row in xrange(self.tableResults.rowCount()):
+#             item = self.tableResults.item
+#             res = item(row, 0)
+#             nid = item(row, 1)
+#             key = item(row, 2)
+#             if res and res.text():
+#                 results.append(res.text())
+#             if nid and nid.text():
+#                 network_ids.append(nid.text())
+#             if key and key.text():
+#                 keys.append(key.text())
 
-        for row in xrange(self.tableResults.rowCount()):
-            item = self.tableResults.item
-            res = item(row, 0)
-            nid = item(row, 1)
-            key = item(row, 2)
-            if res and res.text():
-                results.append(res.text())
-            if nid and nid.text():
-                network_ids.append(nid.text())
-            if key and key.text():
-                keys.append(key.text())
+        results = self.tableResultsModel.getKey('Results file', True)
+        network_ids = self.tableResultsModel.getKey('Network ID', True)
+        keys = self.tableResultsModel.getKey('Keys file', True)
 
         if self.resolution == "yearly":
             gsimcli_results = results
@@ -414,19 +436,19 @@ class Scores(QtGui.QWidget):
         self.show_status(False)
         self.buttonSaveResults.setEnabled(True)
 
-    def remove_rows(self):
-        """Remove the selected rows from the table.
-        Connected to the tableResults context menu.
-
-        """
-        indexes = self.tableResults.selectedIndexes()
-        rows = sorted(set([index.row() for index in indexes]))
-        for n, row in enumerate(rows):
-            self.tableResults.removeRow(row - n)
-
-        # keep one row
-        if not self.tableResults.rowCount():
-            self.tableResults.insertRow(0)
+#     def remove_rows(self):
+#         """Remove the selected rows from the table.
+#         Connected to the tableResults context menu.
+#
+#         """
+#         indexes = self.tableResults.selectedIndexes()
+#         rows = sorted(set([index.row() for index in indexes]))
+#         for n, row in enumerate(rows):
+#             self.tableResults.removeRow(row - n)
+#
+#         # keep one row
+#         if not self.tableResults.rowCount():
+#             self.tableResults.insertRow(0)
 
     def save_results(self):
         """Save the calculated results to a simple text file (TSV).
@@ -434,7 +456,8 @@ class Scores(QtGui.QWidget):
 
         """
         caption = "Select file to save the results"
-        tag = path_up(self.tableResults.item(0, 0).text(), 2)[1]
+        index = self.tableResultsModel.index(0, 0)
+        tag = path_up(self.tableResultsModel.data(index), 2)[1]
         default_name = " ".join(["scores"] + tag.split(os.sep)) + ".txt"
         default_path = os.path.join(self.default_dir, default_name)
 
@@ -460,7 +483,7 @@ class Scores(QtGui.QWidget):
         gp = "tools_benchmark"
         res = ui.GuiParam("temporal_resolution", self.comboResolution, gp)
         fformat = ui.GuiParam("file_format", self.comboFormat, gp)
-        table = ui.GuiParam("table_results", self.tableResults, gp)
+        # table = ui.GuiParam("table_results", self.tableResults, gp)  # FIXME:
         no_data = ui.GuiParam("no_data", self.spinNoData, gp)
         orig = ui.GuiParam("orig_path", self.lineOrig, gp)
         inho = ui.GuiParam("inho_path", self.lineInho, gp)
@@ -473,7 +496,7 @@ class Scores(QtGui.QWidget):
                                    over_network)
         skip_outlier = ui.GuiParam("skip_outlier", self.checkSkipOutlier, gp)
 
-        add([res, fformat, table, no_data, orig, inho, save_cost, cost_path,
+        add([res, fformat, no_data, orig, inho, save_cost, cost_path,  # table
              over_station, over_network, yearly_sum, skip_missing,
              skip_outlier])
 
@@ -532,11 +555,14 @@ class Scores(QtGui.QWidget):
         directory.
 
         """
-        row = self.tableResults.currentRow()
-        item = self.tableResults.item(row, 0)
+        # row = self.tableResults.currentRow()
+        row = self.tableResultsView.currentIndex().row()
+        # item = self.tableResults.item(row, 0)
+        index = self.tableResultsModel.index(row, 0)
+        item = self.tableResultsModel.data(index)
         popup = QtGui.QListWidget(self)
-        if item and item.text():
-            network = item.text()
+        if item:  # and item.text():
+            network = item  # .text()
             files = self.find_results(network)
             ui.pylist_to_qlist(files, popup)
             popup.setWindowFlags(QtCore.Qt.Window)
@@ -563,8 +589,9 @@ class Scores(QtGui.QWidget):
             toggle_show = False
             self.resolution = "yearly"
 
-        self.tableResults.horizontalHeaderItem(0).setText(label)
-        for action in self.tableResults.actions():
+        self.tableResultsModel.setHeaderData(0, label)
+        # self.tableResultsView.horizontalHeaderItem(0).setText(label)
+        for action in self.tableResultsView.actions():
             if action.text().startswith("Show included"):
                 action.setVisible(toggle_show)
         self.checkAverageYearly.setEnabled(toggle_sum)
