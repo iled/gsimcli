@@ -27,13 +27,24 @@ class TableModel(QtCore.QAbstractTableModel):
         super(TableModel, self).__init__(parent)
         self.table = None
         self.header = None
+        self.vheader = None
         self.checkbox_col = checkbox_col
+        self.dataChanged.connect(self.add_rows_auto)
 
     def addItem(self, item):
         count = self.rowCount()
         self.beginInsertRows(QtCore.QModelIndex(), count, count)
         self.table.loc[count] = item
         self.endInsertRows()
+
+    def add_rows_auto(self, index):
+        """Automatically add a new row after entering data in the last row.
+
+        """
+        row = index.row()
+        row_content = self.table.values[row, :-1]
+        if row == (self.rowCount() - 1) and all(row_content):
+            self.addItem(['', '', '', True])
 
     def columnCount(self, parent=QtCore.QModelIndex()):
         if self.table is not None:
@@ -54,12 +65,15 @@ class TableModel(QtCore.QAbstractTableModel):
         else:
             return QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled  # @IgnorePep8
 
-    def headerData(self, col, orientation, role):
+    def headerData(self, idx, orientation, role):
         if (orientation == QtCore.Qt.Horizontal and
                 role == QtCore.Qt.DisplayRole):
-            return str(self.header[col])
+            return unicode(self.header[idx])
+        if (orientation == QtCore.Qt.Vertical and
+                role == QtCore.Qt.DisplayRole):
+            return unicode(self.vheader[idx])
 
-    def getKey(self, key, filter_selected=False):
+    def get_key(self, key, filter_selected=False):
         if filter_selected:
             values = self.table.query(self.checkbox_key)[key]
         else:
@@ -102,11 +116,20 @@ class TableModel(QtCore.QAbstractTableModel):
         if role == QtCore.Qt.EditRole and orientation == QtCore.Qt.Horizontal:
             self.header[section] = value
             self.headerDataChanged.emit(orientation, section, section)
+            return True
+        elif role == QtCore.Qt.EditRole and orientation == QtCore.Qt.Vertical:
+            self.vheader = value
+            self.headerDataChanged.emit(orientation, section, section)
+            return True
+        else:
+            return False
 
     def update(self, data_in):
         self.table = data_in
         headers = data_in.columns
-        self.header = [str(field) for field in headers]
+        self.header = [unicode(field) for field in headers]
+        indexes = data_in.index
+        self.vheader = [unicode(index + 1) for index in indexes]
         self.checkbox_key = self.table.columns[self.checkbox_col]
 
 
@@ -114,16 +137,113 @@ class TableView(QtGui.QTableView):
     def __init__(self, checkbox_col, parent=None):
         super(TableView, self).__init__(parent)
         self.setAlternatingRowColors(True)
-        self.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
-        act = QtGui.QAction("Delete selected row(s)", self)
-        act.triggered.connect(self.onTriggered)
-        self.addAction(act)
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.context_menu)
+        self.doubleClicked.connect(self.browse_cell)
         self.setItemDelegateForColumn(checkbox_col, CheckBoxDelegate(self))
+        self.set_context_menu()
+        self.setEditTriggers(QtGui.QAbstractItemView.AnyKeyPressed | QtGui.QAbstractItemView.SelectedClicked)  # @IgnorePep8
 
-    def onTriggered(self):
-        self.model().removeRows(self.currentIndex().row(), 1)
+    def browse_cell(self):
+        index = self.currentIndex()
+        col = index.column()
+        resolution = self.parent().resolution
+        if resolution == "yearly" or col != 0:
+            self.parent().browse_file(index)
+        elif resolution == "monthly":
+            self.parent().browse_dir(index)
+        pass
+
+    def context_menu(self, point):
+        index = self.indexAt(point)
+        column = index.column()
+        point = self.mapToGlobal(point)
+        if column == 0:
+            self.results_menu.exec_(point)
+        elif column == 1:
+            self.network_menu.exec_(point)
+        elif column == 2:
+            self.keys_menu.exec_(point)
+
+    def remove_rows(self):
+        """Remove the selected rows from the table.
+        Connected to the tableResults View context menu.
+
+        """
+        indexes = self.selectedIndexes()
+        rows = sorted(set([index.row() for index in indexes]))
+        for n, row in enumerate(rows):
+            self.model().removeRow(row - n)
+
+        # keep one row
         if self.model().rowCount() < 1:
             self.model().addItem(['', '', '', True])
+
+    def set_context_menu(self):
+        """Set up the context menu of the tableResults View, in its cells
+        and vertical header.
+
+        """
+        # a menu for different columns
+        self.results_menu = QtGui.QMenu(self)
+        self.network_menu = QtGui.QMenu(self)
+        self.keys_menu = QtGui.QMenu(self)
+        # set up actions
+        browse_file = QtGui.QAction("Browse file", self)
+        browse_directory = QtGui.QAction("Browse directory", self)
+        del_row = QtGui.QAction("Remove selected row(s)", self)
+        browse_file.triggered.connect(self.browse_cell)
+        browse_directory.triggered.connect(self.browse_cell)
+        del_row.triggered.connect(self.remove_rows)
+        # extra option for monthly data
+        show_months = QtGui.QAction("Show included files", self)
+        show_months.triggered.connect(self.show_months_popup)
+        # compose menus
+        self.results_menu.addActions([browse_directory,
+                                      del_row,
+                                      show_months,
+                                      ])
+        self.network_menu.addActions([del_row,
+                                      ])
+        self.keys_menu.addActions([browse_file,
+                                   del_row,
+                                   ])
+        # vertical header
+        vheader = self.verticalHeader()
+        vheader.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
+        vheader.addAction(del_row)
+
+    def set_context_menu_for_resolution(self, resolution):
+        if resolution == "monthly":
+            label = "directory"
+            toggle_show = True
+        elif resolution == "yearly":
+            label = "file"
+            toggle_show = False
+
+        for action in self.results_menu.actions():
+            if action.text().startswith("Browse"):
+                action.setText("Browse {}".format(label))
+            elif action.text().startswith("Show included"):
+                action.setVisible(toggle_show)
+
+    def show_months_popup(self):
+        """Launch a widget to show the monthly files included in the selected
+        directory.
+
+        """
+        row = self.currentIndex().row()
+        index = self.model().index(row, 0)
+        item = self.model().data(index)
+        popup = QtGui.QListWidget(self)
+        if item:
+            network = item
+            files = self.parent().find_results(network)
+            ui.pylist_to_qlist(files, popup)
+            popup.setWindowFlags(QtCore.Qt.Window)
+            popup.setWindowTitle("Files with monthly results")
+            popup.setMinimumWidth(popup.sizeHintForColumn(0) + 15)
+            popup.show()
 
 
 class Scores(QtGui.QWidget):
@@ -165,20 +285,21 @@ class Scores(QtGui.QWidget):
         self.comboFormat.currentIndexChanged.connect(self.file_format)
 
         # table
+        # model and view
         self.tableResultsModel = TableModel(3, self)
         self.tableResultsView = TableView(3, self)
+        # initialise the table with blank values
         columns = ['Results file', 'Network ID', 'Keys file', 'Use']
         table = pd.DataFrame(index=range(5), columns=columns)
         table.fillna('', inplace=True)
         table['Use'] = True
         self.tableResultsModel.update(table)
+        # DEPRECATED:
+        # close the previous used widget, being kept for reference only
         self.tableResults.close()
         self.tableResultsView.setModel(self.tableResultsModel)
         self.layout().insertWidget(3, self.tableResultsView)
         self.hheader = self.tableResultsView.horizontalHeader()
-        self.tableResultsModel.dataChanged.connect(self.add_rows_auto)
-        self.tableResultsView.doubleClicked.connect(self.browse_cell)
-        # self.set_table_menu()
         self.hheader.setResizeMode(0, QtGui.QHeaderView.Stretch)
         self.hheader.setResizeMode(1, QtGui.QHeaderView.ResizeToContents)
         self.hheader.setResizeMode(2, QtGui.QHeaderView.Stretch)
@@ -190,24 +311,6 @@ class Scores(QtGui.QWidget):
                  ])
 
         self.time_resolution()
-
-    def add_rows_auto(self, index):
-        """Automatically add a new row after entering data in the last row.
-        Connected to the tableResults Model.
-
-        """
-        row = index.row()
-        rows = self.tableResultsModel.rowCount()
-        row_content = self.tableResultsModel.table.values[row, :-1]
-        if row == rows - 1 and all(row_content):
-            self.tableResultsModel.addItem(['', '', '', True])
-
-    def browse_cell(self, index):
-        col = index.column()
-        if self.resolution == "yearly" or col != 0:
-            self.browse_file(index)
-        elif self.resolution == "monthly":
-            self.browse_dir(index)
 
     def browse_dir(self, index):
         caption = "Select homogenisation results directory"
@@ -243,15 +346,6 @@ class Scores(QtGui.QWidget):
             if filepath[0]:
                 self.tableResultsModel.setData(index, filepath[0])
                 self.default_dir = os.path.dirname(filepath[0])
-
-    def browse_file_action(self):
-        """Wrapper to call browse_file from the tableResults' context menu.
-
-        """
-        index = self.tableResultsView.currentIndex()
-        row = index.row()
-        col = index.column()
-        self.browse_file(row, col)
 
     def browse_folder(self):
         """Interface to browse a folder.
@@ -324,7 +418,7 @@ class Scores(QtGui.QWidget):
 #             if item is not None:
 #                 keys.append(item.text())
 
-        keys = self.tableResultsModel.getKey("Keys file")
+        keys = self.tableResultsModel.get_key("Keys file")
 
         stations = 0
         for key in keys:
@@ -386,9 +480,9 @@ class Scores(QtGui.QWidget):
 #             if key and key.text():
 #                 keys.append(key.text())
 
-        results = self.tableResultsModel.getKey('Results file', True)
-        network_ids = self.tableResultsModel.getKey('Network ID', True)
-        keys = self.tableResultsModel.getKey('Keys file', True)
+        results = self.tableResultsModel.get_key('Results file', True)
+        network_ids = self.tableResultsModel.get_key('Network ID', True)
+        keys = self.tableResultsModel.get_key('Keys file', True)
 
         if self.resolution == "yearly":
             gsimcli_results = results
@@ -435,20 +529,6 @@ class Scores(QtGui.QWidget):
 
         self.show_status(False)
         self.buttonSaveResults.setEnabled(True)
-
-#     def remove_rows(self):
-#         """Remove the selected rows from the table.
-#         Connected to the tableResults context menu.
-#
-#         """
-#         indexes = self.tableResults.selectedIndexes()
-#         rows = sorted(set([index.row() for index in indexes]))
-#         for n, row in enumerate(rows):
-#             self.tableResults.removeRow(row - n)
-#
-#         # keep one row
-#         if not self.tableResults.rowCount():
-#             self.tableResults.insertRow(0)
 
     def save_results(self):
         """Save the calculated results to a simple text file (TSV).
@@ -518,29 +598,6 @@ class Scores(QtGui.QWidget):
 
         self.total = total
 
-    def set_table_menu(self):
-        """Set up the context menu of the tableResults widget, in its cells
-        and vertical header.
-
-        """
-        # set up actions
-        browse_file = QtGui.QAction("Browse file", self)
-        del_row = QtGui.QAction("Remove selected row(s)", self)
-        browse_file.triggered.connect(self.browse_file_action)
-        del_row.triggered.connect(self.remove_rows)
-        # cells
-        self.tableResults.addAction(browse_file)
-        self.tableResults.addAction(del_row)
-        # extra option for monthly data
-        # if self.resolution == "monthly":
-        show_months = QtGui.QAction("Show included files", self)
-        show_months.triggered.connect(self.show_months)
-        self.tableResults.addAction(show_months)
-        # vertical header
-        vheader = self.tableResults.verticalHeader()
-        vheader.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
-        vheader.addAction(del_row)
-
     def set_use_all(self, toggle):
         """Select all or none of the rows to be used.
         Connected to the Use all checkbox.
@@ -550,50 +607,25 @@ class Scores(QtGui.QWidget):
             index = self.tableResultsModel.index(row, 3)
             self.tableResultsModel.setData(index, toggle)
 
-    def show_months(self):
-        """Launch a widget to show the monthly files included in the selected
-        directory.
-
-        """
-        # row = self.tableResults.currentRow()
-        row = self.tableResultsView.currentIndex().row()
-        # item = self.tableResults.item(row, 0)
-        index = self.tableResultsModel.index(row, 0)
-        item = self.tableResultsModel.data(index)
-        popup = QtGui.QListWidget(self)
-        if item:  # and item.text():
-            network = item  # .text()
-            files = self.find_results(network)
-            ui.pylist_to_qlist(files, popup)
-            popup.setWindowFlags(QtCore.Qt.Window)
-            popup.setWindowTitle("Files with monthly results")
-            popup.setMinimumWidth(popup.sizeHintForColumn(0) + 15)
-            popup.show()
-
     def show_status(self, toggle):
         self.progressBar.setValue(0)
         self.progressBar.setVisible(toggle)
         self.buttonCalculate.setEnabled(not toggle)
 
     def time_resolution(self):
-        resolution = self.comboResolution.currentText()
+        resolution = self.comboResolution.currentText().lower()
 
-        if resolution == "Monthly":
+        if resolution == "monthly":
             label = "Results directory"
             toggle_sum = False
-            toggle_show = True
             self.resolution = "monthly"
-        elif resolution == "Yearly":
+        elif resolution == "yearly":
             label = "Results file"
             toggle_sum = True
-            toggle_show = False
             self.resolution = "yearly"
 
         self.tableResultsModel.setHeaderData(0, label)
-        # self.tableResultsView.horizontalHeaderItem(0).setText(label)
-        for action in self.tableResultsView.actions():
-            if action.text().startswith("Show included"):
-                action.setVisible(toggle_show)
+        self.tableResultsView.set_context_menu_for_resolution(resolution)
         self.checkAverageYearly.setEnabled(toggle_sum)
 
     def update_bench(self):
