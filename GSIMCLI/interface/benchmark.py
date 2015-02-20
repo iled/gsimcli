@@ -152,7 +152,6 @@ class TableView(QtGui.QTableView):
             self.parent().browse_file(index)
         elif resolution == "monthly":
             self.parent().browse_dir(index)
-        pass
 
     def context_menu(self, point):
         index = self.indexAt(point)
@@ -283,6 +282,9 @@ class Scores(QtGui.QWidget):
         # combo boxes
         self.comboResolution.currentIndexChanged.connect(self.time_resolution)
         self.comboFormat.currentIndexChanged.connect(self.file_format)
+
+        # lines
+        self.lineInho.textChanged.connect(self.enable_improvement)
 
         # table
         # model and view
@@ -418,13 +420,27 @@ class Scores(QtGui.QWidget):
 #             if item is not None:
 #                 keys.append(item.text())
 
-        keys = self.tableResultsModel.get_key("Keys file")
+        keys = self.tableResultsModel.get_key("Keys file", True)
 
         stations = 0
         for key in keys:
             stations += sum(1 for line in open(key)) - 1  # @UnusedVariable
 
         return stations
+
+    def enable_improvement(self, inho_path):
+        """Enable/disable widgets related to the Improvement display.
+        Connected to the Inho lineEdit.
+
+        """
+        if inho_path and os.path.isdir(inho_path):
+            toggle = True
+        else:
+            toggle = False
+        self.labelStationImprov.setEnabled(toggle)
+        self.lineStationImprov.setEnabled(toggle)
+        self.labelNetworkImprov.setEnabled(toggle)
+        self.lineNetworkImprov.setEnabled(toggle)
 
     def enable_save_cost(self, toggle):
         """Hide/unhide widgets related to the SaveCosts checkbox: label, line
@@ -512,20 +528,27 @@ class Scores(QtGui.QWidget):
         return glob2.glob(os.path.join(path, '**/*.xls'))
 
     def print_results(self):
+        """Display the results in the lineEdits widgets.
+
+        """
+        show_improvement = self.labelStationImprov.isEnabled()
         over_network = self.groupNetwork.isChecked()
         over_station = self.groupStation.isChecked()
         self.results = self.office.results
 
         if over_network:
             self.network_crmse = str(self.results[0][0])
-            self.network_improvement = str(self.results[2][0])
             self.lineNetworkCRMSE.setText(self.network_crmse)
-            self.lineNetworkImprov.setText(self.network_improvement)
+            if show_improvement:
+                self.network_improvement = str(self.results[2][0])
+                self.lineNetworkImprov.setText(self.network_improvement)
         if over_station:
             self.station_crmse = str(self.results[0][int(over_network)])
-            self.station_improvement = str(self.results[2][int(over_network)])
             self.lineStationCRMSE.setText(self.station_crmse)
-            self.lineStationImprov.setText(self.station_improvement)
+            if show_improvement:
+                self.station_improvement = str(
+                                           self.results[2][int(over_network)])
+                self.lineStationImprov.setText(self.station_improvement)
 
         self.show_status(False)
         self.buttonSaveResults.setEnabled(True)

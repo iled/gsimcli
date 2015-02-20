@@ -320,7 +320,10 @@ def gsimcli_improvement(gsimcli_results, no_data=-999.9, keys_path=None,
     inho_path = kwargs.pop("inho_path")
     submission.setup(orig_path, inho_path)
 
-    results = improvement(submission, **kwargs)
+    if inho_path:
+        results = improvement(submission, **kwargs)
+    else:
+        results = [crmse_submission(submission, **kwargs)]
 
     if costhome_path:
         submission.save(costhome_path)
