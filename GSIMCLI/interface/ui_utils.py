@@ -210,7 +210,6 @@ class Worker(QtCore.QObject):
 
     """
     # signals emmited during the job
-    update_progress = QtCore.Signal(int)
     time_elapsed = QtCore.Signal(int)
     results = QtCore.Signal(object)
     finished = QtCore.Signal()

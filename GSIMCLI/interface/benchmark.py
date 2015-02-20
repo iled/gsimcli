@@ -404,7 +404,7 @@ class Scores(QtGui.QWidget):
         updater = scores.update.progress
         self.office = ui.Office(self, job, updater=updater, **kwargs)
         # self.office.worker.time_elapsed.connect(self.set_time)
-        self.office.worker.update_progress.connect(self.set_progress)
+        self.office.progress.connect(self.set_progress)
         self.office.finished.connect(self.print_results)
         self.office.start()
 
