@@ -21,9 +21,23 @@ base = os.path.dirname(os.path.dirname(__file__))
 
 
 class TableModel(QtCore.QAbstractTableModel):
+    """Table model with a column filled with one check box per line. Each check
+    box is centered in the cell and has no text.
+
+    """
     dataChanged = QtCore.Signal(QtCore.QModelIndex, QtCore.QModelIndex)
 
     def __init__(self, checkbox_col, parent=None):
+        """Constructor.
+
+        Parameters
+        ----------
+        checkbox_col : int
+            Number of the column with the check boxes.
+        parent : QObject, optional
+            Parent of the model.
+
+        """
         super(TableModel, self).__init__(parent)
         self.table = None
         self.header = None
@@ -32,6 +46,14 @@ class TableModel(QtCore.QAbstractTableModel):
         self.dataChanged.connect(self.add_rows_auto)
 
     def addItem(self, item):
+        """Append a row to the table.
+
+        Parameters
+        ----------
+        item : array_like
+            Row to be inserted after the last row in the table.
+
+        """
         count = self.rowCount()
         self.beginInsertRows(QtCore.QModelIndex(), count, count)
         self.table.loc[count] = item
@@ -39,18 +61,32 @@ class TableModel(QtCore.QAbstractTableModel):
 
     def add_rows_auto(self, index):
         """Automatically add a new row after entering data in the last row.
+        Connected to the dataChanged signal.
+        This new row is empty and the check box is not checked.
+
+        Parameters
+        ----------
+        index : QModelIndex
+            Index passed by the dataChanged signal.
 
         """
         row = index.row()
         row_content = self.table.values[row, :-1]
         if row == (self.rowCount() - 1) and all(row_content):
-            self.addItem(['', '', '', True])
+            self.addItem(['', '', '', False])
 
     def columnCount(self, parent=QtCore.QModelIndex()):
+        """
+        Return the number of columns in the table.
+
+        """
         if self.table is not None:
             return self.table.shape[1]
 
     def data(self, index, role=QtCore.Qt.DisplayRole):
+        """Return the value in the given index of the table.
+
+        """
         if role == QtCore.Qt.DisplayRole:
             i = index.row()
             j = index.column()
@@ -60,12 +96,19 @@ class TableModel(QtCore.QAbstractTableModel):
                 return unicode(self.table.iloc[i, j])
 
     def flags(self, index):
+        """Return the item flags for the given index.
+
+        """
         if index.column() == self.checkbox_col:
             return QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled
         else:
             return QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled  # @IgnorePep8
 
     def headerData(self, idx, orientation, role):
+        """Return the data for the given `role` and `section` in the header
+        with the specified `orientation`.
+
+        """
         if (orientation == QtCore.Qt.Horizontal and
                 role == QtCore.Qt.DisplayRole):
             return unicode(self.header[idx])
@@ -74,6 +117,16 @@ class TableModel(QtCore.QAbstractTableModel):
             return unicode(self.vheader[idx])
 
     def get_key(self, key, filter_selected=False):
+        """Return the column named `key` in the table.
+
+        Parameters
+        ----------
+        key : string
+            Column name.
+        filter_selected : boolean, default False
+            Return only the rows with a checked check box.
+
+        """
         if filter_selected:
             values = self.table.query(self.checkbox_key)[key]
         else:
@@ -82,6 +135,9 @@ class TableModel(QtCore.QAbstractTableModel):
         return values
 
     def removeRows(self, row, count, parent=QtCore.QModelIndex()):
+        """Remove the row in the given position.
+
+        """
         if row < 0 or row > self.rowCount():
             return False
 
@@ -92,10 +148,16 @@ class TableModel(QtCore.QAbstractTableModel):
         return True
 
     def rowCount(self, parent=QtCore.QModelIndex()):
+        """Return the number of rows in the table.
+
+        """
         if self.table is not None:
             return self.table.shape[0]
 
     def setChecked(self, index, value, role=QtCore.Qt.EditRole):
+        """Set the check box in the given `index` with the given `value`.
+
+        """
         if role == QtCore.Qt.EditRole:
             self.table.iloc[index.row(), self.checkbox_col] = value
             self.dataChanged.emit(index, index)
@@ -103,6 +165,9 @@ class TableModel(QtCore.QAbstractTableModel):
         return False
 
     def setData(self, index, value, role=QtCore.Qt.EditRole):
+        """Set the `role` data for the item at `index` to `value`.
+
+        """
         if role == QtCore.Qt.EditRole:
             i = index.row()
             j = index.column()
@@ -113,6 +178,11 @@ class TableModel(QtCore.QAbstractTableModel):
 
     def setHeaderData(self, section, value, orientation=QtCore.Qt.Horizontal,
                       role=QtCore.Qt.EditRole):
+        """
+        Set the data for the given `role` and `section` in the header with the
+        specified `orientation` to the `value` supplied.
+
+        """
         if role == QtCore.Qt.EditRole and orientation == QtCore.Qt.Horizontal:
             self.header[section] = value
             self.headerDataChanged.emit(orientation, section, section)
@@ -125,6 +195,17 @@ class TableModel(QtCore.QAbstractTableModel):
             return False
 
     def update(self, data_in):
+        """Change the whole existing table with `data_in`. Headers will be
+        changed accordingly to the names existing in `data_in` table.
+
+        Existing data will be lost.
+
+        Parameters
+        ----------
+        data_in : pandas.DataFrame
+            Table with the new data and headers.
+
+        """
         self.table = data_in
         headers = data_in.columns
         self.header = [unicode(field) for field in headers]
@@ -134,7 +215,23 @@ class TableModel(QtCore.QAbstractTableModel):
 
 
 class TableView(QtGui.QTableView):
+    """A table view to show and manage the data in the table model with check
+    boxes in one column.
+
+    The table has alternating row colours and a customised context menu.
+
+    """
     def __init__(self, checkbox_col, parent=None):
+        """Constructor.
+
+        Parameters
+        ----------
+        checkbox_col : int
+            Number of the column with the check boxes.
+        parent : QObject, optional
+            Parent of the model.
+
+        """
         super(TableView, self).__init__(parent)
         self.setAlternatingRowColors(True)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
@@ -145,15 +242,23 @@ class TableView(QtGui.QTableView):
         self.setEditTriggers(QtGui.QAbstractItemView.AnyKeyPressed | QtGui.QAbstractItemView.SelectedClicked)  # @IgnorePep8
 
     def browse_cell(self):
+        """Wrapper to the dialogs that will open either a File or a Directory
+        dialog.
+
+        """
         index = self.currentIndex()
         col = index.column()
         resolution = self.parent().resolution
         if resolution == "yearly" or col != 0:
             self.parent().browse_file(index)
         elif resolution == "monthly":
-            self.parent().browse_dir(index)
+            self.parent().browse_homog_dir(index)
 
     def context_menu(self, point):
+        """Open a specific context menu depending on which column it was
+        requested.
+
+        """
         index = self.indexAt(point)
         column = index.column()
         point = self.mapToGlobal(point)
@@ -165,7 +270,8 @@ class TableView(QtGui.QTableView):
             self.keys_menu.exec_(point)
 
     def remove_rows(self):
-        """Remove the selected rows from the table.
+        """Remove the selected rows from the table. If the last row is removed,
+        a new one will be added.
         Connected to the tableResults View context menu.
 
         """
@@ -179,8 +285,8 @@ class TableView(QtGui.QTableView):
             self.model().addItem(['', '', '', True])
 
     def set_context_menu(self):
-        """Set up the context menu of the tableResults View, in its cells
-        and vertical header.
+        """Set up the context menus of the tableResults View, in its cells
+        and vertical header. Each column will have its own context menu.
 
         """
         # a menu for different columns
@@ -213,6 +319,10 @@ class TableView(QtGui.QTableView):
         vheader.addAction(del_row)
 
     def set_context_menu_for_resolution(self, resolution):
+        """Adjust the context menu according to the selected time resolution
+        (monthly or yearly).
+
+        """
         if resolution == "monthly":
             label = "directory"
             toggle_show = True
@@ -314,7 +424,10 @@ class Scores(QtGui.QWidget):
 
         self.time_resolution()
 
-    def browse_dir(self, index):
+    def browse_homog_dir(self, index):
+        """Dialog to select the directory with the homogenisation results.
+
+        """
         caption = "Select homogenisation results directory"
         filepath = QtGui.QFileDialog.getExistingDirectory(self, caption,
                                                           dir=self.default_dir)
@@ -512,6 +625,11 @@ class Scores(QtGui.QWidget):
         self.keys = keys
 
     def file_format(self):
+        """Handle the different file formats accepted.
+
+        WIP
+
+        """
         fformat = self.comboFormat.currentText()
         if fformat == "gsimcli":
             toggle_save = True
@@ -580,6 +698,9 @@ class Scores(QtGui.QWidget):
                 afile.write(text)
 
     def set_gui_params(self):
+        """Set the GUI parameters.
+
+        """
         self.guiparams = list()
         add = self.guiparams.extend
 
@@ -604,10 +725,16 @@ class Scores(QtGui.QWidget):
              skip_outlier])
 
     def set_progress(self, current):
+        """Set the progress of the calculation process.
+
+        """
         progress = 100 * current / self.total
         self.progressBar.setValue(progress)
 
     def set_progress_max(self):
+        """Determine the maximum value for the progress bar.
+
+        """
         over_network = self.groupNetwork.isChecked()
         over_station = self.groupStation.isChecked()
 
@@ -631,11 +758,18 @@ class Scores(QtGui.QWidget):
             self.tableResultsModel.setData(index, toggle)
 
     def show_status(self, toggle):
+        """Enable/disable the progress bar and the Calculate pushbutton.
+
+        """
         self.progressBar.setValue(0)
         self.progressBar.setVisible(toggle)
         self.buttonCalculate.setEnabled(not toggle)
 
     def time_resolution(self):
+        """Handle the time resolution.
+        Connected to the resolution combo box.
+
+        """
         resolution = self.comboResolution.currentText().lower()
 
         if resolution == "monthly":
@@ -652,6 +786,10 @@ class Scores(QtGui.QWidget):
         self.checkAverageYearly.setEnabled(toggle_sum)
 
     def update_bench(self):
+        """Update the Orig and Inho paths according to a previsouly saved
+        benchmark directory.
+
+        """
         benchmark_path = self.sender().benchmark_path
         precip = os.path.join("precip", "sur1")
         if not self.lineOrig.text():
