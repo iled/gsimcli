@@ -43,7 +43,9 @@ class TableModel(QtCore.QAbstractTableModel):
         self.header = None
         self.vheader = None
         self.checkbox_col = checkbox_col
+        # signals
         self.dataChanged.connect(self.add_rows_auto)
+        self.dataChanged.connect(self.validade_row)
 
     def addItem(self, item):
         """Append a row to the table.
@@ -116,6 +118,12 @@ class TableModel(QtCore.QAbstractTableModel):
                 role == QtCore.Qt.DisplayRole):
             return unicode(self.vheader[idx])
 
+    def isChecked(self, index):
+        """Return the check box state in the given `index`.
+
+        """
+        return self.table.iloc[index.row(), self.checkbox_col]
+
     def get_key(self, key, filter_selected=False):
         """Return the column named `key` in the table.
 
@@ -133,6 +141,17 @@ class TableModel(QtCore.QAbstractTableModel):
             values = self.table[key]
 
         return values
+
+    def get_row(self, row):
+        """Return the data in the given `row` number.
+
+        Parameters
+        ----------
+        row : int
+            Row number
+
+        """
+        return self.table.loc[row]
 
     def removeRows(self, row, count, parent=QtCore.QModelIndex()):
         """Remove the row in the given position.
@@ -213,6 +232,29 @@ class TableModel(QtCore.QAbstractTableModel):
         self.vheader = [unicode(index + 1) for index in indexes]
         self.checkbox_key = self.table.columns[self.checkbox_col]
 
+    def validade_row(self, index):
+        """Validate the data inserted in the row of the given `index`.
+
+        This method is too specific and should be overridden for other cases.
+
+        TODO: use QValidator
+
+        """
+        row = index.row()
+        row_data = self.get_row(row)
+        result_path = os.path.exists(row_data[0])
+        network_id = row_data[1]
+        key_path = os.path.exists(row_data[2])
+        checked = self.isChecked(index)
+        if not checked and network_id and result_path and key_path:
+            self.setChecked(index, True)
+            return True
+        elif checked and (not network_id or not result_path or not key_path):
+            self.setChecked(index, False)
+            return True
+        else:
+            return False
+
 
 class TableView(QtGui.QTableView):
     """A table view to show and manage the data in the table model with check
@@ -235,10 +277,14 @@ class TableView(QtGui.QTableView):
         super(TableView, self).__init__(parent)
         self.setAlternatingRowColors(True)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        # signals
         self.customContextMenuRequested.connect(self.context_menu)
         self.doubleClicked.connect(self.browse_cell)
+        # set delegate
         self.setItemDelegateForColumn(checkbox_col, CheckBoxDelegate(self))
+        # build context menu
         self.set_context_menu()
+        # set edit triggers that avoid overlap of slots when double clicking
         self.setEditTriggers(QtGui.QAbstractItemView.AnyKeyPressed | QtGui.QAbstractItemView.SelectedClicked)  # @IgnorePep8
 
     def browse_cell(self):
@@ -404,7 +450,7 @@ class Scores(QtGui.QWidget):
         columns = ['Results file', 'Network ID', 'Keys file', 'Use']
         table = pd.DataFrame(index=range(5), columns=columns)
         table.fillna('', inplace=True)
-        table['Use'] = True
+        table['Use'] = False
         self.tableResultsModel.update(table)
         # DEPRECATED:
         # close the previous used widget, being kept for reference only
