@@ -539,8 +539,21 @@ class Scores(QtGui.QWidget):
         Connected to the buttonCalculate widget.
 
         """
+        # simple validation of input data
+        try:
+            self.extract_results()
+        except BaseException as e:
+            print str(e)
+            return False
+        else:
+            if not os.path.isdir(self.lineOrig.text()):
+                raise ValueError("Original data path is not valid.")
+            if not all([len(self.gsimcli_results),
+                        len(self.network_ids),
+                        len(self.keys)]):
+                raise ValueError("Incomplete or invalid gsimcli results.")
+
         self.show_status(True)
-        self.extract_results()
         self.set_progress_max()
 
         kwargs = {
@@ -639,22 +652,6 @@ class Scores(QtGui.QWidget):
         tableResults Model.
 
         """
-#         results = list()
-#         network_ids = list()
-#         keys = list()
-#
-#         for row in xrange(self.tableResults.rowCount()):
-#             item = self.tableResults.item
-#             res = item(row, 0)
-#             nid = item(row, 1)
-#             key = item(row, 2)
-#             if res and res.text():
-#                 results.append(res.text())
-#             if nid and nid.text():
-#                 network_ids.append(nid.text())
-#             if key and key.text():
-#                 keys.append(key.text())
-
         results = self.tableResultsModel.get_key('Results file', True)
         network_ids = self.tableResultsModel.get_key('Network ID', True)
         keys = self.tableResultsModel.get_key('Keys file', True)
@@ -842,6 +839,7 @@ class Scores(QtGui.QWidget):
             self.lineOrig.setText(os.path.join(benchmark_path, "orig", precip))
         if not self.lineInho.text():
             self.lineInho.setText(os.path.join(benchmark_path, "inho", precip))
+
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
