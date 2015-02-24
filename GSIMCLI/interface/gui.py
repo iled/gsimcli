@@ -14,7 +14,6 @@ import os
 import sys
 from tempfile import NamedTemporaryFile
 import time
-from interface.install_dataset import InstallDialog
 
 base = os.path.dirname(os.path.dirname(__file__))
 sys.path.append(base)
@@ -22,6 +21,7 @@ sys.path.append(base)
 import benchmark
 import external_libs.disk as fs
 from external_libs.pyside_dynamic import loadUi
+from install_dataset import InstallDialog
 from launchers import method_classic
 import pandas as pd
 from parsers.gsimcli import GsimcliParam
@@ -125,7 +125,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         index_correction = self.HC_comboCorrectionMethod.currentIndexChanged
         index_correction.connect(self.enable_skewness)
         index_correction.connect(self.enable_percentile)
-        
+
         # line edits
         self.DL_lineDataPath.textChanged.connect(self.preview_data_file)
         self.DB_lineDecadesPath.textChanged.connect(self.changed_decades_path)
@@ -1663,7 +1663,7 @@ class Homogenising(QtCore.QObject):
                                    cores=cores)
 
         self.is_running = False
-        # this second is a workaround for the timer QThread removal
+        # this second is a workaround for the timer's QThread removal
         time.sleep(1)
         self.finished.emit()
 
