@@ -33,6 +33,11 @@ class InstallDialog(QtGui.QDialog):
         super(InstallDialog, self).__init__(parent)
         # load ui file
         loadUi(os.path.join(base, "interface", "install_dataset.ui"), self)
+        # centre window according to parent
+        if parent is not None:
+            pos = self.mapToGlobal(parent.window().frameGeometry().center())
+            self.move(pos.x() - self.width() / 2, pos.y() - self.height() / 2)
+
         self.temp_file = os.path.join(tempfile.gettempdir(), 'benchmark.zip')
         self.benchmark_path = None
         self.downloading = False
