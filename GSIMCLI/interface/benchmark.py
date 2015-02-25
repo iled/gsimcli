@@ -89,7 +89,7 @@ class TableModel(QtCore.QAbstractTableModel):
         """Return the value in the given index of the table.
 
         """
-        if role == QtCore.Qt.DisplayRole:
+        if role in [QtCore.Qt.DisplayRole, QtCore.Qt.EditRole]:
             i = index.row()
             j = index.column()
             if j == self.checkbox_col:
@@ -284,8 +284,10 @@ class TableView(QtGui.QTableView):
         self.setItemDelegateForColumn(checkbox_col, CheckBoxDelegate(self))
         # build context menu
         self.set_context_menu()
-        # set edit triggers that avoid overlap of slots when double clicking
-        self.setEditTriggers(QtGui.QAbstractItemView.AnyKeyPressed | QtGui.QAbstractItemView.SelectedClicked)  # @IgnorePep8
+        # set edit triggers
+        self.setEditTriggers(QtGui.QAbstractItemView.AnyKeyPressed |
+                             QtGui.QAbstractItemView.EditKeyPressed |
+                             QtGui.QAbstractItemView.SelectedClicked)
 
     def browse_cell(self):
         """Wrapper to the dialogs that will open either a File or a Directory
