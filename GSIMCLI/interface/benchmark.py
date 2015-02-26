@@ -637,6 +637,9 @@ class Scores(QtGui.QWidget):
         self.labelNetworkImprov.setEnabled(toggle)
         self.lineNetworkImprov.setEnabled(toggle)
         self.checkSkipMissing.setEnabled(toggle)
+        if toggle:
+            inho_path = self.lineInho.text()
+            self.enable_improvement(inho_path)
 
     def enable_scores_station(self, toggle):
         """Toggle widgets related to the station scores group: crmse and
@@ -648,6 +651,9 @@ class Scores(QtGui.QWidget):
         self.lineStationCRMSE.setEnabled(toggle)
         self.labelStationImprov.setEnabled(toggle)
         self.lineStationImprov.setEnabled(toggle)
+        if toggle:
+            inho_path = self.lineInho.text()
+            self.enable_improvement(inho_path)
 
     def extract_results(self):
         """Extract the results files, network ids and keys files from the
