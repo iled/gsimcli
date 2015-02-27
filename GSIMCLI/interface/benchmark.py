@@ -234,10 +234,24 @@ class TableModel(QtCore.QAbstractTableModel):
 
     def validade_row(self, index):
         """Validate the data inserted in the row of the given `index`.
+        If all items in the row are valid, then the checkbox in that row will
+        be checked.
+        If the row is not completely valid, but the checkbox was
+        already checked, it will not be unchecked.
 
         This method is too specific and should be overridden for other cases.
 
         TODO: use QValidator
+
+        Parameters
+        ----------
+        index : QModelIndex
+            The index of a cell located in the row that will be validated.
+
+        Returns
+        -------
+        boolean
+            True if the row is valid, False otherwise.
 
         """
         row = index.row()
@@ -246,11 +260,9 @@ class TableModel(QtCore.QAbstractTableModel):
         network_id = row_data[1]
         key_path = os.path.exists(row_data[2])
         checked = self.isChecked(index)
-        if not checked and network_id and result_path and key_path:
-            self.setChecked(index, True)
-            return True
-        elif checked and (not network_id or not result_path or not key_path):
-            self.setChecked(index, False)
+        if network_id and result_path and key_path:
+            if not checked:
+                self.setChecked(index, True)
             return True
         else:
             return False
@@ -587,13 +599,6 @@ class Scores(QtGui.QWidget):
         keys files.
 
         """
-#         rows = self.tableResultsModel.rowCount()
-#         keys = list()
-#         for row in xrange(rows):
-#             item = self.tableResults.item(row, 2)
-#             if item is not None:
-#                 keys.append(item.text())
-
         keys = self.tableResultsModel.get_key("Keys file", True)
 
         stations = 0
