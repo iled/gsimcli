@@ -45,7 +45,6 @@ class TableModel(QtCore.QAbstractTableModel):
         self.checkbox_col = checkbox_col
         # signals
         self.dataChanged.connect(self.add_rows_auto)
-        self.dataChanged.connect(self.validade_row)
 
     def addItem(self, item):
         """Append a row to the table.
@@ -231,41 +230,6 @@ class TableModel(QtCore.QAbstractTableModel):
         indexes = data_in.index
         self.vheader = [unicode(index + 1) for index in indexes]
         self.checkbox_key = self.table.columns[self.checkbox_col]
-
-    def validade_row(self, index):
-        """Validate the data inserted in the row of the given `index`.
-        If all items in the row are valid, then the checkbox in that row will
-        be checked.
-        If the row is not completely valid, but the checkbox was
-        already checked, it will not be unchecked.
-
-        This method is too specific and should be overridden for other cases.
-
-        TODO: use QValidator
-
-        Parameters
-        ----------
-        index : QModelIndex
-            The index of a cell located in the row that will be validated.
-
-        Returns
-        -------
-        boolean
-            True if the row is valid, False otherwise.
-
-        """
-        row = index.row()
-        row_data = self.get_row(row)
-        result_path = os.path.exists(row_data[0])
-        network_id = row_data[1]
-        key_path = os.path.exists(row_data[2])
-        checked = self.isChecked(index)
-        if network_id and result_path and key_path:
-            if not checked:
-                self.setChecked(index, True)
-            return True
-        else:
-            return False
 
 
 class TableView(QtGui.QTableView):
