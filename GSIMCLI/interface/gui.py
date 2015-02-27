@@ -105,8 +105,10 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.buttonAbort.clicked.connect(self.abort_gsimcli)
 
         # change pages
-        self.treeWidget.expandAll()
-        self.treeWidget.currentItemChanged.connect(self.set_stacked_item)
+        self.treeSettings.expandAll()
+        self.treeSettings.currentItemChanged.connect(self.set_settings_item)
+        self.treeTools.expandAll()
+        self.treeTools.currentItemChanged.connect(self.set_tools_item)
 
         # check boxes
         self.DL_checkHeader.toggled.connect(self.enable_header)
@@ -157,6 +159,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.set_cpu_cores()
         self.SO_spinMaxSearchNodes.valueChanged.connect(self.set_max_nodes)
         self.SA_spinMaxNodes.valueChanged.connect(self.set_max_nodes)
+
+        # tabs
+        self.tabWidget.currentChanged.connect(self.set_tab)
 
         # hidden widgets by default
         ui.hide([
@@ -417,18 +422,18 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         else:
             sys.__stdout__.write(text)
 
-    def set_stacked_item(self, current, previous):
-        """Connect the right menu (QTreeWidget) with the panels on the right
-        (QStackedWidget).
+    def set_settings_item(self, current, previous):
+        """Connect the Settings right menu (QTreeWidget) with the panels on the
+        right (QStackedWidget).
 
         """
         if current and current.text(0) in ["Data", "Simulation",
                                            "Homogenisation"]:
             current.setExpanded(True)
-            self.treeWidget.setCurrentItem(current.child(0))
+            self.treeSettings.setCurrentItem(current.child(0))
 
         if current:
-            tree_item = self.treeWidget.currentItem().text(0)
+            tree_item = self.treeSettings.currentItem().text(0)
         else:
             tree_item = None
 
@@ -453,14 +458,44 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         elif tree_item == "Results":
             self.stackedWidget.setCurrentWidget(self.HomogenisationResults)
 
+    def set_tab(self, index):
+        """Update the panels on the right (QStackedWidget) according to the
+        selected tab (QTabWidget)
+
+        """
+        text = self.tabWidget.tabText(index)
+        if text == "Settings":
+            item = self.treeSettings.currentItem()
+            self.set_settings_item(item, item)
+        elif text == "Tools":
+            item = self.treeTools.currentItem()
+            self.set_tools_item(item, item)
+
     def set_tools(self):
         """Connect the Tools menu (QAction) with the panels on the right
         (QStackedWidget).
 
         """
-        self.treeWidget.selectionModel().clear()
+        self.treeSettings.selectionModel().clear()
         who = self.sender().objectName().lower()
         if "scores" in who:
+            self.stackedWidget.setCurrentWidget(self.tools_benchmark)
+
+    def set_tools_item(self, current, previous):
+        """Connect the Tools right menu (QTreeWidget) with the panels on the
+        right (QStackedWidget).
+
+        """
+        if current and current.text(0) in ["Benchmark"]:
+            current.setExpanded(True)
+            self.treeTools.setCurrentItem(current.child(0))
+
+        if current:
+            tree_item = self.treeTools.currentItem().text(0)
+        else:
+            tree_item = None
+
+        if tree_item == "Scores calculation":
             self.stackedWidget.setCurrentWidget(self.tools_benchmark)
 
     def install_dataset(self):
@@ -610,8 +645,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.DB_buttonAddNetworks.setEnabled(toggle)
         self.DB_buttonRemoveNetworks.setEnabled(toggle)
         self.DB_listNetworksPaths.setEnabled(toggle)
-        tree_item = self.treeWidget.findItems("Grid", QtCore.Qt.MatchRecursive,
-                                              QtCore.Qt.MatchExactly)[0]
+        tree_item = self.treeSettings.findItems("Grid",
+                                                QtCore.Qt.MatchRecursive,
+                                                QtCore.Qt.MatchExactly)[0]
         tree_item.setDisabled(toggle)
         if toggle:
             tool_tip = ("Batch mode for networks is enabled, grids are "
@@ -661,7 +697,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         # disable variogram
         # self.SimulationVariogram.setDisabled(toggle)
         # self.SV_labelBatchDecades.setVisible(toggle)
-        tree_item = self.treeWidget.findItems("Variogram",
+        tree_item = self.treeSettings.findItems("Variogram",
                                               QtCore.Qt.MatchRecursive,
                                               QtCore.Qt.MatchExactly)[0]
         tree_item.setDisabled(toggle)
