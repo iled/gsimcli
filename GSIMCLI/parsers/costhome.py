@@ -485,15 +485,14 @@ class Network(object):
                 if orig:
                     orig_data = station.orig.data.mean(axis=1)
             else:
-                homog_data = station.data
+                homog_data = station.data.copy()
                 if orig:
-                    orig_data = station.orig.data
+                    orig_data = station.orig.data.copy()
 
             if first:
-                # netw_average = np.zeros(station.data.shape[0])
-                netw_average = homog_data
+                netw_average = homog_data.copy()
                 if orig:
-                    orig_average = orig_data
+                    orig_average = orig_data.copy()
                 first = False
                 continue
             netw_average += homog_data
@@ -586,6 +585,8 @@ class Network(object):
         for i, station_col in enumerate(data_cols):
             stid = station_ids[i]
             data = pd.DataFrame(xlstable[station_col] / div)
+            if data.iloc[0].values > 500:
+                pass
             if not yearly:
                 data.columns = [month]
             if stid in self.stations_id:
@@ -923,19 +924,3 @@ def match_sub(path, sub, level=3):
             raise os.error('no such file: \'{}\''.format(match))
 
     return match
-
-
-if __name__ == '__main__':
-    no_data = -999.9
-    p = '/Users/julio/Desktop/testes/cost-home/benchmark/h009/precip/sur1/000005/horrm21109001d.txt'
-    p2 = '/Users/julio/Desktop/testes/cost-home/benchmark/h009/precip/sur1/000005/horrm21109001d__new.txt'
-    # st = Station(p, no_data)
-    # st.setup()
-    subp = '/Users/julio/Desktop/testes/cost-home/benchmark/h009/precip/sur1'
-    # sub = Submission(subp, no_data)
-    # sub.save('/Users/julio/Desktop/testes/')
-    bench = '/Users/julio/Desktop/testes/cost-home/rede000005/1900_1909.txt'
-    netw = Network(network_id='teste')
-    netw.load_pointset(bench)
-    netw.save('/Users/julio/Desktop/testes/')
-    print 'done'
