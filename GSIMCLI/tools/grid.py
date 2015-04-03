@@ -548,8 +548,8 @@ class GridFiles(object):
         for grid in self.files:
             os.remove(grid.name)
 
-    def stats(self, lmean=False, lmed=False, lvar=False, lstd=False,
-              lcoefvar=False, lperc=False, p=0.95):
+    def stats(self, lmean=False, lmed=False, lskew=False, lvar=False,
+              lstd=False, lcoefvar=False, lperc=False, p=0.95):
         """Calculate some statistics among every realisation.
 
         Each statistic is calculated node-wise along the complete number of
@@ -561,6 +561,8 @@ class GridFiles(object):
             Calculate the mean.
         lmed : boolean, default False
             Calculate the median.
+        lskew : boolean, default False
+            Calculate skewness.
         lvar : boolean, default False
             Calculate the variance.
         lstd : boolean, default False
@@ -590,6 +592,8 @@ class GridFiles(object):
             meanmap = np.zeros(self.cells)
         if lmed:
             medmap = np.zeros(self.cells)
+        if lskew:
+            skewmap = np.zeros(self.cells)
         if lvar:
             varmap = np.zeros(self.cells)
         if lstd:
@@ -613,6 +617,8 @@ class GridFiles(object):
             if lmed:
                 medmap[cell] = np.median(arr)
                 # comparar com bottleneck.median()
+            if lskew:
+                skewmap[cell] = skew(arr)
             if lvar:
                 varmap[cell] = np.nanvar(arr, ddof=1)
             if lstd:
@@ -632,6 +638,8 @@ class GridFiles(object):
             retlist.append(meanmap)
         if lmed:
             retlist.append(medmap)
+        if lskew:
+            retlist.append(skewmap)
         if lvar:
             retlist.append(varmap)
         if lstd:
