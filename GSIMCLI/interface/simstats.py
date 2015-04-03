@@ -51,7 +51,8 @@ class SimStats(QtGui.QWidget):
         # radio
         self.radioGridManual.toggled.connect(self.enable_manualspec)
         self.radioGridFile.toggled.connect(self.browse_gridfile)
-        # self.radioGridSame.toggled.connect(self.set_samegrid)
+#         self.radioGridFile.clicked.connect(self.handle_gridclick)
+        self.radioGridSame.toggled.connect(self.set_samegrid)
 
     def browse_gridfile(self, toggle):
         """Dialog to select the file with the grid specifications.
@@ -61,36 +62,53 @@ class SimStats(QtGui.QWidget):
         if toggle:
             caption = "Select the grid specifications file"
             filters = "Grid spec (*grid*.csv);;CSV files (*.csv)"
+            print "dir", self.default_dir
             filepath = QtGui.QFileDialog.getOpenFileName(self, caption,
                                                          dir=self.default_dir,
                                                          filter=filters)
             if filepath[0]:
-                tooltip = ("Value for the Z coordinate missing, please specify"
-                           " it manually.")
+                self.default_dir = os.path.dirname(filepath[0])
                 spec = read_specfile(filepath[0])
+                missing = []
                 # number of nodes
                 nodes = "{}, {}".format(spec.xnodes.values[0],
                                         spec.ynodes.values[0])
                 if hasattr(spec, "znodes"):
                     nodes += ", {}".format(spec.znodes.values[0])
+                    missing.append(False)
                 else:
-#                     self.lineGridNodes.setToolTip(tooltip)
-#                     self.lineGridNodes.toolTip().showText()
-                    QtGui.QToolTip.showText(self.lineGridNodes.mapToGlobal(QtCore.QPoint(0,0)), tooltip)
-    #QToolTip::showText( widget->mapToGlobal( QPoint( 0, 0 ) ), errorString );@
-                self.lineGridNodes.setText(nodes)
+                    missing.append(True)
                 # cell size
                 sizes = "{}, {}".format(spec.xsize.values[0],
                                         spec.ysize.values[0])
                 if hasattr(spec, "zsize"):
                     sizes += ", {}".format(spec.zsize.values[0])
-                self.lineGridSize.setText(sizes)
+                    missing.append(False)
+                else:
+                    missing.append(True)
                 # origin coordinates
                 origins = "{}, {}".format(spec.xmin.values[0],
                                           spec.ymin.values[0])
                 if hasattr(spec, "zmin"):
                     origins += ", {}".format(spec.zmin.values[0])
-                self.lineGridOrig.setText(origins)
+                    missing.append(False)
+                else:
+                    missing.append(True)
+
+                if any(missing):
+                    opt = self.show_msgbox_missingz()
+                    if opt == QtGui.QMessageBox.Ok:
+                        self.radioGridManual.setChecked(True)
+                        save = True
+                    elif opt == QtGui.QMessageBox.Cancel:
+                        save = False
+                else:
+                    save = True
+
+                if save:
+                    self.lineGridNodes.setText(nodes)
+                    self.lineGridSize.setText(sizes)
+                    self.lineGridOrig.setText(origins)
 
     def browse_simdir(self):
         """Dialog to select the directory with the simulated maps.
@@ -147,6 +165,10 @@ class SimStats(QtGui.QWidget):
         self.lineGridSize.setReadOnly(not toggle)
         self.lineGridOrig.setReadOnly(not toggle)
 
+#     def handle_gridclick(self):
+#         if self.radioGridFile.isChecked():
+#             self.browse_gridfile(True)
+
     def remove_sims(self):
         """Remove selected simulated map files from the files list.
         Connected to the RemoveSim button
@@ -157,6 +179,14 @@ class SimStats(QtGui.QWidget):
             self.listSimFiles.takeItem(item)
         self.update_sim_label()
 
+    def save_gridspecs(self, nodes, sizes, origins):
+        """WIP
+        
+        """
+        self.lineGridNodes.setText(nodes)
+        self.lineGridSize.setText(sizes)
+        self.lineGridOrig.setText(origins)
+
     def set_gui_params(self):
         """Set the GUI parameters.
 
@@ -165,6 +195,24 @@ class SimStats(QtGui.QWidget):
         add = self.guiparams.extend
 
         gp = "tools_simstats"
+
+    def set_samegrid(self):
+        """Use the grid specifications that were previously set in the
+        simulation settings.
+        Connected to the GridSame radio button.
+
+        """
+        grid = self.parent()
+        nodes = (grid.SG_spinXXNodes.value(),
+                 grid.SG_spinYYNodes.value(),
+                 grid.SG_spinZZNodes.value())
+        sizes = (grid.SG_spinXXSize.value(),
+                 grid.SG_spinYYSize.value(),
+                 grid.SG_spinZZSize.value())
+        origins = (grid.SG_spinXXOrig.value(),
+                   grid.SG_spinYYOrig.value(),
+                   grid.SG_spinZZOrig.value())
+        self.save_gridspecs(nodes, sizes, origins)
 
     def set_simmaps(self, ext="out"):
         """Find and set the simulated maps in the SimFiles list.
@@ -181,6 +229,14 @@ class SimStats(QtGui.QWidget):
         else:
             self.listSimFiles.clear()
             self.listSimFiles.addItem("Invalid directory.")
+
+    def show_msgbox_missingz(self):
+        msgbox = QtGui.QMessageBox(self)
+        msgbox.setText("At least one value for the Z coordinate is missing.")
+        msgbox.setInformativeText("Do you want to specify it manually?")
+        msgbox.setStandardButtons(msgbox.Ok | msgbox.Cancel)
+        msgbox.setDefaultButton(msgbox.Ok)
+        return msgbox.exec_()
 
     def update_sim_label(self):
         """Update the text in the SimFiles label.
