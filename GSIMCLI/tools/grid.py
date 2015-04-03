@@ -411,7 +411,7 @@ class GridFiles(object):
     def load(self, first_file, n, dims, first_coord, cells_size, no_data,
              headerin=3):
         """Open several grid files and provide a list containing each file
-        handler (delivered in `files` attribute).
+        handler (delivered in the `files` attribute).
 
         Parameters
         ----------
@@ -420,6 +420,8 @@ class GridFiles(object):
             format.
         n : int
             Number of files.
+        dims : array_like
+            Number of nodes in each direction, [dx, dy, dz]
         first_coord : array_like
             First coordinate in each direction, [xi, yi, zi].
         cells_size : array_like
@@ -458,15 +460,68 @@ class GridFiles(object):
         self.header = headerin
         self.nodata = no_data
         self.files.append(open(first_file, 'rb'))
-        # fpath, ext = os.path.splitext(first_file)
         for i in xrange(2, n + 1):
-            # another = fpath + str(i) + ext
             another = filename_indexing(first_file, i)
             if os.path.isfile(another):
                 self.files.append(open(another, 'rb'))
             else:
                 raise IOError('File {} not found.'.
                               format(os.path.basename(another)))
+
+    def load_files(self, files_list, dims, first_coord, cells_size, no_data,
+                   headerin=3):
+        """Open a list of given grid files and provide a list containing each
+        file handler (delivered in the `files` attribute).
+
+        Parameters
+        ----------
+        files_list : list
+            List of file paths to the files to be opened
+        dims : array_like
+            Number of nodes in each direction, [dx, dy, dz]
+        first_coord : array_like
+            First coordinate in each direction, [xi, yi, zi].
+        cells_size : array_like
+            Nodes size in each direction, [cellx, celly, cellz].
+        no_data : number
+            Missing data value.
+        headerin : int, default 3
+            Number of lines in the header.
+
+        Raises
+        ------
+        IOError
+            Could not find a file with an expected file name.
+
+        Notes
+        -----
+        It is assumed that the files are numbered in the following manner:
+
+        - 1st file_with_this_name.extension
+        - 2nd file_with_this_name2.extension
+        - 3rd file_with_this_name3.extension
+        - nth file_with_this_namen.extension
+
+        """
+        self.nfiles = len(files_list)
+        self.dx = dims[0]
+        self.dy = dims[1]
+        self.dz = dims[2]
+        self.xi = first_coord[0]
+        self.yi = first_coord[1]
+        self.zi = first_coord[2]
+        self.cellx = cells_size[0]
+        self.celly = cells_size[1]
+        self.cellz = cells_size[2]
+        self.cells = np.prod(dims)
+        self.header = headerin
+        self.nodata = no_data
+
+        for gridfile in files_list:
+            if os.path.isfile(gridfile):
+                self.files.append(open(gridfile, 'rb'))
+            else:
+                raise IOError('File {} not found.'.format(gridfile))
 
     def reset_read(self):
         """Reset the  pointer that reads each file to the beginning.
@@ -1076,7 +1131,7 @@ if __name__ == '__main__':
     rad = 0
     print(timeit.timeit("_wrap2()", setup="from __main__ import _wrap2",
                     number=10))
-    for rad in xrange(0, 5):#(0, 3):
+    for rad in xrange(0, 5):  # (0, 3):
 
     # """ timer
 #     print 'calculating grid stats + drill'
