@@ -4,13 +4,14 @@ Created on 05/03/2015
 
 @author: julio
 """
-from PySide import QtGui, QtCore
+from PySide import QtGui
 import glob2
 import os
 import sys
 
 from external_libs.pyside_dynamic import loadUi
 import interface.ui_utils as ui
+from tools.grid import GridFiles
 from tools.homog import read_specfile
 
 base = os.path.dirname(os.path.dirname(__file__))
@@ -41,6 +42,9 @@ class SimStats(QtGui.QWidget):
         self.buttonSavePath.clicked.connect(self.browse_savedir)
         self.buttonAddSim.clicked.connect(self.browse_simfile)
         self.buttonRemoveSim.clicked.connect(self.remove_sims)
+
+        # check boxes
+        self.checkPercentile.toggled.connect(self.enable_percentile)
 
         # label
         self.sim_label = self.labelSimFiles.text()
@@ -157,14 +161,30 @@ class SimStats(QtGui.QWidget):
         Connected to the calculate button.
 
         """
-        lmean = self.checkMean.isChecked()
-        lmed = self.checkMedian.isChecked()
-        # lskew = self.checkSkewness.isChecked()
-        lvar = self.checkVariance.isChecked()
-        lstd = self.checkSD.isChecked()
-        lcoefvar = self.checkCoefVar.isChecked()
-        lperc = self.Percentile.isChecked()
-
+        # open all grid files
+        kwargs = {
+              'files_list': ui.qlist_to_pylist(self.listSimFiles),
+              'dims': map(int, self.lineGridNodes.text().split(", ")),
+              'first_coord': map(float, self.lineGridOrig.text().split(", ")),
+              'cells_size': map(float, self.lineGridSize.text().split(", ")),
+              'no_data': float(self.spinNoData.value()),
+              'headerin': self.checkHeader.isChecked() * 3,
+                }
+        self.grids = GridFiles()
+        self.grids.load_files(**kwargs)
+        # calculate stats
+        kwargs = {
+              'lmean': self.checkMean.isChecked(),
+              'lmed': self.checkMedian.isChecked(),
+              'lskew': self.checkSkewness.isChecked(),
+              'lvar': self.checkVariance.isChecked(),
+              'lstd': self.checkSD.isChecked(),
+              'lcoefvar': self.checkCoefVar.isChecked(),
+              'lperc': self.checkPercentile.isChecked(),
+              'p': self.spinPercentile.value(),
+                }
+        self.results = self.grids.stats(**kwargs)
+        self.save_results()
 
     def enable_manualspec(self, toggle):
         """Enable the line edits related to the grid specifications.
@@ -174,6 +194,13 @@ class SimStats(QtGui.QWidget):
         self.lineGridNodes.setReadOnly(not toggle)
         self.lineGridSize.setReadOnly(not toggle)
         self.lineGridOrig.setReadOnly(not toggle)
+
+    def enable_percentile(self, toggle):
+        """Enable/disable the spinbox related to the percentile.
+        Connected to the percentile checkbox.
+
+        """
+        self.spinPercentile.setEnabled(toggle)
 
     def fetch_stats(self):
         """Retrieve which stats should be calculated.
@@ -198,6 +225,14 @@ class SimStats(QtGui.QWidget):
         self.lineGridNodes.setText(", ".join(map(str, nodes)))
         self.lineGridSize.setText(", ".join(map(str, sizes)))
         self.lineGridOrig.setText(", ".join(map(str, origins)))
+
+    def save_results(self):
+        """Save the resulting grids with the calculated statistics.
+
+        """
+        savepath = self.lineSavePath.text()
+        for key, value in self.results.iteritems():
+            value.save(os.path.join(savepath, key + ".out"), key)
 
     def set_gui_params(self):
         """Set the GUI parameters.
@@ -251,6 +286,8 @@ class SimStats(QtGui.QWidget):
         msgbox.setInformativeText("Do you want to specify it manually?")
         msgbox.setStandardButtons(msgbox.Ok | msgbox.Cancel)
         msgbox.setDefaultButton(msgbox.Ok)
+        msgbox.setWindowTitle("Specify missing value manually?")
+        msgbox.setIcon(msgbox.Warning)
         return msgbox.exec_()
 
     def update_sim_label(self):
