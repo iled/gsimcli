@@ -13,6 +13,7 @@ import os
 from scipy.stats import skew
 import time
 
+import bottleneck as bn
 import numpy as np
 import pandas as pd
 from tools.utils import skip_lines, filename_indexing
@@ -576,16 +577,13 @@ class GridFiles(object):
 
         Returns
         -------
-        retlist : list of ndarray
-            List containing one ndarray for each calculated statistic.
+        retdict : dict of GridArr
+            Dictionary containing one GridArr for each calculated statistic.
 
         See Also
         --------
         stats_area : same but considering a circular (and horizontal) area of
         a specified radius around a given point.
-
-        .. TODO: - devolver em GridArr
-                 - handle no data
 
         """
         if lmean:
@@ -612,44 +610,61 @@ class GridFiles(object):
                 arr[i] = grid.readline()
 
             skip = False
+            # replace no data's with NaN
+            bn.replace(arr, self.nodata, np.nan)
             if lmean:
-                meanmap[cell] = arr.mean()
+                meanmap[cell] = bn.nanmean(arr)
             if lmed:
-                medmap[cell] = np.median(arr)
-                # comparar com bottleneck.median()
+                medmap[cell] = bn.nanmedian(arr)
             if lskew:
-                skewmap[cell] = skew(arr)
+                skewmap[cell] = pd.Series(arr).skew()
             if lvar:
-                varmap[cell] = np.nanvar(arr, ddof=1)
+                varmap[cell] = bn.nanvar(arr, ddof=1)
             if lstd:
-                stdmap[cell] = arr.std()
+                stdmap[cell] = bn.nanstd(arr, ddof=1)
             if lcoefvar:
                 if lstd and lmean:
                     coefvarmap[cell] = stdmap[cell] / meanmap[cell] * 100
                 else:
-                    coefvarmap[cell] = arr.std() / arr.mean() * 100
+                    std = bn.nanstd(arr, ddof=1)
+                    mean = bn.nanmean(arr)
+                    coefvarmap[cell] = std / mean * 100
             if lperc:
-                percmap[cell] = np.percentile(arr, [(100 - p * 100) / 2,
-                                                    100 - (100 - p * 100) / 2])
+                percmap[cell] = pd.Series(arr).quantile([(1 - p) / 2,
+                                                         1 - (1 - p) / 2])
 
-        retlist = list()
+        retdict = dict()
 
         if lmean:
-            retlist.append(meanmap)
+            meangrid = GridArr(name='meanmap', dx=self.dx, dy=self.dy,
+                               dz=self.dz, nodata=self.nodata, val=meanmap)
+            retdict['meanmap'] = meangrid
         if lmed:
-            retlist.append(medmap)
+            medgrid = GridArr(name='medianmap', dx=self.dx, dy=self.dy,
+                              dz=self.dz, nodata=self.nodata, val=medmap)
+            retdict['medianmap'] = medgrid
         if lskew:
-            retlist.append(skewmap)
+            skewgrid = GridArr(name='skewmap', dx=self.dx, dy=self.dy,
+                               dz=self.dz, nodata=self.nodata, val=skewmap)
+            retdict['skewmap'] = skewgrid
         if lvar:
-            retlist.append(varmap)
+            vargrid = GridArr(name='varmap', dx=self.dx, dy=self.dy,
+                              dz=self.dz, nodata=self.nodata, val=varmap)
+            retdict['varmap'] = vargrid
         if lstd:
-            retlist.append(stdmap)
+            stdgrid = GridArr(name='stdmap', dx=self.dx, dy=self.dy,
+                              dz=self.dz, nodata=self.nodata, val=stdmap)
+            retdict['stdmap'] = stdgrid
         if lcoefvar:
-            retlist.append(coefvarmap)
+            coefvargrid = GridArr(name='coefvarmap', dx=self.dx, dy=self.dy,
+                              dz=self.dz, nodata=self.nodata, val=coefvarmap)
+            retdict['coefvarmap'] = coefvargrid
         if lperc:
-            retlist.append(percmap)
+            percgrid = GridArr(name='percmap', dx=self.dx, dy=self.dy,
+                               dz=self.dz, nodata=self.nodata, val=percmap)
+            retdict['percmap'] = percgrid
 
-        return retlist
+        return retdict
 
     def stats_area(self, loc, tol=0, lmean=False, lmed=False, lskew=False,
                    lvar=False, lstd=False, lcoefvar=False, lperc=False,
@@ -742,26 +757,29 @@ class GridFiles(object):
                     curr_line[j] = line
                     skip = False
 
+            # replace no data's with NaN
+            bn.replace(arr, self.nodata, np.nan)
             # compute the required statistics
             if lmean:
-                meanline[layer] = arr.mean()
+                meanline[layer] = bn.nanmean(arr)
             if lmed:
-                medline[layer] = np.median(arr)
-                # TODO: comparar com bottleneck.median()
+                medline[layer] = bn.nanmedian(arr)
             if lskew:
-                skewline[layer] = skew(arr)
+                skewline[layer] = pd.Series(arr).skew()
             if lvar:
-                varline[layer] = np.nanvar(arr, ddof=1)
+                varline[layer] = bn.nanvar(arr, ddof=1)
             if lstd:
-                stdline[layer] = arr.std()
+                stdline[layer] = bn.nanstd(arr, ddof=1)
             if lcoefvar:
                 if lstd and lmean:
                     coefvarline[layer] = stdline[line] / meanline[line] * 100
                 else:
-                    coefvarline[layer] = arr.std() / arr.mean() * 100
+                    std = bn.nanstd(arr, ddof=1)
+                    mean = bn.nanmean(arr)
+                    coefvarline[layer] = std / mean * 100
             if lperc:
-                percline[layer] = np.percentile(arr, [(100 - p * 100) / 2,
-                                              100 - (100 - p * 100) / 2])
+                percline[layer] = pd.Series(arr).quantile([(1 - p) / 2,
+                                                           1 - (1 - p) / 2])
             if save:
                 arrpset = PointSet('realisations at location ({}, {}, {})'.
                                    format(loc[0], loc[1], layer * self.cellz +
