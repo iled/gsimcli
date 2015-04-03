@@ -300,7 +300,7 @@
        <property name="title">
         <string>Calculate the following statistics across all the simulated maps:</string>
        </property>
-       <layout class="QGridLayout" name="gridLayout">
+       <layout class="QFormLayout" name="formLayout">
         <item row="0" column="0">
          <widget class="QCheckBox" name="checkMean">
           <property name="text">
@@ -309,9 +309,9 @@
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="QCheckBox" name="checkVariance">
+         <widget class="QCheckBox" name="checkCoefVar">
           <property name="text">
-           <string>Variance</string>
+           <string>Coefficient of variation</string>
           </property>
          </widget>
         </item>
@@ -323,9 +323,9 @@
          </widget>
         </item>
         <item row="1" column="1">
-         <widget class="QCheckBox" name="checkCoefVar">
+         <widget class="QCheckBox" name="checkBox">
           <property name="text">
-           <string>Coefficient of variation</string>
+           <string>Skewness</string>
           </property>
          </widget>
         </item>
@@ -342,6 +342,52 @@
            <string>Percentile</string>
           </property>
          </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QCheckBox" name="checkVariance">
+          <property name="text">
+           <string>Variance</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <layout class="QHBoxLayout" name="horizontalLayout_7">
+          <item>
+           <widget class="QDoubleSpinBox" name="spinPercentile">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="decimals">
+             <number>4</number>
+            </property>
+            <property name="minimum">
+             <double>0.000100000000000</double>
+            </property>
+            <property name="maximum">
+             <double>0.999900000000000</double>
+            </property>
+            <property name="singleStep">
+             <double>0.005000000000000</double>
+            </property>
+            <property name="value">
+             <double>0.950000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_4">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
         </item>
        </layout>
       </widget>
