@@ -36,7 +36,7 @@ class SimStats(QtGui.QWidget):
             self.default_dir = os.path.expanduser('~/')
 
         # buttons
-#         self.buttonCalculate.clicked.connect(self.calculate_stats)
+        self.buttonCalculate.clicked.connect(self.calculate_stats)
         self.buttonSimsPath.clicked.connect(self.browse_simdir)
         self.buttonSavePath.clicked.connect(self.browse_savedir)
         self.buttonAddSim.clicked.connect(self.browse_simfile)
@@ -152,6 +152,20 @@ class SimStats(QtGui.QWidget):
             self.lineSavePath.setText(dirpath)
             self.default_dir = dirpath
 
+    def calculate_stats(self):
+        """Calculate the selected stats of the listed simulated maps.
+        Connected to the calculate button.
+
+        """
+        lmean = self.checkMean.isChecked()
+        lmed = self.checkMedian.isChecked()
+        # lskew = self.checkSkewness.isChecked()
+        lvar = self.checkVariance.isChecked()
+        lstd = self.checkSD.isChecked()
+        lcoefvar = self.checkCoefVar.isChecked()
+        lperc = self.Percentile.isChecked()
+
+
     def enable_manualspec(self, toggle):
         """Enable the line edits related to the grid specifications.
         Connected to the radio button to Set manually.
@@ -160,6 +174,12 @@ class SimStats(QtGui.QWidget):
         self.lineGridNodes.setReadOnly(not toggle)
         self.lineGridSize.setReadOnly(not toggle)
         self.lineGridOrig.setReadOnly(not toggle)
+
+    def fetch_stats(self):
+        """Retrieve which stats should be calculated.
+
+        """
+        pass
 
     def remove_sims(self):
         """Remove selected simulated map files from the files list.
@@ -206,6 +226,8 @@ class SimStats(QtGui.QWidget):
                        grid.SG_spinYYOrig.value(),
                        grid.SG_spinZZOrig.value())
             self.save_gridspecs(nodes, sizes, origins)
+            self.checkHeader.setChecked(grid.DL_checkHeader.isChecked())
+            self.spinNoData.setValue(grid.DL_spinNoData.value())
 
     def set_simmaps(self, ext="out"):
         """Find and set the simulated maps in the SimFiles list.
