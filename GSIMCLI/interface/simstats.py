@@ -50,19 +50,20 @@ class SimStats(QtGui.QWidget):
 
         # radio
         self.radioGridManual.toggled.connect(self.enable_manualspec)
-        self.radioGridFile.toggled.connect(self.browse_gridfile)
-#         self.radioGridFile.clicked.connect(self.handle_gridclick)
+        self.radioGridFile.clicked.connect(self.browse_gridfile)
         self.radioGridSame.toggled.connect(self.set_samegrid)
 
-    def browse_gridfile(self, toggle):
+        # hidden widgets by default
+        ui.hide([self.progressBar])
+
+    def browse_gridfile(self):
         """Dialog to select the file with the grid specifications.
         Connected to the GridFile radio button.
 
         """
-        if toggle:
+        if self.radioGridFile.isChecked():
             caption = "Select the grid specifications file"
             filters = "Grid spec (*grid*.csv);;CSV files (*.csv)"
-            print "dir", self.default_dir
             filepath = QtGui.QFileDialog.getOpenFileName(self, caption,
                                                          dir=self.default_dir,
                                                          filter=filters)
@@ -71,26 +72,23 @@ class SimStats(QtGui.QWidget):
                 spec = read_specfile(filepath[0])
                 missing = []
                 # number of nodes
-                nodes = "{}, {}".format(spec.xnodes.values[0],
-                                        spec.ynodes.values[0])
+                nodes = [spec.xnodes.values[0], spec.ynodes.values[0]]
                 if hasattr(spec, "znodes"):
-                    nodes += ", {}".format(spec.znodes.values[0])
+                    nodes.append(spec.znodes.values[0])
                     missing.append(False)
                 else:
                     missing.append(True)
                 # cell size
-                sizes = "{}, {}".format(spec.xsize.values[0],
-                                        spec.ysize.values[0])
+                sizes = [spec.xsize.values[0], spec.ysize.values[0]]
                 if hasattr(spec, "zsize"):
-                    sizes += ", {}".format(spec.zsize.values[0])
+                    sizes.append(spec.zsize.values[0])
                     missing.append(False)
                 else:
                     missing.append(True)
                 # origin coordinates
-                origins = "{}, {}".format(spec.xmin.values[0],
-                                          spec.ymin.values[0])
+                origins = [spec.xmin.values[0], spec.ymin.values[0]]
                 if hasattr(spec, "zmin"):
-                    origins += ", {}".format(spec.zmin.values[0])
+                    origins.append(spec.zmin.values[0])
                     missing.append(False)
                 else:
                     missing.append(True)
@@ -106,9 +104,7 @@ class SimStats(QtGui.QWidget):
                     save = True
 
                 if save:
-                    self.lineGridNodes.setText(nodes)
-                    self.lineGridSize.setText(sizes)
-                    self.lineGridOrig.setText(origins)
+                    self.save_gridspecs(nodes, sizes, origins)
 
     def browse_simdir(self):
         """Dialog to select the directory with the simulated maps.
@@ -165,10 +161,6 @@ class SimStats(QtGui.QWidget):
         self.lineGridSize.setReadOnly(not toggle)
         self.lineGridOrig.setReadOnly(not toggle)
 
-#     def handle_gridclick(self):
-#         if self.radioGridFile.isChecked():
-#             self.browse_gridfile(True)
-
     def remove_sims(self):
         """Remove selected simulated map files from the files list.
         Connected to the RemoveSim button
@@ -180,12 +172,12 @@ class SimStats(QtGui.QWidget):
         self.update_sim_label()
 
     def save_gridspecs(self, nodes, sizes, origins):
-        """WIP
-        
+        """Update the widgets with the grid specifications.
+
         """
-        self.lineGridNodes.setText(nodes)
-        self.lineGridSize.setText(sizes)
-        self.lineGridOrig.setText(origins)
+        self.lineGridNodes.setText(", ".join(map(str, nodes)))
+        self.lineGridSize.setText(", ".join(map(str, sizes)))
+        self.lineGridOrig.setText(", ".join(map(str, origins)))
 
     def set_gui_params(self):
         """Set the GUI parameters.
@@ -196,23 +188,24 @@ class SimStats(QtGui.QWidget):
 
         gp = "tools_simstats"
 
-    def set_samegrid(self):
+    def set_samegrid(self, toggle):
         """Use the grid specifications that were previously set in the
         simulation settings.
         Connected to the GridSame radio button.
 
         """
         grid = self.parent()
-        nodes = (grid.SG_spinXXNodes.value(),
-                 grid.SG_spinYYNodes.value(),
-                 grid.SG_spinZZNodes.value())
-        sizes = (grid.SG_spinXXSize.value(),
-                 grid.SG_spinYYSize.value(),
-                 grid.SG_spinZZSize.value())
-        origins = (grid.SG_spinXXOrig.value(),
-                   grid.SG_spinYYOrig.value(),
-                   grid.SG_spinZZOrig.value())
-        self.save_gridspecs(nodes, sizes, origins)
+        if toggle and grid is not None:
+            nodes = (grid.SG_spinXXNodes.value(),
+                     grid.SG_spinYYNodes.value(),
+                     grid.SG_spinZZNodes.value())
+            sizes = (grid.SG_spinXXSize.value(),
+                     grid.SG_spinYYSize.value(),
+                     grid.SG_spinZZSize.value())
+            origins = (grid.SG_spinXXOrig.value(),
+                       grid.SG_spinYYOrig.value(),
+                       grid.SG_spinZZOrig.value())
+            self.save_gridspecs(nodes, sizes, origins)
 
     def set_simmaps(self, ext="out"):
         """Find and set the simulated maps in the SimFiles list.
