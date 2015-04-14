@@ -2387,6 +2387,16 @@
                </property>
               </item>
              </item>
+             <item>
+              <property name="text">
+               <string>Simulation</string>
+              </property>
+              <item>
+               <property name="text">
+                <string>Statistics</string>
+               </property>
+              </item>
+             </item>
             </widget>
            </item>
           </layout>
@@ -2633,6 +2643,7 @@
     </property>
     <addaction name="actionBenchmarkScores"/>
     <addaction name="actionInstallDataSet"/>
+    <addaction name="actionSimulationStatistics"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -2770,15 +2781,23 @@
   </action>
   <action name="actionBenchmarkScores">
    <property name="text">
-    <string>Benchmark scores</string>
+    <string>&amp;Benchmark scores</string>
    </property>
    <property name="shortcut">
-    <string>F8</string>
+    <string>F9</string>
    </property>
   </action>
   <action name="actionInstallDataSet">
    <property name="text">
-    <string>Install bechmark data set</string>
+    <string>&amp;Install bechmark data set</string>
+   </property>
+  </action>
+  <action name="actionSimulationStatistics">
+   <property name="text">
+    <string>&amp;Simulation statistics</string>
+   </property>
+   <property name="shortcut">
+    <string>F10</string>
    </property>
   </action>
  </widget>
