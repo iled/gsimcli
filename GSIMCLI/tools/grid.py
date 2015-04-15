@@ -469,8 +469,8 @@ class GridFiles(object):
                 raise IOError('File {} not found.'.
                               format(os.path.basename(another)))
 
-    def load_files(self, files_list, dims, first_coord, cells_size, no_data,
-                   headerin=3):
+    def open_files(self, files_list, dims, first_coord, cells_size, no_data,
+                   headerin=3, only_paths=False):
         """Open a list of given grid files and provide a list containing each
         file handler (delivered in the `files` attribute).
 
@@ -488,6 +488,8 @@ class GridFiles(object):
             Missing data value.
         headerin : int, default 3
             Number of lines in the header.
+        only_paths : bool
+            Do not open the files, just save their paths.
 
         Raises
         ------
@@ -504,6 +506,10 @@ class GridFiles(object):
         - nth file_with_this_namen.extension
 
         """
+        def append_opened(path):
+            "Auxiliary function to minimise the number of conditions verified."
+            self.files.append(open(path, 'rb'))
+
         self.nfiles = len(files_list)
         self.dx = dims[0]
         self.dy = dims[1]
@@ -518,10 +524,16 @@ class GridFiles(object):
         self.header = headerin
         self.nodata = no_data
 
+        if only_paths:
+            open_file = self.files.append
+        else:
+            open_file = append_opened
+
         for gridfile in files_list:
-            if os.path.isfile(gridfile):
-                self.files.append(open(gridfile, 'rb'))
-            else:
+            try:
+                open_file(gridfile)
+            except IOError, msg:
+                print(msg)
                 raise IOError('File {} not found.'.format(gridfile))
 
     def reset_read(self):
@@ -586,6 +598,12 @@ class GridFiles(object):
         a specified radius around a given point.
 
         """
+        # check if the map files are already opened or not
+        if isinstance(self.files[0], file):
+            opened_files = True
+        else:
+            opened_files = False
+
         if lmean:
             meanmap = np.zeros(self.cells)
         if lmed:
@@ -603,11 +621,23 @@ class GridFiles(object):
 
         arr = np.zeros(self.nfiles)
         skip = True
+        offset = os.SEEK_SET
         for cell in xrange(self.cells - self.header):
-            for i, grid in enumerate(self.files):
+            for i, gridfile in enumerate(self.files):
+                # deal with map files not open yet
+                if opened_files:
+                    grid = gridfile
+                else:
+                    grid = open(gridfile, 'rb')
+                    grid.seek(offset)
+
                 if skip:
                     skip_lines(grid, self.header)
                 arr[i] = grid.readline()
+
+            if not opened_files:
+                offset = grid.tell()
+                grid.close()
 
             skip = False
             # replace no data's with NaN

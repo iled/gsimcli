@@ -169,9 +169,10 @@ class SimStats(QtGui.QWidget):
               'cells_size': map(float, self.lineGridSize.text().split(", ")),
               'no_data': float(self.spinNoData.value()),
               'headerin': self.checkHeader.isChecked() * 3,
+              'only_paths': True,
                 }
         self.grids = GridFiles()
-        self.grids.load_files(**kwargs)
+        self.grids.open_files(**kwargs)
         # calculate stats
         kwargs = {
               'lmean': self.checkMean.isChecked(),
