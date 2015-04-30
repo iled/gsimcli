@@ -21,6 +21,7 @@ base = os.path.dirname(os.path.dirname(__file__))
 
 
 class TableModel(QtCore.QAbstractTableModel):
+
     """Table model with a column filled with one check box per line. Each check
     box is centered in the cell and has no text.
 
@@ -233,12 +234,14 @@ class TableModel(QtCore.QAbstractTableModel):
 
 
 class TableView(QtGui.QTableView):
+
     """A table view to show and manage the data in the table model with check
     boxes in one column.
 
     The table has alternating row colours and a customised context menu.
 
     """
+
     def __init__(self, checkbox_col, parent=None):
         """Constructor.
 
@@ -380,10 +383,12 @@ class TableView(QtGui.QTableView):
 
 
 class Scores(QtGui.QWidget):
+
     """Interface to the calculation of benchmark scores of a homogenisation
     process.
 
     """
+
     def __init__(self, parent=None):
         """Constructor
 
@@ -535,19 +540,19 @@ class Scores(QtGui.QWidget):
         self.set_progress_max()
 
         kwargs = {
-              'gsimcli_results': self.gsimcli_results,
-              'no_data': self.spinNoData.value(),
-              'keys_path': self.keys,
-              'costhome_path': self.lineSaveCost.text(),
-              'orig_path': self.lineOrig.text(),
-              'inho_path': self.lineInho.text(),
-              'yearly': self.resolution == 'yearly',
-              'yearly_sum': self.checkAverageYearly.isChecked(),
-              'over_network': self.groupNetwork.isChecked(),
-              'over_station': self.groupStation.isChecked(),
-              'skip_missing': self.checkSkipMissing.isChecked(),
-              'skip_outlier': self.checkSkipOutlier.isChecked(),
-                }
+            'gsimcli_results': self.gsimcli_results,
+            'no_data': self.spinNoData.value(),
+            'keys_path': self.keys,
+            'costhome_path': self.lineSaveCost.text(),
+            'orig_path': self.lineOrig.text(),
+            'inho_path': self.lineInho.text(),
+            'yearly': self.resolution == 'yearly',
+            'yearly_sum': self.checkAverageYearly.isChecked(),
+            'over_network': self.groupNetwork.isChecked(),
+            'over_station': self.groupStation.isChecked(),
+            'skip_missing': self.checkSkipMissing.isChecked(),
+            'skip_outlier': self.checkSkipOutlier.isChecked(),
+        }
 
         # set up the job
         job = scores.gsimcli_improvement
@@ -625,7 +630,7 @@ class Scores(QtGui.QWidget):
             self.enable_improvement(inho_path)
 
     def extract_results(self):
-        """Extract the results files, network ids and keys files from the
+        """Extract the results files, network IDs and keys files from the
         tableResults Model.
 
         """
@@ -637,8 +642,8 @@ class Scores(QtGui.QWidget):
             gsimcli_results = results
         elif self.resolution == "monthly":
             networks = list()
-            for network in results:
-                networks.append(self.find_results(network))
+            for i, network in enumerate(results):
+                networks.append(self.find_results(network, network_ids[i]))
             gsimcli_results = networks
         self.gsimcli_results = dict(zip(network_ids, gsimcli_results))
         self.network_ids = network_ids
@@ -659,11 +664,11 @@ class Scores(QtGui.QWidget):
         self.enable_save_cost(toggle_save and self.checkSaveCost.isChecked())
         self.checkSaveCost.setEnabled(toggle_save)
 
-    def find_results(self, path):
+    def find_results(self, path, network_id=''):
         """Find gsimcli results files.
 
         """
-        return glob2.glob(os.path.join(path, '**/*.xls'))
+        return glob2.glob(os.path.join(path, '**/*' + network_id + '*.xls'))
 
     def print_results(self):
         """Display the results in the lineEdits widgets.
@@ -685,7 +690,7 @@ class Scores(QtGui.QWidget):
             self.lineStationCRMSE.setText(self.station_crmse)
             if show_improvement:
                 self.station_improvement = str(
-                                           self.results[2][int(over_network)])
+                    self.results[2][int(over_network)])
                 self.lineStationImprov.setText(self.station_improvement)
 
         self.show_status(False)
