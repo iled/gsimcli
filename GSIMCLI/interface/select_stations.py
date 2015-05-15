@@ -58,6 +58,13 @@ class SelectStations(QtGui.QDialog):
         # spin
         self.spinCol.valueChanged.connect(self.refresh)
 
+    def accept(self):
+        """Custom accept event. Save the selected candidate stations.
+
+        """
+        self.selected = [i.text() for i in self.listStations.selectedItems()]
+        QtGui.QDialog.accept(self)
+
     def browse_stations(self):
         """Dialog to select the file with the stations.
         Connected to the browse pushbutton.
@@ -82,6 +89,12 @@ class SelectStations(QtGui.QDialog):
         self.header = toggle
         self.guess_column()
         self.refresh()
+
+    def get_selected(self):
+        """Return the selected stations.
+
+        """
+        return self.selected
 
     def guess_column(self):
         """Try to set the IDs column based if the file has a header. It will
