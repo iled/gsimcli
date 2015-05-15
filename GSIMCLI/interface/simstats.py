@@ -60,6 +60,8 @@ class SimStats(QtGui.QWidget):
         self.radioGridFile.clicked.connect(self.browse_gridfile)
         self.radioGridSame.toggled.connect(self.set_samegrid)
         self.radioCandidates.clicked.connect(self.select_stations)
+        self.full_grid = self.radioFullGrid.isChecked()
+        self.radioFullGrid.toggled.connect(self.enable_full_grid)
         self.radioRadius.toggled.connect(self.enable_radius)
 
         # hidden widgets by default
@@ -179,18 +181,21 @@ class SimStats(QtGui.QWidget):
         self.grids = GridFiles()
         self.grids.open_files(**kwargs)
         # calculate stats
-        kwargs = {
-            'lmean': self.checkMean.isChecked(),
-            'lmed': self.checkMedian.isChecked(),
-            'lskew': self.checkSkewness.isChecked(),
-            'lvar': self.checkVariance.isChecked(),
-            'lstd': self.checkSD.isChecked(),
-            'lcoefvar': self.checkCoefVar.isChecked(),
-            'lperc': self.checkPercentile.isChecked(),
-            'p': self.spinPercentile.value(),
-        }
-        self.results = self.grids.stats(**kwargs)
+        kwargs = self.fetch_stats()
+        if self.full_grid:
+            self.results = self.grids.stats(**kwargs)
+        else:
+            # TODO: missing arguments
+            self.results = self.grids.stats_area(loc, tol, save)
         self.save_results()
+
+    def enable_full_grid(self, toggle):
+        """Save the setting to use the complete grid to calculate the chosen
+        statistics.
+        Connected to the fullgrid radio button.
+
+        """
+        self.full_grid = toggle
 
     def enable_manualspec(self, toggle):
         """Enable the line edits related to the grid specifications.
@@ -217,10 +222,22 @@ class SimStats(QtGui.QWidget):
         self.spinRadius.setEnabled(toggle)
 
     def fetch_stats(self):
-        """Retrieve which stats should be calculated.
+        """Retrieve which stats should be calculated. They are saved in the
+        form of keyword arguments, according to the stats function in the
+        grid module.
 
         """
-        pass
+        self.stats_kwargs = {
+            'lmean': self.checkMean.isChecked(),
+            'lmed': self.checkMedian.isChecked(),
+            'lskew': self.checkSkewness.isChecked(),
+            'lvar': self.checkVariance.isChecked(),
+            'lstd': self.checkSD.isChecked(),
+            'lcoefvar': self.checkCoefVar.isChecked(),
+            'lperc': self.checkPercentile.isChecked(),
+            'p': self.spinPercentile.value(),
+        }
+        return self.stats_kwargs
 
     def remove_sims(self):
         """Remove selected simulated map files from the files list.
