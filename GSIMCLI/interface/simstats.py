@@ -10,6 +10,7 @@ import os
 import sys
 
 from external_libs.pyside_dynamic import loadUi
+from interface.select_stations import SelectStations
 import interface.ui_utils as ui
 from tools.grid import GridFiles
 from tools.homog import read_specfile
@@ -18,9 +19,11 @@ base = os.path.dirname(os.path.dirname(__file__))
 
 
 class SimStats(QtGui.QWidget):
+
     """Interface to the calculation of statistics across simulated maps.
 
     """
+
     def __init__(self, parent=None):
         """Constructor.
 
@@ -56,6 +59,8 @@ class SimStats(QtGui.QWidget):
         self.radioGridManual.toggled.connect(self.enable_manualspec)
         self.radioGridFile.clicked.connect(self.browse_gridfile)
         self.radioGridSame.toggled.connect(self.set_samegrid)
+        self.radioCandidates.clicked.connect(self.select_stations)
+        self.radioRadius.toggled.connect(self.enable_radius)
 
         # hidden widgets by default
         ui.hide([self.progressBar])
@@ -163,27 +168,27 @@ class SimStats(QtGui.QWidget):
         """
         # open all grid files
         kwargs = {
-              'files_list': ui.qlist_to_pylist(self.listSimFiles),
-              'dims': map(int, self.lineGridNodes.text().split(", ")),
-              'first_coord': map(float, self.lineGridOrig.text().split(", ")),
-              'cells_size': map(float, self.lineGridSize.text().split(", ")),
-              'no_data': float(self.spinNoData.value()),
-              'headerin': self.checkHeader.isChecked() * 3,
-              'only_paths': True,
-                }
+            'files_list': ui.qlist_to_pylist(self.listSimFiles),
+            'dims': map(int, self.lineGridNodes.text().split(", ")),
+            'first_coord': map(float, self.lineGridOrig.text().split(", ")),
+            'cells_size': map(float, self.lineGridSize.text().split(", ")),
+            'no_data': float(self.spinNoData.value()),
+            'headerin': self.checkHeader.isChecked() * 3,
+            'only_paths': True,
+        }
         self.grids = GridFiles()
         self.grids.open_files(**kwargs)
         # calculate stats
         kwargs = {
-              'lmean': self.checkMean.isChecked(),
-              'lmed': self.checkMedian.isChecked(),
-              'lskew': self.checkSkewness.isChecked(),
-              'lvar': self.checkVariance.isChecked(),
-              'lstd': self.checkSD.isChecked(),
-              'lcoefvar': self.checkCoefVar.isChecked(),
-              'lperc': self.checkPercentile.isChecked(),
-              'p': self.spinPercentile.value(),
-                }
+            'lmean': self.checkMean.isChecked(),
+            'lmed': self.checkMedian.isChecked(),
+            'lskew': self.checkSkewness.isChecked(),
+            'lvar': self.checkVariance.isChecked(),
+            'lstd': self.checkSD.isChecked(),
+            'lcoefvar': self.checkCoefVar.isChecked(),
+            'lperc': self.checkPercentile.isChecked(),
+            'p': self.spinPercentile.value(),
+        }
         self.results = self.grids.stats(**kwargs)
         self.save_results()
 
@@ -202,6 +207,14 @@ class SimStats(QtGui.QWidget):
 
         """
         self.spinPercentile.setEnabled(toggle)
+
+    def enable_radius(self, toggle):
+        """Enable/disable the spinbox related to the option to calculate
+        the statistics in a radius around the candidate stations.
+        Connected to the radius radio button.
+
+        """
+        self.spinRadius.setEnabled(toggle)
 
     def fetch_stats(self):
         """Retrieve which stats should be calculated.
@@ -234,6 +247,15 @@ class SimStats(QtGui.QWidget):
         savepath = self.lineSavePath.text()
         for key, value in self.results.iteritems():
             value.save(os.path.join(savepath, key + ".out"), key)
+
+    def select_stations(self):
+        """Pop up the dialog to select stations from a PointSet file.
+        Connected to the candidates radio button.
+
+        """
+        self.select_dialog = SelectStations(self)
+        self.select_dialog.accepted.connect(self.set_stations)
+        self.select_dialog.open()
 
     def set_gui_params(self):
         """Set the GUI parameters.
@@ -272,7 +294,7 @@ class SimStats(QtGui.QWidget):
         """
         simdir = self.lineSimsPath.text()
         if not len(simdir):
-            return
+            return None
         elif os.path.isdir(simdir):
             simfiles = glob2.glob(os.path.join(simdir, "**/*." + ext))
             ui.pylist_to_qlist(simfiles, self.listSimFiles)
@@ -280,6 +302,13 @@ class SimStats(QtGui.QWidget):
         else:
             self.listSimFiles.clear()
             self.listSimFiles.addItem("Invalid directory.")
+
+    def set_stations(self):
+        """Save the selected candidate stations.
+        Connected to the select dialog.
+
+        """
+        self.stations = self.select_dialog.get_selected()
 
     def show_msgbox_missingz(self):
         msgbox = QtGui.QMessageBox(self)
