@@ -60,9 +60,9 @@ class SimStats(QtGui.QWidget):
         self.radioGridFile.clicked.connect(self.browse_gridfile)
         self.radioGridSame.toggled.connect(self.set_samegrid)
         self.radioCandidates.clicked.connect(self.select_stations)
+        self.radioCandidates.toggled.connect(self.enable_radius)
         self.full_grid = self.radioFullGrid.isChecked()
         self.radioFullGrid.toggled.connect(self.enable_full_grid)
-        self.radioRadius.toggled.connect(self.enable_radius)
 
         # hidden widgets by default
         ui.hide([self.progressBar])
@@ -167,6 +167,7 @@ class SimStats(QtGui.QWidget):
         """Calculate the selected stats of the listed simulated maps.
         Connected to the calculate button.
 
+        TODO: missing arguments: only_paths, save
         """
         # open all grid files
         kwargs = {
@@ -185,8 +186,13 @@ class SimStats(QtGui.QWidget):
         if self.full_grid:
             self.results = self.grids.stats(**kwargs)
         else:
-            # TODO: missing arguments
-            self.results = self.grids.stats_area(loc, tol, save)
+            kwargs['tol'] = self.spinRadius.value()
+            save = False
+            kwargs['save'] = save
+            loc = None
+            for loc in []:
+                kwargs['loc'] = loc
+                self.results = self.grids.stats_area(**kwargs)
         self.save_results()
 
     def enable_full_grid(self, toggle):
@@ -220,6 +226,7 @@ class SimStats(QtGui.QWidget):
 
         """
         self.spinRadius.setEnabled(toggle)
+        self.labelRadius.setEnabled(toggle)
 
     def fetch_stats(self):
         """Retrieve which stats should be calculated. They are saved in the
@@ -259,6 +266,7 @@ class SimStats(QtGui.QWidget):
 
     def save_results(self):
         """Save the resulting grids with the calculated statistics.
+
 
         """
         savepath = self.lineSavePath.text()
