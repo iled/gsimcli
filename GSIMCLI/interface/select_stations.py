@@ -29,6 +29,7 @@ class SelectStations(QtGui.QDialog):
 
         """
         super(SelectStations, self).__init__(parent)
+        self.parent = parent
         # load ui file
         loadUi(os.path.join(base, "interface", "select_stations.ui"), self)
         if parent is not None:
@@ -39,6 +40,8 @@ class SelectStations(QtGui.QDialog):
             self.default_dir = self.parent.default_dir
         else:
             self.default_dir = os.path.expanduser('~/')
+
+        self.load_settings()
 
         # buttons
         self.buttonBrowse.clicked.connect(self.browse_stations)
@@ -53,7 +56,7 @@ class SelectStations(QtGui.QDialog):
         self.linePath.editingFinished.connect(self.refresh)
 
         # list
-        self.listStations.currentItemChanged.connect(self.toggle_all)
+        self.tableStations.currentItemChanged.connect(self.toggle_all)
 
         # spin
         self.spinCol.valueChanged.connect(self.refresh)
@@ -62,7 +65,9 @@ class SelectStations(QtGui.QDialog):
         """Custom accept event. Save the selected candidate stations.
 
         """
-        self.selected = [i.text() for i in self.listStations.selectedItems()]
+        self.selected = [i.text() for i in self.tableStations.selectedItems()]
+        self.locations()
+        self.save_settings()
         QtGui.QDialog.accept(self)
 
     def browse_stations(self):
@@ -129,6 +134,36 @@ class SelectStations(QtGui.QDialog):
         else:
             self.spinCol.setMaximum(self.pset.nvars)
 
+    def load_settings(self):
+        """Load settings from a dictionary.
+
+        FIXME: not working
+        """
+        if hasattr(self, "settings"):
+            s = self.settings
+            self.linePath.setText(s['path'])
+            self.checkHeader.setChecked(s['header'])
+            self.spinCol.setValue(s['idcol'])
+            self.checkAll.setChecked(s['all'])
+            self.tableStations.setSelectionModel(s[''])
+
+    def locations(self, stations=None):
+        """Retrieve the coordinates of a given list of stations' ID's. If no
+        list is given, try to fetch the previously selected stations.
+
+        """
+        if stations is None and hasattr(self, "selected"):
+            stations = self.selected
+        locs = {}
+        idcol = self.spinCol.value() - 1
+        vals = self.pset.values
+        for station in stations:
+            st = vals[vals.ix[:, idcol] == station]
+            # assuming X and Y are the first 2 columns
+            locs[station] = st.iloc[0, :2]
+        self.locs = locs
+        print locs
+
     def preview_data_file(self):
         """Set the QPlainTextEdit to preview the first 10 lines of a data file.
         Connected to the data path line edit.
@@ -156,15 +191,30 @@ class SelectStations(QtGui.QDialog):
         self.load_data()
         self.set_list()
 
+    def save_settings(self):
+        """Use a dictionary to save current settings.
+
+        FIXME: not working
+        """
+        if self.parent:
+            settings = {
+                'path': self.linePath.text(),
+                'header': self.checkHeader.isChecked(),
+                'idcol': self.spinCol.value(),
+                'all': self.checkAll.isChecked(),
+                'selected': self.tableStations.selectionModel()
+            }
+            self.parent.select_stations_settings = settings
+
     def select_all(self, toggle):
         """Select all the stations in the list.
         Connected to the selectAll checkbox.
 
         """
         if toggle:
-            self.listStations.selectAll()
+            self.tableStations.selectAll()
         else:
-            self.listStations.clearSelection()
+            self.tableStations.clearSelection()
 
     def set_list(self):
         """Build the list with the stations' IDs.
@@ -179,10 +229,19 @@ class SelectStations(QtGui.QDialog):
         except KeyError:
             pass
         else:
-            stations_list = map(unicode, stations.astype('int'))
+            # stations_list = map(unicode, stations.astype('int'))
 
-            pylist_to_qlist(stations_list, self.listStations)
-            self.labelFound.setText(unicode(self.listStations.count()))
+            # pylist_to_qlist(stations_list, self.tableStations)
+            self.locations(stations)
+            item = QtGui.QTableWidgetItem
+            for i, station in enumerate(stations):
+                x, y = self.locs[station]
+                self.tableStations.insertRow(i)
+                self.tableStations.setItem(i, 0, item(station))
+                self.tableStations.setItem(i, 1, item(x))
+                self.tableStations.setItem(i, 2, item(y))
+
+            self.labelFound.setText(unicode(self.tableStations.rowCount()))
 
     def toggle_all(self, cur, prev):
         """Uncheck the selectAll checkbox if any station is unselected.

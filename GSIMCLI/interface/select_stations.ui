@@ -145,7 +145,7 @@
     </layout>
    </item>
    <item>
-    <widget class="QListWidget" name="listStations">
+    <widget class="QTableWidget" name="tableStations">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
        <horstretch>0</horstretch>
@@ -161,9 +161,21 @@
      <property name="selectionMode">
       <enum>QAbstractItemView::MultiSelection</enum>
      </property>
-     <property name="sortingEnabled">
-      <bool>true</bool>
-     </property>
+     <column>
+      <property name="text">
+       <string>Station ID</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>X</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Y</string>
+      </property>
+     </column>
     </widget>
    </item>
    <item>
