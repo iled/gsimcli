@@ -278,8 +278,9 @@ class SimStats(QtGui.QWidget):
         Connected to the candidates radio button.
 
         """
-        self.select_dialog = SelectStations(self)
-        self.select_dialog.accepted.connect(self.set_stations)
+        if not hasattr(self, 'select_dialog'):
+            self.select_dialog = SelectStations(self)
+            self.select_dialog.accepted.connect(self.set_stations)
         self.select_dialog.open()
 
     def set_gui_params(self):
