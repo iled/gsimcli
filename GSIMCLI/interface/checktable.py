@@ -139,7 +139,7 @@ class TableModel(QtCore.QAbstractTableModel):
 
         """
         if filter_selected:
-            values = self.table.query(self.checkbox_key)[key]
+            values = self.table.query(self.checkbox_key + ' == True')[key]
         else:
             values = self.table[key]
 
