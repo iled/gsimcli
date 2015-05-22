@@ -5,6 +5,7 @@ Created on 05/03/2015
 @author: julio
 """
 from PySide import QtGui
+from collections import namedtuple
 import glob2
 import os
 import sys
@@ -15,7 +16,9 @@ import interface.ui_utils as ui
 from tools.grid import GridFiles
 from tools.homog import read_specfile
 
+
 base = os.path.dirname(os.path.dirname(__file__))
+_selected_stations = namedtuple('Stations', ['ID', 'X', 'Y'])
 
 
 class SimStats(QtGui.QWidget):
@@ -283,7 +286,8 @@ class SimStats(QtGui.QWidget):
         if self.select_dialog.exec_():
             self.labelSelected.setText(str(self.select_dialog.n_selected) +
                                        ' stations selected')
-            self.stations = self.select_dialog.get_selected()
+            self.selected_stations = _selected_stations(
+                *self.select_dialog.get_selected())
 
     def set_gui_params(self):
         """Set the GUI parameters.
