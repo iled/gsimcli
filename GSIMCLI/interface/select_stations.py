@@ -72,6 +72,7 @@ class SelectStations(QtGui.QDialog):
         self.stations = self.tableStationsModel.get_key('Station ID', True)
         self.x = self.tableStationsModel.get_key('X', True)
         self.y = self.tableStationsModel.get_key('Y', True)
+        self.n_selected = self.stations.shape[0]
         QtGui.QDialog.accept(self)
 
     def browse_stations(self):

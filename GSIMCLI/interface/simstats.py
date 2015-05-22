@@ -280,8 +280,10 @@ class SimStats(QtGui.QWidget):
         """
         if not hasattr(self, 'select_dialog'):
             self.select_dialog = SelectStations(self)
-            self.select_dialog.accepted.connect(self.set_stations)
-        self.select_dialog.open()
+        if self.select_dialog.exec_():
+            self.labelSelected.setText(str(self.select_dialog.n_selected) +
+                                       ' stations selected')
+            self.stations = self.select_dialog.get_selected()
 
     def set_gui_params(self):
         """Set the GUI parameters.
@@ -329,14 +331,10 @@ class SimStats(QtGui.QWidget):
             self.listSimFiles.clear()
             self.listSimFiles.addItem("Invalid directory.")
 
-    def set_stations(self):
-        """Save the selected candidate stations.
-        Connected to the select dialog.
+    def show_msgbox_missingz(self):
+        """Open a message box when one value for the Z coordinate is missing.
 
         """
-        self.stations = self.select_dialog.get_selected()
-
-    def show_msgbox_missingz(self):
         msgbox = QtGui.QMessageBox(self)
         msgbox.setText("At least one value for the Z coordinate is missing.")
         msgbox.setInformativeText("Do you want to specify it manually?")
