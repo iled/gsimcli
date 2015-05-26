@@ -5,6 +5,7 @@ Created on 14/05/2015
 @author: julio
 """
 from PySide import QtGui, QtCore
+from collections import namedtuple
 import os
 import sys
 
@@ -17,6 +18,7 @@ from tools.grid import PointSet
 
 
 base = os.path.dirname(os.path.dirname(__file__))
+_selected_stations = namedtuple('Stations', ['ID', 'X', 'Y'])
 
 
 class SelectStations(QtGui.QDialog):
@@ -125,7 +127,7 @@ class SelectStations(QtGui.QDialog):
         """Return the selected stations.
 
         """
-        return self.stations, self.x, self.y
+        return _selected_stations(self.stations, self.x, self.y)
 
     def guess_column(self):
         """Try to set the IDs column based if the file has a header. It will

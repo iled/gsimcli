@@ -5,7 +5,6 @@ Created on 05/03/2015
 @author: julio
 """
 from PySide import QtGui
-from collections import namedtuple
 import glob2
 import os
 import sys
@@ -18,7 +17,6 @@ from tools.homog import read_specfile
 
 
 base = os.path.dirname(os.path.dirname(__file__))
-_selected_stations = namedtuple('Stations', ['ID', 'X', 'Y'])
 
 
 class SimStats(QtGui.QWidget):
@@ -180,7 +178,7 @@ class SimStats(QtGui.QWidget):
             'cells_size': map(float, self.lineGridSize.text().split(", ")),
             'no_data': float(self.spinNoData.value()),
             'headerin': self.checkHeader.isChecked() * 3,
-            'only_paths': True,
+            'only_paths': False,  # TODO: opt, deal with full/locs
         }
         self.grids = GridFiles()
         self.grids.open_files(**kwargs)
@@ -192,10 +190,14 @@ class SimStats(QtGui.QWidget):
             kwargs['tol'] = self.spinRadius.value()
             save = False
             kwargs['save'] = save
-            loc = None
-            for loc in []:
+            self.results = {}
+            stations_ids, x, y = self.selected_stations
+            for i, stid in enumerate(stations_ids):
+                print "processing: ", stid
+                loc = (x[i], y[i])
                 kwargs['loc'] = loc
-                self.results = self.grids.stats_area(**kwargs)
+                self.results[stid] = self.grids.stats_area(**kwargs)
+                self.grids.reset_read()
         self.save_results()
 
     def enable_full_grid(self, toggle):
@@ -274,7 +276,11 @@ class SimStats(QtGui.QWidget):
         """
         savepath = self.lineSavePath.text()
         for key, value in self.results.iteritems():
-            value.save(os.path.join(savepath, key + ".out"), key)
+            filepath = os.path.join(savepath, str(key) + ".out")
+            if self.full_grid:
+                value.save(filepath, varname=key, header=True)
+            else:
+                value.save(filepath, header=True)
 
     def select_stations(self):
         """Pop up the dialog to select stations from a PointSet file.
@@ -286,8 +292,7 @@ class SimStats(QtGui.QWidget):
         if self.select_dialog.exec_():
             self.labelSelected.setText(str(self.select_dialog.n_selected) +
                                        ' stations selected')
-            self.selected_stations = _selected_stations(
-                *self.select_dialog.get_selected())
+            self.selected_stations = self.select_dialog.get_selected()
 
     def set_gui_params(self):
         """Set the GUI parameters.
@@ -352,7 +357,7 @@ class SimStats(QtGui.QWidget):
         """Update the text in the SimFiles label.
 
         """
-        self.labelSimFiles.setText(self.sim_label + " ({} files found)".
+        self.labelSimFiles.setText(self.sim_label + " ({} files)".
                                    format(self.listSimFiles.count()))
 
 
