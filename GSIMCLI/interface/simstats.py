@@ -4,7 +4,7 @@ Created on 05/03/2015
 
 @author: julio
 """
-from PySide import QtGui
+from PySide import QtGui, QtCore
 import glob2
 import os
 import sys
@@ -49,12 +49,19 @@ class SimStats(QtGui.QWidget):
 
         # check boxes
         self.checkPercentile.toggled.connect(self.enable_percentile)
+        self.checkSelectAll.toggled.connect(self.select_all)
+        self.checkFilterCand.toggled.connect(self.filter_candidate)
+        self.checkFilterSim.toggled.connect(self.filter_sims)
 
         # label
         self.sim_label = self.labelSimFiles.text()
 
         # line
         self.lineSimsPath.editingFinished.connect(self.set_simmaps)
+
+        # list
+        self.listSimFiles.itemSelectionChanged.connect(
+            self.update_filtered_label)
 
         # radio
         self.radioGridManual.toggled.connect(self.enable_manualspec)
@@ -170,9 +177,10 @@ class SimStats(QtGui.QWidget):
 
         TODO: missing arguments: only_paths, save
         """
-        # open all grid files
+        # open all grid file
+        selection = self.listSimFiles.selectedItems()
         kwargs = {
-            'files_list': ui.qlist_to_pylist(self.listSimFiles),
+            'files_list': ui.qlist_to_pylist(selection),
             'dims': map(int, self.lineGridNodes.text().split(", ")),
             'first_coord': map(float, self.lineGridOrig.text().split(", ")),
             'cells_size': map(float, self.lineGridSize.text().split(", ")),
@@ -192,13 +200,14 @@ class SimStats(QtGui.QWidget):
             kwargs['save'] = save
             self.results = {}
             stations_ids, x, y = self.selected_stations
-            for i, stid in enumerate(stations_ids):
+            for i, stid in stations_ids.iteritems():
                 print "processing: ", stid
                 loc = (x[i], y[i])
                 kwargs['loc'] = loc
                 self.results[stid] = self.grids.stats_area(**kwargs)
                 self.grids.reset_read()
         self.save_results()
+        print 'done'
 
     def enable_full_grid(self, toggle):
         """Save the setting to use the complete grid to calculate the chosen
@@ -251,6 +260,78 @@ class SimStats(QtGui.QWidget):
         }
         return self.stats_kwargs
 
+    def filter_candidate(self, toggle):
+        """Filter the listed simulation maps, according to the number of the
+        candidate stations. The station number is relative to the
+        homogenisation order and not to the station's ID.
+        Connected to the filter cand checkbox.
+
+        """
+        # if the max sims filter is enabled, keep selection
+        if not self.checkFilterSim.isChecked():
+            self.listSimFiles.clearSelection()
+        # apply filter
+        if toggle:
+            st = self.spinFilterCand.value()
+            cand = 'st' + str(st)
+            self.filtered_cand = self.listSimFiles.findItems(
+                cand, QtCore.Qt.MatchContains)
+            for item in self.filtered_cand:
+                item.setSelected(True)
+        else:
+            # clear selection
+            self.listSimFiles
+            if hasattr(self, 'filtered_cand'):
+                for item in self.filtered_cand:
+                    item.setSelected(False)
+            if hasattr(self, 'filtered_sim'):
+                for item in self.filtered_sim:
+                    item.setSelected(True)
+
+    def filter_sims(self, toggle):
+        """Filter the listed simulation maps, according to a maximum number of
+        simulated maps.
+        Connected to the filter cand checkbox.
+
+        """
+        # if the candidate filter is enabled, keep selection
+        candfilter = self.checkFilterCand.isChecked()
+        if not candfilter:
+            self.listSimFiles.clearSelection()
+        # apply filter
+        if toggle:
+            # use existing selection
+            if candfilter:
+                items = self.listSimFiles.selectedItems()
+            else:
+                items = self.listSimFiles.findItems(
+                    '*', QtCore.Qt.MatchWildcard)
+
+            max_sims = self.spinFilterSim.value()
+            self.filtered_sim = []
+            for item in items:
+                sim_number = item.text().split(
+                    '_sim')[1].replace('_', '').split('.')[0]
+                try:
+                    sim_number = int(sim_number)
+                    if sim_number > max_sims:
+                        # do not select
+                        item.setSelected(False)
+                        continue
+                except ValueError:
+                    # the first simulation does not have a number
+                    pass
+                item.setSelected(True)
+                self.filtered_sim.append(item)
+        else:
+            # clear selection
+            if hasattr(self, 'filtered_sim'):
+                for item in self.filtered_sim:
+                    item.setSelected(False)
+            if hasattr(self, 'filtered_cand'):
+                for item in self.filtered_cand:
+                    item.setSelected(True)
+
     def remove_sims(self):
         """Remove selected simulated map files from the files list.
         Connected to the RemoveSim button
@@ -281,6 +362,16 @@ class SimStats(QtGui.QWidget):
                 value.save(filepath, varname=key, header=True)
             else:
                 value.save(filepath, header=True)
+
+    def select_all(self, toggle):
+        """Select all the simulated maps in the list.
+        Connected to the SelectAll checkbox.
+
+        """
+        if toggle:
+            self.listSimFiles.selectAll()
+        else:
+            self.listSimFiles.clearSelection()
 
     def select_stations(self):
         """Pop up the dialog to select stations from a PointSet file.
@@ -352,6 +443,13 @@ class SimStats(QtGui.QWidget):
         msgbox.setWindowTitle("Specify missing value manually?")
         msgbox.setIcon(msgbox.Warning)
         return msgbox.exec_()
+
+    def update_filtered_label(self):
+        """Update the text in the Filtered label.
+
+        """
+        self.labelFiltered.setText(
+            str(len(self.listSimFiles.selectedItems())) + ' selected')
 
     def update_sim_label(self):
         """Update the text in the SimFiles label.
