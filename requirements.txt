@@ -1,0 +1,13 @@
+Bottleneck
+glob2
+lxml
+numexpr
+numpy
+pandas
+PySide
+python-dateutil
+pytz
+scipy
+six
+xlrd
+xlwt
