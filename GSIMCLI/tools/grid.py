@@ -38,7 +38,7 @@ class PointSet(object):
 
     Notes
     -----
-    According to GSLIB standard, a point-set file has the following format
+    According to the GSLIB standard, a point-set file has the following format
         - descriptive name
         - number of variables
         - variables names, one per line (must have two LOCATION variables)
@@ -95,6 +95,29 @@ class PointSet(object):
             self.values = pd.DataFrame(values)
             if len(self.values.columns) == len(self.varnames):
                 self.values.columns = self.varnames
+                
+    def add_var(self, values, varname=None):
+        """Append a new variable to an existing PointSet.
+        
+        Parameters
+        ----------
+        values : array_like
+            Set of values that will be added to the PointSet as a new variable.
+        varname : string, optional
+            The name of the new variable. If not provided, the new variable
+            will be named as 'varNUMBER', according to the total NUMBER of
+            variables in the PointSet. If there is an existing variable with
+            the same name, it will not be overwritten, and the variable will
+            be added with name `'varname' + '_new'`.
+
+        """
+        self.nvars += 1
+        if varname is None:
+            varname = 'var{}'.format(self.nvars)
+        if varname in self.varnames:
+            varname += '_new'
+        self.varnames.append(varname)
+        self.values[varname] = values
 
     def load(self, psetfile, nd=-999.9, header=True):
         """Load a point-set from a file in GSLIB format.
