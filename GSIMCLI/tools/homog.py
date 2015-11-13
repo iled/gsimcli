@@ -25,7 +25,8 @@ _ntuple_stations = namedtuple('Stations', 'stations total')
 
 
 def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
-           percentile=None, flag=True, save=False, outfile=None, header=True):
+           percentile=None, flag=True, save=False, outfile=None, header=True,
+           optional_stats=None):
     """Try to detect and homogenise irregularities in data series, following
     the geostatistical simulation approach:
 
@@ -83,6 +84,19 @@ def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
     header : boolean, default True
         True if `obs_file` has the GSLIB standard header lines. The resulting
         `homogenised` PointSet will follow.
+    optional_stats : dict, optional
+        Calculate and append additional statistics to the homogenised PointSet.
+        This dict will overwrite the arguments passed to grids.stats_area. It
+        may have one or more optional keys:
+            - lmean: mean;
+            - lmed: median;
+            - lskew: skewness;
+            - lvar: variance;
+            - lstd: standard deviation;
+            - lcoefvar: coefficient of variation;
+            - lperc: percentile of detection.
+        Each key must have a boolean value (however, there is no point in
+        passing a `False` value).
 
     Returns
     -------
@@ -106,6 +120,12 @@ def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
         - if no homogenisation took place in that cell, Flag = no_data_value
         - otherwise, Flag = observed_value
 
+    See Also
+    --------
+    grid.stats_area : Calculate some statistics among every realisation,
+        considering a circular (and horizontal) area of a given radius around
+        a given point.
+
     References
     ----------
     .. [1] Costa, A., & Soares, A. (2009). Homogenization of climate data
@@ -113,6 +133,7 @@ def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
         Geosciences, 41(3), 291–305. doi:10.1007/s11004-008-9203-3
 
     """
+    # required statistics according to the selected correction method
     if method == 'mean':
         lmean = True
         lmed = False
@@ -132,8 +153,19 @@ def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
     else:
         raise ValueError('Method {} invalid or incomplete.'.format(method))
 
+    selected_stats = {
+        'lmean': lmean,
+        'lmed': lmed,
+        'lskew': lskew,
+    }
+
+    # update the selected statistics according to the optional ones
+    if optional_stats:
+        selected_stats.update(optional_stats)
+
     # FIXME: lmean must always be True in order to fill missing data
-    lmean = True
+    selected_stats['lmean'] = True
+    selected_stats['lperc'] = True  # always required for the detection
 
     if isinstance(obs_file, gr.PointSet):
         obs = obs_file
@@ -142,9 +174,10 @@ def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
         obs.load(obs_file, header)
 
     obs_xy = list(obs.values.iloc[0, :2])
-    # calculate stats
-    local_stats = grids.stats_area(obs_xy, rad, lmean, lmed, lskew, lperc=True,
-                                   p=prob, save=save)
+    # calculate stats and set an alias
+    local_stats = grids.stats_area(obs_xy, rad, p=prob, save=save,
+                                   **selected_stats)
+    stats = local_stats.values
 
     # remove lines with no-data and flags
     if 'Flag' in obs.values.columns:
@@ -157,7 +190,7 @@ def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
     obs.values = obs.values.replace(obs.nodata, np.nan)
 
     # mean values
-    meanvalues = pd.Series(local_stats.values['mean'].values, name='clim')
+    meanvalues = pd.Series(stats['mean'].values, name='clim')
 
     # find and fill missing values with the mean values
     fn = 0
@@ -170,8 +203,7 @@ def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
     obs.values.update(meanvalues, overwrite=False)
 
     # detect irregularities
-    hom_where = ~obs.values['clim'].between(local_stats.values['lperc'],
-                                            local_stats.values['rperc'])
+    hom_where = ~obs.values['clim'].between(stats['lperc'], stats['rperc'])
     detected_number = hom_where.sum()  # + fn
 
     # homogenise irregularities
@@ -179,13 +211,12 @@ def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
                               list(obs.varnames), obs.values.copy())
 
     if method == 'mean':
-        fixvalues = local_stats.values['mean'].values
+        fixvalues = stats['mean'].values
     elif method == 'median':
-        fixvalues = local_stats.values['median'].values
+        fixvalues = stats['median'].values
     elif method == 'skewness' and skewness:
-        fixvalues = np.where(local_stats.values['skewness'] > skewness,
-                             local_stats.values['median'],
-                             local_stats.values['mean'])
+        fixvalues = np.where(stats['skewness'] > skewness, stats['median'],
+                             stats['mean'])
     elif method == 'percentile':
         # allow a different percentile value for the detection and for the
         # correction
@@ -196,7 +227,7 @@ def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
         else:
             vline_perc = local_stats
 
-        fixvalues = np.where(obs.values['clim'] > local_stats.values['rperc'],
+        fixvalues = np.where(obs.values['clim'] > stats['rperc'],
                              vline_perc.values['rperc'],
                              vline_perc.values['lperc'])
 
@@ -204,9 +235,29 @@ def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
                                                           fixvalues)
     if flag:
         flag_col = obs.values['clim'].where(hom_where, obs.nodata)
-        homogenised.nvars += 1
-        homogenised.varnames.append('Flag')
-        homogenised.values['Flag'] = flag_col
+        homogenised.add_var(flag_col, 'Flag')
+
+    # append the additional statistics required by user, if any
+    # first, map the stats keys and their names in the local_stats PointSet
+    stats_names = {
+        'lmean': 'mean',
+        'lmed': 'median',
+        'lskew': 'skewness',
+        'lvar': 'variance',
+        'lstd': 'std',
+        'lcoefvar': 'coefvar',
+        'lperc': 'lperc',  # rperc
+    }
+    # second, add each corresponding column to the homogenised PointSet
+    if optional_stats:
+        for key, value in optional_stats.iteritems():
+            if value and key == 'lperc':
+                percentiles = np.where(obs.values['clim'] > stats['rperc'],
+                                       stats['rperc'], stats['lperc'])
+                homogenised.add_var(varname='pdet', values=percentiles)
+            elif value:
+                varname = stats_names[key]
+                homogenised.add_var(varname=varname, values=stats[varname])
 
     if save and outfile:
         homogenised.save(outfile, header)
@@ -578,7 +629,7 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
             - cost-home: COST-HOME format, prepare results to the benchmark
               process
     lvars : array_like of int, optional
-        Only save certain columns.
+        Only save certain columns. Only used if `fformat == 'normal'`.
     header : boolean, default True
         True if `pset_file` has the GSLIB standard header lines.
     network_split : boolean, default True
@@ -624,7 +675,7 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
         csvheader = ['time']
         # year, time (month), stationID_VAR, stationID_FLAG
         stations = list_stations(pset, header)
-        varname = pset.varnames[-2]
+        varname = pset.varnames[-2]  # code smell: what if using optional cols
         headerline = [[str(stations[i]) + '_' + varname,
                        str(stations[i]) + '_FLAG']
                       for i in xrange(len(stations))]
@@ -665,8 +716,8 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
     if save_stations:
         stations = list_stations(pset, header)
         stations_out = os.path.join(os.path.dirname(outfile),
-                                os.path.splitext(os.path.basename(outfile))
-                                [0] + '_stations.csv')
+                                    os.path.splitext(os.path.basename(outfile))
+                                    [0] + '_stations.csv')
         stationsdf = pd.DataFrame(index=stations, columns=['x', 'y'])
 
         for i, st in enumerate(stations):
