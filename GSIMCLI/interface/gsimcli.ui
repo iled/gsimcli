@@ -2040,9 +2040,6 @@
          </widget>
          <widget class="QWidget" name="HomogenisationResults">
           <layout class="QVBoxLayout" name="verticalLayout_22">
-           <property name="spacing">
-            <number>15</number>
-           </property>
            <item>
             <layout class="QVBoxLayout" name="verticalLayout_18">
              <item>
@@ -2088,6 +2085,67 @@
               </widget>
              </item>
             </layout>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="HR_groupStats">
+             <property name="toolTip">
+              <string>The selected statistics will be included in the results file, next to the climatic variable value of each station.</string>
+             </property>
+             <property name="title">
+              <string>Include additional statistics for the simulated distribution</string>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_2">
+              <item row="0" column="0">
+               <widget class="QCheckBox" name="HR_checkMean">
+                <property name="text">
+                 <string>Mean</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QCheckBox" name="HR_checkCoefVar">
+                <property name="text">
+                 <string>Coefficient of variation</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QCheckBox" name="HR_checkMedian">
+                <property name="text">
+                 <string>Median</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QCheckBox" name="HR_checkSkewness">
+                <property name="text">
+                 <string>Skewness</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QCheckBox" name="HR_checkStd">
+                <property name="text">
+                 <string>Standard deviation</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QCheckBox" name="HR_checkPercDet">
+                <property name="text">
+                 <string>Percentile of detection</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QCheckBox" name="HR_checkVariance">
+                <property name="text">
+                 <string>Variance</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
            </item>
            <item>
             <layout class="QVBoxLayout" name="verticalLayout_20">
@@ -2594,7 +2652,7 @@
      <x>0</x>
      <y>0</y>
      <width>991</width>
-     <height>23</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
