@@ -608,9 +608,9 @@ def station_order(method, pset_file=None, nd=-999.9, header=True,
     return stations_list
 
 
-def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
-                network_split=True, save_stations=False, keys=None,
-                append_year=False):
+def save_output(pset_file, outfile, fformat='gsimcli', outvars=None,
+                header=True, network_split=True, save_stations=False,
+                keys=None, append_year=False):
     """Write homogenisation results to given format.
 
     Parameters
@@ -628,8 +628,9 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
             - gslib: GSLIB standard with header, useful for visualisation
             - cost-home: COST-HOME format, prepare results to the benchmark
               process
-    lvars : array_like of int, optional
-        Only save certain columns. Only used if `fformat == 'normal'`.
+    outvars : array_like of int, optional
+        Only save certain columns.
+        Only used if `fformat in ['normal', 'gsimcli']`.
     header : boolean, default True
         True if `pset_file` has the GSLIB standard header lines.
     network_split : boolean, default True
@@ -663,39 +664,48 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
     if fformat == 'normal':
         with open(outfile, 'wb') as csvfile:
             out = csv.writer(csvfile, dialect='excel')
-            if not lvars:
+            if not outvars:
                 out.writerow(pset.varnames)
                 out.writerows(pset.values)
             else:
-                out.writerow([pset.varnames[i] for i in lvars])
-                out.writerows(pset.values.iloc[:, np.array(lvars)])
+                out.writerow([pset.varnames[i] for i in outvars])
+                out.writerows(pset.values.iloc[:, np.array(outvars)])
 
     elif fformat == 'gsimcli':
         # year, time (month)
-        csvheader = ['time']
-        # year, time (month), stationID_VAR, stationID_FLAG
+        # csvheader = ['time']  # not being used
+        # year, time (month), stationID_VAR, stationID_FLAG, optional_stats
         stations = list_stations(pset, header)
-        varname = pset.varnames[-2]  # code smell: what if using optional cols
-        headerline = [[str(stations[i]) + '_' + varname,
-                       str(stations[i]) + '_FLAG']
-                      for i in xrange(len(stations))]
-        csvheader += itertools.chain.from_iterable(headerline)
+        # varname = pset.varnames[-2]  # code smell: what if using optional cols
+#         headerline = [[str(stations[i]) + '_' + varname,
+#                        str(stations[i]) + '_FLAG']
+#                       for i in xrange(len(stations))]
+        # csvheader += itertools.chain.from_iterable(headerline)
+        
+        csvheader = [str(stations[i]) + '_' + pset_file.varnames[var]
+                     for i in xrange(len(stations))
+                     for var in outvars]
+        
         outdf = pd.DataFrame(index=np.arange(pset.values['time'].min(),
                                              pset.values['time'].max()
                                              + 1),
-                             columns=csvheader[1:])
+                             columns=csvheader)  # [1:])
+        
         for i in xrange(len(stations)):
-            temp = pset.values[pset.values['station'] == stations[i]
-                               ][['time', 'clim', 'Flag']]
-            tempdf = pd.DataFrame(temp[['clim', 'Flag']])
-            tempdf.index = temp['time']
-            tempdf.columns = csvheader[2 * i + 1:2 * i + 3]
+            stations_bool = pset.values['station'] == stations[i]
+            tempdf = pset.values[stations_bool][outvars]  # ['time', 'clim', 'Flag']]
+            # tempdf = pd.DataFrame(temp[['clim', 'Flag']])
+            tempdf.index = pset.values[stations_bool]['time']
+            nvars = len(outvars)
+            tempdf.columns = csvheader[nvars * i:nvars * (i + 1)]
             outdf.update(tempdf)
+        
         if append_year:  # TODO: perhaps for monthly data
             raise NotImplementedError
             years = 0
             outdf.insert(0, 'year', years)
-        outdf.to_csv(outfile, index_label='year')
+        
+        outdf.to_csv(outfile, index_label='year')  # code smell: only yearly?
 
     elif fformat.lower() == 'gslib':
         if network_split and 'network' in pset.varnames:
