@@ -172,7 +172,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.SA_labelMaxSamples, self.SA_spinMaxSamples,
             self.HD_groupUserOrder, self.HD_groupTolerance,
             self.HC_groupSkewness, self.HC_groupPercentile,
-            ])
+        ])
 
         # default
         self.default_varnames()
@@ -378,7 +378,22 @@ class GsimcliMainWindow(QtGui.QMainWindow):
                              gsimcli_name="results")
         r_name = ui.GuiParam("results_name", self.HR_lineResultsName, group=gp,
                              gsimcli_name="results_file")
-        add([detect_save, sim_purge, r_path, r_name])
+        stats_mean = ui.GuiParam("stats_mean", self.HR_checkMean, group=gp,
+                                 gsimcli_name="opt_stats_mean")
+        stats_median = ui.GuiParam("stats_median", self.HR_checkMedian,
+                                   group=gp, gsimcli_name="opt_stats_median")
+        stats_std = ui.GuiParam("stats_std", self.HR_checkStd, group=gp,
+                                gsimcli_name="opt_stats_std")
+        stats_var = ui.GuiParam("stats_var", self.HR_checkVariance, group=gp,
+                                gsimcli_name="opt_stats_variance")
+        stats_coefvar = ui.GuiParam("stats_coefvar", self.HR_checkCoefVar,
+                                    group=gp, gsimcli_name="opt_stats_coefvar")
+        stats_skew = ui.GuiParam("stats_skew", self.HR_checkSkewness, group=gp,
+                                 gsimcli_name="opt_stats_skewness")
+        stats_percdet = ui.GuiParam("stats_percdet", self.HR_checkPercDet,
+                                    group=gp, gsimcli_name="opt_stats_percdet")
+        add([detect_save, sim_purge, r_path, r_name, stats_mean, stats_median,
+             stats_std, stats_var, stats_coefvar, stats_skew, stats_percdet])
 
         #    Tools / Benchmark
         add(self.tools_benchmark.guiparams)
@@ -698,8 +713,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         # self.SimulationVariogram.setDisabled(toggle)
         # self.SV_labelBatchDecades.setVisible(toggle)
         tree_item = self.treeSettings.findItems("Variogram",
-                                              QtCore.Qt.MatchRecursive,
-                                              QtCore.Qt.MatchExactly)[0]
+                                                QtCore.Qt.MatchRecursive,
+                                                QtCore.Qt.MatchExactly)[0]
         tree_item.setDisabled(toggle)
         if toggle:
             tool_tip = ("Batch mode for decades is enabled, variograms "
@@ -1500,6 +1515,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         """Try to deduce the network ID from the results file.
         Connected to the ResultsFile line.
 
+        TODO: just in case.
+
         """
         pass
 
@@ -1530,6 +1547,28 @@ class GsimcliMainWindow(QtGui.QMainWindow):
                 filename = os.path.splitext(filename)[0] + ".xls"
             self.HR_lineResultsName.setText(filename)
             self.HR_lineResultsName.setCursorPosition(len(filename) - 4)
+
+    def set_additional_stats(self):
+        """List which additional statistics the user selected. They will be
+        included in the results file.
+        Connected to the Stats groupbox.
+
+        """
+        columns = []
+        varnames = ui.qlist_to_pylist(self.DL_listVarNames)
+        # always include the climatic variable and the Flag
+        columns.append(varnames.index('clim'))
+        columns.append(columns[0] + 1)
+        # look for additional stats
+        self.additional_stats = {
+            'lmean': self.HR_checkMean.isChecked(),
+            'lmed': self.HR_checkMedian.isChecked(),
+            'lskew': self.HR_checkSkewness.isChecked(),
+            'lvar': self.HR_checkVariance.isChecked(),
+            'lstd': self.HR_checkStd.isChecked(),
+            'lcoefvar': self.HR_checkCoefVar.isChecked(),
+            'lperc': self.HR_checkPercDet.isChecked(),
+        }
 
     def run_gsimcli(self):
         """Launch GSIMCLI process according to the existing ui settings.
