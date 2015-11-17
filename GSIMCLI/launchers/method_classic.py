@@ -44,7 +44,7 @@ is_alive = True
 def gsimcli(stations_file, stations_header, no_data, stations_order,
             correct_method, detect_prob, detect_flag, detect_save, exe_path,
             par_file, outfolder, purge_sims, rad=0, correct_skew=None,
-            correct_percentile=None, cores=None, dbgfile=None,
+            correct_percentile=None, outvars=None, cores=None, dbgfile=None,
             print_status=False, skip_dss=False):
     """Main routine to run GSIMCLI homogenisation procedure in a set of
     stations.
@@ -95,6 +95,8 @@ def gsimcli(stations_file, stations_header, no_data, stations_order,
         Samples skewness threshold, used if `correct_method == 'skewness'`.
     correct_percentile: float, optional
         p value used if correct_method == 'percentile'.
+    outvars : array_like of int, optional
+        Select which variables (column numbers) should be saved in the output.
     cores : int, optional
         Maximum number of cores to be used. If None, it will use all available
         cores.
@@ -211,11 +213,11 @@ def gsimcli(stations_file, stations_header, no_data, stations_order,
         if print_status:
             print 'Detecting inhomogeneities...'
         homogenisation = hmg.detect(grids=sim_maps, obs_file=candidate,
-                                 method=correct_method, prob=detect_prob,
-                                 flag=detect_flag, save=detect_save,
-                                 outfile=intermediary_files, header=True,
-                                 skewness=correct_skew, rad=rad,
-                                 percentile=correct_percentile)
+                                    method=correct_method, prob=detect_prob,
+                                    flag=detect_flag, save=detect_save,
+                                    outfile=intermediary_files, header=True,
+                                    skewness=correct_skew, rad=rad,
+                                    percentile=correct_percentile)
         homogenised, detected_number, filled_number = homogenisation
         if print_status:
             print 'Inhomogeneities detected: {}'.format(detected_number)
