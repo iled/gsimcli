@@ -75,6 +75,14 @@ class GsimcliParam(ParametersFile):
         results: path to the folder where results will be saved
         results_file: path to the file containing the results when processing
                       by decade.
+         -- Include optional statistics of the simulated distribution ('y'/'n')
+        opt_stats_mean: mean
+        opt_stats_median: median
+        opt_stats_std: standard deviation
+        opt_stats_variance: variance
+        opt_stats_coefvar: coefficient of variation
+        opt_stats_skewness: skewness
+        opt_stats_percdet: percentile of detection
 
         --- DSS ---
         dss_par: path to the DSS parameters file (optional; if none, default
@@ -121,8 +129,8 @@ class GsimcliParam(ParametersFile):
         text = ['st_order', 'correct_method', 'results', 'dss_exe']
         real_n = ['detect_prob', 'no_data']
         boolean = ['data_header', 'detect_save', 'sim_purge']
-        opt_text = ['data', 'dss_par', 'name', 'variables', 'krig_type', 'model',
-                    'results_file']
+        opt_text = ['data', 'dss_par', 'name', 'variables', 'krig_type',
+                    'model', 'results_file']
         opt_int = ['st_user', 'number_simulations', 'search_strategy',
                    'min_data', 'max_samples', 'max_search_nodes', 'angles',
                    'XX_nodes_number', 'XX_minimum', 'XX_spacing',
@@ -130,12 +138,18 @@ class GsimcliParam(ParametersFile):
                    'ZZ_nodes_number', 'ZZ_minimum', 'ZZ_spacing',
                    'radius', 'search_radius', 'search_angles']
         opt_real = ['skewness', 'percentile', 'nugget', 'sill', 'ranges']
-        opt_boolean = ['ascending', 'md_last', 'tolerance', 'distance_units']
+        opt_boolean = ['ascending', 'md_last', 'tolerance', 'distance_units',
+                       'opt_stats_mean', 'opt_stats_median', 'opt_stats_std',
+                       'opt_stats_variance', 'opt_stats_coefvar',
+                       'opt_stats_skewness', 'opt_stats_percdet']
         order = ['data', 'no_data', 'data_header', 'name',
                  'variables', 'st_order', 'ascending', 'md_last', 'st_user',
                  'detect_prob', 'tolerance', 'radius', 'distance_units',
                  'correct_method', 'skewness', 'percentile',
                  'detect_save', 'sim_purge', 'results', 'results_file',
+                 'opt_stats_mean', 'opt_stats_median', 'opt_stats_std',
+                 'opt_stats_variance', 'opt_stats_coefvar',
+                 'opt_stats_skewness', 'opt_stats_percdet',
                  'dss_par', 'dss_exe', 'number_simulations', 'krig_type',
                  'search_strategy', 'search_radius', 'search_angles',
                  'min_data', 'max_search_samples', 'max_search_nodes', 'model',
@@ -222,7 +236,7 @@ class GsimcliParam(ParametersFile):
             if self.krig_type.lower() == 'ok':
                 krig = 0
             elif self.krig_type.lower() == 'sk':
-                krig = 1  # TODO: faltam outros tipos
+                krig = 1  # TODO: other kriging types missing
             keywords.append('krig')
             values.append([krig, 0])
         if hasattr(self, 'max_search_nodes'):
