@@ -44,7 +44,7 @@ is_alive = True
 def gsimcli(stations_file, stations_header, no_data, stations_order,
             correct_method, detect_prob, detect_flag, detect_save, exe_path,
             par_file, outfolder, purge_sims, rad=0, correct_skew=None,
-            correct_percentile=None, outvars=None, cores=None, dbgfile=None,
+            correct_percentile=None, optional_stats=None, cores=None, dbgfile=None,
             print_status=False, skip_dss=False):
     """Main routine to run GSIMCLI homogenisation procedure in a set of
     stations.
@@ -95,8 +95,8 @@ def gsimcli(stations_file, stations_header, no_data, stations_order,
         Samples skewness threshold, used if `correct_method == 'skewness'`.
     correct_percentile: float, optional
         p value used if correct_method == 'percentile'.
-    outvars : array_like of int, optional
-        Select which variables (column numbers) should be saved in the output.
+    optional_stats : 
+
     cores : int, optional
         Maximum number of cores to be used. If None, it will use all available
         cores.
@@ -217,7 +217,8 @@ def gsimcli(stations_file, stations_header, no_data, stations_order,
                                     flag=detect_flag, save=detect_save,
                                     outfile=intermediary_files, header=True,
                                     skewness=correct_skew, rad=rad,
-                                    percentile=correct_percentile)
+                                    percentile=correct_percentile,
+                                    optional_stats=optional_stats)
         homogenised, detected_number, filled_number = homogenisation
         if print_status:
             print 'Inhomogeneities detected: {}'.format(detected_number)
