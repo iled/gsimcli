@@ -362,7 +362,7 @@ class GridArr(object):
                                                 axis=0)),
                                      np.arange(1, self.dz + 1))))
         xy_nodes = coord_to_grid(wellxy, [self.cellx, self.celly, self.cellz],
-                      [self.xi, self.yi, self.zi])
+                                 [self.xi, self.yi, self.zi])
         for z in xrange(self.dz):
             p = (xy_nodes[0] + self.dx * (xy_nodes[1] - 1) +
                  self.dx * self.dy * z)
@@ -669,7 +669,7 @@ class GridFiles(object):
 
         # convert the coordinates of the first point to grid nodes
         loc = coord_to_grid(loc, [self.cellx, self.celly, self.cellz],
-                    [self.xi, self.yi, self.zi])[:2]
+                            [self.xi, self.yi, self.zi])[:2]
         # find the nodes coordinates within a circle centred in the first point
         neighbours_nodes = circle(loc[0], loc[1], tol)
         # compute the lines numbers for each point in the neighbourhood, across
@@ -722,7 +722,9 @@ class GridFiles(object):
             if lperc:
                 percline[layer] = np.percentile(arr, [(100 - p * 100) / 2,
                                               100 - (100 - p * 100) / 2])
-            if save:
+            if save and tol == 0:
+                # FIXME: not working with the tolerance feature
+                # need to adjust the arrpset or cherry-pick arr
                 arrpset = PointSet('realisations at location ({}, {}, {})'.
                                    format(loc[0], loc[1], layer * self.cellz +
                                           self.zi), self.nodata, 3,

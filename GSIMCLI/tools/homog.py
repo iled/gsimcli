@@ -174,10 +174,9 @@ def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
         obs.load(obs_file, header)
 
     obs_xy = list(obs.values.iloc[0, :2])
-    # calculate stats and set an alias
+    # calculate local stats and fetch inner dataframe
     local_stats = grids.stats_area(obs_xy, rad, p=prob, save=save,
-                                   **selected_stats)
-    stats = local_stats.values
+                                   **selected_stats).values
 
     # remove lines with no-data and flags
     if 'Flag' in obs.values.columns:
@@ -190,7 +189,7 @@ def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
     obs.values = obs.values.replace(obs.nodata, np.nan)
 
     # mean values
-    meanvalues = pd.Series(stats['mean'].values, name='clim')
+    meanvalues = pd.Series(local_stats['mean'].values, name='clim')
 
     # find and fill missing values with the mean values
     fn = 0
@@ -203,7 +202,8 @@ def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
     obs.values.update(meanvalues, overwrite=False)
 
     # detect irregularities
-    hom_where = ~obs.values['clim'].between(stats['lperc'], stats['rperc'])
+    hom_where = ~obs.values['clim'].between(local_stats['lperc'],
+                                            local_stats['rperc'])
     detected_number = hom_where.sum()  # + fn
 
     # homogenise irregularities
@@ -211,25 +211,24 @@ def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
                               list(obs.varnames), obs.values.copy())
 
     if method == 'mean':
-        fixvalues = stats['mean'].values
+        fixvalues = local_stats['mean'].values
     elif method == 'median':
-        fixvalues = stats['median'].values
+        fixvalues = local_stats['median'].values
     elif method == 'skewness' and skewness:
-        fixvalues = np.where(stats['skewness'] > skewness, stats['median'],
-                             stats['mean'])
+        fixvalues = np.where(local_stats['skewness'] > skewness,
+                             local_stats['median'], local_stats['mean'])
     elif method == 'percentile':
         # allow a different percentile value for the detection and for the
         # correction
         if percentile != prob:
             grids.reset_read()
             vline_perc = grids.stats_area(obs_xy, rad, lperc=True,
-                                          p=percentile, save=False)
+                                          p=percentile, save=False).values
         else:
             vline_perc = local_stats
 
-        fixvalues = np.where(obs.values['clim'] > stats['rperc'],
-                             vline_perc.values['rperc'],
-                             vline_perc.values['lperc'])
+        fixvalues = np.where(obs.values['clim'] > local_stats['rperc'],
+                             vline_perc['rperc'], vline_perc['lperc'])
 
     homogenised.values['clim'] = obs.values['clim'].where(~hom_where,
                                                           fixvalues)
@@ -237,8 +236,8 @@ def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
         flag_col = obs.values['clim'].where(hom_where, obs.nodata)
         homogenised.add_var(flag_col, 'Flag')
 
-    # append the additional statistics required by user, if any
-    # first, map the stats keys and their names in the local_stats PointSet
+    # append the additional statistics required by the user, if any
+    # first, map the local_stats keys and their names in the PointSet dataframe
     stats_names = {
         'lmean': 'mean',
         'lmed': 'median',
@@ -252,12 +251,14 @@ def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
     if optional_stats:
         for key, value in optional_stats.iteritems():
             if value and key == 'lperc':
-                percentiles = np.where(obs.values['clim'] > stats['rperc'],
-                                       stats['rperc'], stats['lperc'])
+                percentiles = np.where(
+                    obs.values['clim'] > local_stats['rperc'],
+                    local_stats['rperc'], local_stats['lperc'])
                 homogenised.add_var(varname='pdet', values=percentiles)
             elif value:
                 varname = stats_names[key]
-                homogenised.add_var(varname=varname, values=stats[varname])
+                homogenised.add_var(varname=varname,
+                                    values=local_stats[varname].values)
 
     if save and outfile:
         homogenised.save(outfile, header)
@@ -409,8 +410,8 @@ def list_networks_stations(networks, variables, secdir=None, header=True,
     total = 0
     for network in networks:
         if secdir:
-            directory = os.path.join(network, glob.glob(
-                                            os.path.join(network, secdir))[0])
+            directory = os.path.join(
+                network, glob.glob(os.path.join(network, secdir))[0])
         else:
             directory = network
         pset_path = find_pset_file(directory, header, nvars, exts)
