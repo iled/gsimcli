@@ -400,7 +400,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
              stats_std, stats_var, stats_coefvar, stats_skew, stats_percdet])
 
         #    Tools
-        add([self.tools_benchmark.guiparams, self.tools_simstats])
+        add(self.tools_benchmark.guiparams)
+        add(self.tools_simstats.guiparams)
 
     def about(self):
         """The About box. """
