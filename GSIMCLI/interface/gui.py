@@ -1107,7 +1107,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.SO_lineExePath.setText(self.params.dss_exe)
         self.SO_spinNumberSims.setValue(self.params.number_simulations)
         self.SO_comboKrigType.setCurrentIndex(self.SO_comboKrigType.findText(
-                       self.params.krig_type[0], QtCore.Qt.MatchStartsWith))
+            self.params.krig_type[0], QtCore.Qt.MatchStartsWith))
         self.SO_spinMaxSearchNodes.setValue(self.params.max_search_nodes)
 
         # Simulation / Grid
@@ -1146,8 +1146,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         if st_order == "sorted":
             st_order = "id order"
         self.HD_comboStationOrder.setCurrentIndex(
-                                  self.HD_comboStationOrder.findText(st_order,
-                                                     QtCore.Qt.MatchContains))
+            self.HD_comboStationOrder.findText(st_order,
+                                               QtCore.Qt.MatchContains))
         if st_order == "user":
             ui.pylist_to_qlist(self.params.st_user, self.HD_listUserOrder)
         else:
@@ -1161,7 +1161,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 
         # Homogenisation / Correction
         self.HC_comboCorrectionMethod.setCurrentIndex(
-             self.HC_comboCorrectionMethod.findText(self.params.correct_method,
+            self.HC_comboCorrectionMethod.findText(self.params.correct_method,
                                                    QtCore.Qt.MatchContains))
         if self.params.correct_method == "skewness":
             self.HC_spinSkewness.setValue(self.params.skewness)
@@ -1173,7 +1173,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.HR_checkPurgeSims.setChecked(self.params.sim_purge)
         if hasattr(self.params, "results_file"):
             self.HR_lineResultsName.setText(
-                                    self.params.results_file.decode('utf-8'))
+                self.params.results_file.decode('utf-8'))
 #             results = self.params.results_file
 #         else:
 #             results = self.params.results
@@ -1196,7 +1196,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             name = param.gsimcli_name
             if name is not None:
                 if param.check_dependencies() and param.has_data():
-                    # krigging type
+                    # kriging type
                     if name == "krig_type":
                         krigtype = self.SO_comboKrigType.currentText()
                         if krigtype == "Simple":
@@ -1238,6 +1238,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         """Create or update GsimcliParams file. Connected to dialogbuttonbox.
 
         """
+        self.set_additional_stats()
         self.save_gsimcli_settings(self.temp_params.name)
 
     def reset_settings(self):
@@ -1713,6 +1714,7 @@ class Homogenising(QtCore.QObject):
         self.is_running = True
         self.timer.start(time.time())
         cores = self.gui.SO_spinCores.value()
+        optional_stats = self.gui.additional_stats
 
         if self.gui.batch_networks:
             networks_list = ui.qlist_to_pylist(self.gui.DB_listNetworksPaths)
@@ -1723,14 +1725,17 @@ class Homogenising(QtCore.QObject):
                                           decades=self.gui.batch_decades,
                                           skip_dss=self.gui.skip_sim,
                                           print_status=self.gui.print_status,
-                                          cores=cores)
+                                          cores=cores,
+                                          optional_stats=optional_stats)
         elif self.gui.batch_decades:
+            variograms_file = str(self.gui.DB_lineVariogPath.text())
+            network_id = self.gui.DB_lineNetworkID.text()
             method_classic.batch_decade(par_path=self.gui.params.path,
-                        variograms_file=str(self.gui.DB_lineVariogPath.text()),
-                        print_status=self.gui.print_status,
-                        skip_dss=self.gui.skip_sim,
-                        network_id=self.gui.DB_lineNetworkID.text(),
-                        cores=cores)
+                                        variograms_file=variograms_file,
+                                        print_status=self.gui.print_status,
+                                        skip_dss=self.gui.skip_sim,
+                                        network_id=network_id, cores=cores,
+                                        optional_stats=optional_stats)
         else:
             method_classic.run_par(par_path=self.gui.params.path,
                                    skip_dss=self.gui.skip_sim,
@@ -1771,8 +1776,8 @@ class EmittingStream(QtCore.QObject):
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
-    app.setOrganizationName("ISEGI-NOVA")
-    app.setOrganizationDomain("www.isegi.unl.pt")
+    app.setOrganizationName("NOVA IMS")
+    app.setOrganizationDomain("www.novaims.unl.pt")
     app.setApplicationName("gsimcli")
     # MainWindow = loadUiWidget("/home/julio/qt/gsimcli.ui")
     MainWindow = GsimcliMainWindow()
