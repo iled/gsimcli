@@ -480,8 +480,8 @@ def take_candidate(pset_file, station, header=True, save=False, path=None):
     # remove existing optional columns
     drop_vars = ['Flag', 'mean', 'median', 'std', 'pdet', 'variance',
                  'coefvar', 'skewness']
-    candidate.drop(drop_vars, axis=1, inplace=True, errors='ignore')
-    neighbours.drop(drop_vars, axis=1, inplace=True, errors='ignore')
+    candidate = candidate.drop(drop_vars, axis=1, errors='ignore')
+    neighbours = neighbours.drop(drop_vars, axis=1, errors='ignore')
     nvars = candidate.shape[1]
     varnames = list(candidate.columns)
         
@@ -713,6 +713,10 @@ def save_output(pset_file, outfile, fformat='gsimcli', outvars=None,
             raise NotImplementedError
             years = 0
             outdf.insert(0, 'year', years)
+        
+        # remove empty columns -- optional stats for stations that were not
+        # homogenised
+        outdf.dropna(axis=1, how='all', inplace=True)
         
         outdf.to_csv(outfile, index_label='year')  # code smell: only yearly?
 
