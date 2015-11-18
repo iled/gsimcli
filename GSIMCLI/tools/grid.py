@@ -825,7 +825,7 @@ class GridFiles(object):
                 stdline[layer] = bn.nanstd(arr, ddof=1)
             if lcoefvar:
                 if lstd and lmean:
-                    coefvarline[layer] = stdline[line] / meanline[line] * 100
+                    coefvarline[layer] = stdline[layer] / meanline[layer] * 100
                 else:
                     std = bn.nanstd(arr, ddof=1)
                     mean = bn.nanmean(arr)
