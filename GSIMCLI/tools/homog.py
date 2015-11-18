@@ -477,18 +477,18 @@ def take_candidate(pset_file, station, header=True, save=False, path=None):
     candidate = pset.values[pset.values['station'] == int(station)]
     neighbours = pset.values[pset.values['station'] != int(station)]
 
-    if 'Flag' in candidate.columns:
-        candidate = candidate.drop('Flag', axis=1)
-        cand_nvars = pset.nvars - 1
-        cand_varnames = list(candidate.columns)
-    else:
-        cand_nvars = pset.nvars
-        cand_varnames = pset.varnames
-
+    # remove existing optional columns
+    drop_vars = ['Flag', 'mean', 'median', 'std', 'pdet', 'variance',
+                 'coefvar', 'skewness']
+    candidate.drop(drop_vars, axis=1, inplace=True, errors='ignore')
+    neighbours.drop(drop_vars, axis=1, inplace=True, errors='ignore')
+    nvars = candidate.shape[1]
+    varnames = list(candidate.columns)
+        
     candidate_pset = gr.PointSet('Candidate_' + str(station), pset.nodata,
-                                 cand_nvars, cand_varnames, candidate)
+                                 nvars, varnames, candidate)
     neighbours_pset = gr.PointSet('References_' + str(station), pset.nodata,
-                                  pset.nvars, pset.varnames, neighbours)
+                                  nvars, varnames, neighbours)
 
     if save and path:
         base, ext = os.path.splitext(path)

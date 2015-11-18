@@ -25,6 +25,7 @@ from install_dataset import InstallDialog
 from launchers import method_classic
 import pandas as pd
 from parsers.gsimcli import GsimcliParam
+from simstats import SimStats
 import tools.homog as hmg
 from tools.utils import seconds_convert
 import ui_utils as ui
@@ -68,7 +69,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 
         # pages
         self.tools_benchmark = benchmark.Scores(self)
+        self.tools_simstats = SimStats(self)
         self.stackedWidget.addWidget(self.tools_benchmark)
+        self.stackedWidget.addWidget(self.tools_simstats)
 
         # set params
         self.params = GsimcliParam()
@@ -154,6 +157,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.actionAbout.triggered.connect(self.about)
         self.actionBenchmarkScores.triggered.connect(self.set_tools)
         self.actionInstallDataSet.triggered.connect(self.install_dataset)
+        self.actionSimulationStatistics.triggered.connect(self.set_tools)
 
         # spin
         self.set_cpu_cores()
@@ -395,8 +399,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         add([detect_save, sim_purge, r_path, r_name, stats_mean, stats_median,
              stats_std, stats_var, stats_coefvar, stats_skew, stats_percdet])
 
-        #    Tools / Benchmark
-        add(self.tools_benchmark.guiparams)
+        #    Tools
+        add([self.tools_benchmark.guiparams, self.tools_simstats])
 
     def about(self):
         """The About box. """
@@ -495,6 +499,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         who = self.sender().objectName().lower()
         if "scores" in who:
             self.stackedWidget.setCurrentWidget(self.tools_benchmark)
+        elif "statistics" in who:
+            self.stackedWidget.setCurrentWidget(self.tools_simstats)
 
     def set_tools_item(self, current, previous):
         """Connect the Tools right menu (QTreeWidget) with the panels on the
@@ -512,6 +518,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 
         if tree_item == "Scores calculation":
             self.stackedWidget.setCurrentWidget(self.tools_benchmark)
+        elif tree_item == "Statistics":
+            self.stackedWidget.setCurrentWidget(self.tools_simstats)
 
     def install_dataset(self):
         """Pop up the dialog to download and install the benchmark data set.

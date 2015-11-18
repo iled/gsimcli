@@ -13,6 +13,7 @@ import os
 from scipy.stats import skew
 import time
 
+import bottleneck as bn
 import numpy as np
 import pandas as pd
 from tools.utils import skip_lines, filename_indexing
@@ -434,7 +435,7 @@ class GridFiles(object):
     def load(self, first_file, n, dims, first_coord, cells_size, no_data,
              headerin=3):
         """Open several grid files and provide a list containing each file
-        handler (delivered in `files` attribute).
+        handler (delivered in the `files` attribute).
 
         Parameters
         ----------
@@ -443,6 +444,8 @@ class GridFiles(object):
             format.
         n : int
             Number of files.
+        dims : array_like
+            Number of nodes in each direction, [dx, dy, dz]
         first_coord : array_like
             First coordinate in each direction, [xi, yi, zi].
         cells_size : array_like
@@ -481,15 +484,80 @@ class GridFiles(object):
         self.header = headerin
         self.nodata = no_data
         self.files.append(open(first_file, 'rb'))
-        # fpath, ext = os.path.splitext(first_file)
         for i in xrange(2, n + 1):
-            # another = fpath + str(i) + ext
             another = filename_indexing(first_file, i)
             if os.path.isfile(another):
                 self.files.append(open(another, 'rb'))
             else:
                 raise IOError('File {} not found.'.
                               format(os.path.basename(another)))
+
+    def open_files(self, files_list, dims, first_coord, cells_size, no_data,
+                   headerin=3, only_paths=False):
+        """Open a list of given grid files and provide a list containing each
+        file handler (delivered in the `files` attribute).
+
+        Parameters
+        ----------
+        files_list : list
+            List of file paths to the files to be opened
+        dims : array_like
+            Number of nodes in each direction, [dx, dy, dz]
+        first_coord : array_like
+            First coordinate in each direction, [xi, yi, zi].
+        cells_size : array_like
+            Nodes size in each direction, [cellx, celly, cellz].
+        no_data : number
+            Missing data value.
+        headerin : int, default 3
+            Number of lines in the header.
+        only_paths : bool
+            Do not open the files, just save their paths.
+
+        Raises
+        ------
+        IOError
+            Could not find a file with an expected file name.
+
+        Notes
+        -----
+        It is assumed that the files are numbered in the following manner:
+
+        - 1st file_with_this_name.extension
+        - 2nd file_with_this_name2.extension
+        - 3rd file_with_this_name3.extension
+        - nth file_with_this_namen.extension
+
+        """
+        def append_opened(path):
+            "Auxiliary function to minimise the number of conditions verified."
+            self.files.append(open(path, 'rb'))
+
+        self.nfiles = len(files_list)
+        self.dx = dims[0]
+        self.dy = dims[1]
+        self.dz = dims[2]
+        self.xi = first_coord[0]
+        self.yi = first_coord[1]
+        self.zi = first_coord[2]
+        self.cellx = cells_size[0]
+        self.celly = cells_size[1]
+        self.cellz = cells_size[2]
+        self.cells = np.prod(dims)
+        self.header = headerin
+        self.nodata = no_data
+
+        if only_paths:
+            open_file = self.files.append
+        else:
+            open_file = append_opened
+
+        for gridfile in files_list:
+            try:
+                open_file(gridfile)
+            except IOError, msg:
+                print(msg)
+                raise IOError('File {} not found.'.format(gridfile))
 
     def reset_read(self):
         """Reset the  pointer that reads each file to the beginning.
@@ -516,8 +584,8 @@ class GridFiles(object):
         for grid in self.files:
             os.remove(grid.name)
 
-    def stats(self, lmean=False, lmed=False, lvar=False, lstd=False,
-              lcoefvar=False, lperc=False, p=0.95):
+    def stats(self, lmean=False, lmed=False, lskew=False, lvar=False,
+              lstd=False, lcoefvar=False, lperc=False, p=0.95):
         """Calculate some statistics among every realisation.
 
         Each statistic is calculated node-wise along the complete number of
@@ -529,6 +597,8 @@ class GridFiles(object):
             Calculate the mean.
         lmed : boolean, default False
             Calculate the median.
+        lskew : boolean, default False
+            Calculate skewness.
         lvar : boolean, default False
             Calculate the variance.
         lstd : boolean, default False
@@ -542,22 +612,27 @@ class GridFiles(object):
 
         Returns
         -------
-        retlist : list of ndarray
-            List containing one ndarray for each calculated statistic.
+        retdict : dict of GridArr
+            Dictionary containing one GridArr for each calculated statistic.
 
         See Also
         --------
         stats_area : same but considering a circular (and horizontal) area of
         a specified radius around a given point.
 
-        .. TODO: - devolver em GridArr
-                 - handle no data
-
         """
+        # check if the map files are already opened or not
+        if isinstance(self.files[0], file):
+            opened_files = True
+        else:
+            opened_files = False
+
         if lmean:
             meanmap = np.zeros(self.cells)
         if lmed:
             medmap = np.zeros(self.cells)
+        if lskew:
+            skewmap = np.zeros(self.cells)
         if lvar:
             varmap = np.zeros(self.cells)
         if lstd:
@@ -569,47 +644,80 @@ class GridFiles(object):
 
         arr = np.zeros(self.nfiles)
         skip = True
+        offset = os.SEEK_SET
         for cell in xrange(self.cells - self.header):
-            for i, grid in enumerate(self.files):
+            for i, gridfile in enumerate(self.files):
+                # deal with map files not open yet
+                if opened_files:
+                    grid = gridfile
+                else:
+                    grid = open(gridfile, 'rb')
+                    grid.seek(offset)
+
                 if skip:
                     skip_lines(grid, self.header)
                 arr[i] = grid.readline()
 
+            if not opened_files:
+                offset = grid.tell()
+                grid.close()
+
             skip = False
+            # replace no data's with NaN
+            bn.replace(arr, self.nodata, np.nan)
             if lmean:
-                meanmap[cell] = arr.mean()
+                meanmap[cell] = bn.nanmean(arr)
             if lmed:
-                medmap[cell] = np.median(arr)
-                # comparar com bottleneck.median()
+                medmap[cell] = bn.nanmedian(arr)
+            if lskew:
+                skewmap[cell] = pd.Series(arr).skew()
             if lvar:
-                varmap[cell] = np.nanvar(arr, ddof=1)
+                varmap[cell] = bn.nanvar(arr, ddof=1)
             if lstd:
-                stdmap[cell] = arr.std()
+                stdmap[cell] = bn.nanstd(arr, ddof=1)
             if lcoefvar:
                 if lstd and lmean:
                     coefvarmap[cell] = stdmap[cell] / meanmap[cell] * 100
                 else:
-                    coefvarmap[cell] = arr.std() / arr.mean() * 100
+                    std = bn.nanstd(arr, ddof=1)
+                    mean = bn.nanmean(arr)
+                    coefvarmap[cell] = std / mean * 100
             if lperc:
-                percmap[cell] = np.percentile(arr, [(100 - p * 100) / 2,
-                                                    100 - (100 - p * 100) / 2])
+                percmap[cell] = pd.Series(arr).quantile([(1 - p) / 2,
+                                                         1 - (1 - p) / 2])
 
-        retlist = list()
+        retdict = dict()
 
         if lmean:
-            retlist.append(meanmap)
+            meangrid = GridArr(name='meanmap', dx=self.dx, dy=self.dy,
+                               dz=self.dz, nodata=self.nodata, val=meanmap)
+            retdict['meanmap'] = meangrid
         if lmed:
-            retlist.append(medmap)
+            medgrid = GridArr(name='medianmap', dx=self.dx, dy=self.dy,
+                              dz=self.dz, nodata=self.nodata, val=medmap)
+            retdict['medianmap'] = medgrid
+        if lskew:
+            skewgrid = GridArr(name='skewmap', dx=self.dx, dy=self.dy,
+                               dz=self.dz, nodata=self.nodata, val=skewmap)
+            retdict['skewmap'] = skewgrid
         if lvar:
-            retlist.append(varmap)
+            vargrid = GridArr(name='varmap', dx=self.dx, dy=self.dy,
+                              dz=self.dz, nodata=self.nodata, val=varmap)
+            retdict['varmap'] = vargrid
         if lstd:
-            retlist.append(stdmap)
+            stdgrid = GridArr(name='stdmap', dx=self.dx, dy=self.dy,
+                              dz=self.dz, nodata=self.nodata, val=stdmap)
+            retdict['stdmap'] = stdgrid
         if lcoefvar:
-            retlist.append(coefvarmap)
+            coefvargrid = GridArr(name='coefvarmap', dx=self.dx, dy=self.dy,
+                              dz=self.dz, nodata=self.nodata, val=coefvarmap)
+            retdict['coefvarmap'] = coefvargrid
         if lperc:
-            retlist.append(percmap)
+            percgrid = GridArr(name='percmap', dx=self.dx, dy=self.dy,
+                               dz=self.dz, nodata=self.nodata, val=percmap)
+            retdict['percmap'] = percgrid
 
-        return retlist
+        return retdict
 
     def stats_area(self, loc, tol=0, lmean=False, lmed=False, lskew=False,
                    lvar=False, lstd=False, lcoefvar=False, lperc=False,
@@ -702,26 +810,29 @@ class GridFiles(object):
                     curr_line[j] = line
                     skip = False
 
+            # replace no data's with NaN
+            bn.replace(arr, self.nodata, np.nan)
             # compute the required statistics
             if lmean:
-                meanline[layer] = arr.mean()
+                meanline[layer] = bn.nanmean(arr)
             if lmed:
-                medline[layer] = np.median(arr)
-                # TODO: comparar com bottleneck.median()
+                medline[layer] = bn.nanmedian(arr)
             if lskew:
-                skewline[layer] = skew(arr)
+                skewline[layer] = pd.Series(arr).skew()
             if lvar:
-                varline[layer] = np.nanvar(arr, ddof=1)
+                varline[layer] = bn.nanvar(arr, ddof=1)
             if lstd:
-                stdline[layer] = arr.std()
+                stdline[layer] = bn.nanstd(arr, ddof=1)
             if lcoefvar:
                 if lstd and lmean:
                     coefvarline[layer] = stdline[line] / meanline[line] * 100
                 else:
-                    coefvarline[layer] = arr.std() / arr.mean() * 100
+                    std = bn.nanstd(arr, ddof=1)
+                    mean = bn.nanmean(arr)
+                    coefvarline[layer] = std / mean * 100
             if lperc:
-                percline[layer] = np.percentile(arr, [(100 - p * 100) / 2,
-                                              100 - (100 - p * 100) / 2])
+                percline[layer] = pd.Series(arr).quantile([(1 - p) / 2,
+                                                           1 - (1 - p) / 2])
             if save and tol == 0:
                 # FIXME: not working with the tolerance feature
                 # need to adjust the arrpset or cherry-pick arr
@@ -1101,7 +1212,7 @@ if __name__ == '__main__':
     rad = 0
     print(timeit.timeit("_wrap2()", setup="from __main__ import _wrap2",
                     number=10))
-    for rad in xrange(0, 5):#(0, 3):
+    for rad in xrange(0, 5):  # (0, 3):
 
     # """ timer
 #     print 'calculating grid stats + drill'
