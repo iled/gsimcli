@@ -173,7 +173,7 @@ def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
         obs = gr.PointSet()
         obs.load(obs_file, header)
 
-    obs_xy = list(obs.values.iloc[0, :2])
+    obs_xy = list(obs.values.loc[obs.values.first_valid_index(), ['x', 'y']])
     # calculate local stats and fetch inner dataframe
     local_stats = grids.stats_area(obs_xy, rad, p=prob, save=save,
                                    **selected_stats).values
@@ -209,6 +209,9 @@ def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
     # homogenise irregularities
     homogenised = gr.PointSet(obs.name + '_homogenised', obs.nodata, obs.nvars,
                               list(obs.varnames), obs.values.copy())
+    # remove columns that are placeholders for optional statistics
+    homogenised.values.dropna(axis=1, inplace=True)
+    homogenised.varnames = list(homogenised.values.columns)
 
     if method == 'mean':
         fixvalues = local_stats['mean'].values
@@ -365,6 +368,7 @@ def list_stations(pset_file, header=True, variables=None):
     if variables:
         pset.flush_varnames(variables)
 
+    # FIXME: .station wont work if the columns order is previously changed
     stations = np.unique(pset.values.station)
     stations_list = map(int, stations)
 
@@ -522,18 +526,21 @@ def append_homog_station(pset_file, station, header=True):
         pset = gr.PointSet()
         pset.load(pset_file, header)
 
-    # checks if 'Flag' column already exists
+    # check if 'Flag' column already exists, and create it if not
     if 'Flag' not in pset.varnames:
-        pset.varnames.append('Flag')
-        pset.nvars += 1
-        pset.values = (pset.values.join
-                       (pd.Series(np.repeat(pset.nodata, pset.values.shape[0]),
-                                  name='Flag')))
-    elif pset.nvars != station.nvars:
-        raise ValueError('PointSets {} and {} have different number of '
-                         'variables.'.format(pset.name, station.name))
-
+        pset.add_var(np.repeat(pset.nodata, pset.values.shape[0]), 'Flag')
+    # make sure both PointSet's have the same variables, if not find missing
+    if sorted(pset.varnames) != sorted(station.varnames):
+        missing_vars = list(set(station.varnames) - set(pset.varnames))
+    else:
+        missing_vars = []
+    # fill the missing variables
+    for var in missing_vars:
+        pset.add_var(np.repeat(np.nan, pset.values.shape[0]), var)
+    # append the rows of the station PointSet into the other PointSet
     pset.values = pset.values.append(station.values, ignore_index=True)
+    # FIXME: hack to fix the columns order -- shouldn't be necessary
+    pset.values = pset.values[pset.varnames]
     return pset
 
 
@@ -732,8 +739,8 @@ def save_output(pset_file, outfile, fformat='gsimcli', outvars=None,
         stationsdf = pd.DataFrame(index=stations, columns=['x', 'y'])
 
         for i, st in enumerate(stations):
-            stationsdf.iloc[i] = pset.values[pset.values['station'] == st
-                                             ].iloc[0, :2]
+            stationsdf.iloc[i] = pset.values[pset.values['station'] == st].loc[
+                pset.values.first_valid_index(), ['x', 'y']]
         if keys:
             keysdf = pd.read_csv(keys, sep='\t', index_col=0)
 
