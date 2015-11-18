@@ -637,8 +637,7 @@ def save_output(pset_file, outfile, fformat='gsimcli', outvars=None,
             - cost-home: COST-HOME format, prepare results to the benchmark
               process
     outvars : array_like of int, optional
-        Only save certain columns.
-        Only used if `fformat in ['normal', 'gsimcli']`.
+        Only save certain columns. Only used if `fformat == 'normal'`.
     header : boolean, default True
         True if `pset_file` has the GSLIB standard header lines.
     network_split : boolean, default True
@@ -689,10 +688,12 @@ def save_output(pset_file, outfile, fformat='gsimcli', outvars=None,
 #                        str(stations[i]) + '_FLAG']
 #                       for i in xrange(len(stations))]
         # csvheader += itertools.chain.from_iterable(headerline)
-        
-        csvheader = [str(stations[i]) + '_' + pset_file.varnames[var]
-                     for i in xrange(len(stations))
-                     for var in outvars]
+        # outvars deduced from varnames in excess of x, y, time, station
+        outvars = ['clim', 'Flag']
+        outvars += sorted(set(pset_file.varnames)
+                          - set(['x', 'y', 'time', 'station', 'clim', 'Flag']))
+        csvheader = [str(stations[i]) + '_' + varname
+                     for i in xrange(len(stations)) for varname in outvars]
         
         outdf = pd.DataFrame(index=np.arange(pset.values['time'].min(),
                                              pset.values['time'].max()
@@ -739,8 +740,8 @@ def save_output(pset_file, outfile, fformat='gsimcli', outvars=None,
         stationsdf = pd.DataFrame(index=stations, columns=['x', 'y'])
 
         for i, st in enumerate(stations):
-            stationsdf.iloc[i] = pset.values[pset.values['station'] == st].loc[
-                pset.values.first_valid_index(), ['x', 'y']]
+            temp = pset.values[pset.values['station'] == st]
+            stationsdf.iloc[i] = temp.loc[temp.first_valid_index(), ['x', 'y']]
         if keys:
             keysdf = pd.read_csv(keys, sep='\t', index_col=0)
 

@@ -282,7 +282,10 @@ def run_par(par_path, print_status=False, **kwargs):
 
     stations_pset = gr.PointSet()
     stations_pset.load(gscpar.data, gscpar.no_data, gscpar.data_header)
-    stations_pset.flush_varnames(gscpar.variables)
+    # rewrite the original PointSet variables names
+    # hack it to the first 5 variables, in order to discard additional ones
+    # such as Flag and optional statistics
+    stations_pset.flush_varnames(gscpar.variables[:5])
 
     if hasattr(gscpar, 'name'):
         stations_pset.name = gscpar.name
