@@ -20,6 +20,7 @@ from tools.utils import skip_lines, filename_indexing
 
 
 class PointSet(object):
+
     """Class for storing point-set data (irregular mesh).
 
     Attributes
@@ -65,6 +66,7 @@ class PointSet(object):
     GSLIB Help Page: File Formats : http://www.gslib.com/gslib_help/format.html
 
     """
+
     def __init__(self, name='', nodata=-999.9, nvars=0, varnames=list(),
                  values=np.zeros((0, 0)), psetpath=str(), header=True):
         """Constructor to initialise a PointSet instance.
@@ -119,6 +121,9 @@ class PointSet(object):
             varname += '_new'
         self.varnames.append(varname)
         self.values[varname] = values
+
+    def __repr__(self):
+        return str(self.values)
 
     def load(self, psetfile, nd=-999.9, header=True):
         """Load a point-set from a file in GSLIB format.
@@ -205,6 +210,7 @@ class PointSet(object):
 
 
 class GridArr(object):
+
     """Class to store a grid (regular mesh).
 
     Attributes
@@ -263,6 +269,7 @@ class GridArr(object):
     .. TODO: support multiple variables in the same grid.
 
     """
+
     def __init__(self, name='', dx=0, dy=0, dz=0, xi=0, yi=0, zi=0, cellx=1,
                  celly=1, cellz=1, nodata=-999.9, val=np.zeros(1)):
         """
@@ -374,6 +381,7 @@ class GridArr(object):
 
 
 class GridFiles(object):
+
     """This class keeps track of all the files containing simulation results,
     i.e., Direct Sequential Simulation (DSS) realisations.
 
@@ -413,6 +421,7 @@ class GridFiles(object):
     .. TODO: make class child of GridArr?
 
     """
+
     def __init__(self):
         """Constructor to initialise a GridFiles instance.
 
@@ -723,8 +732,8 @@ class GridFiles(object):
                    lvar=False, lstd=False, lcoefvar=False, lperc=False,
                    p=0.95, save=False):
         """Calculate some statistics among every realisation, considering a
-        circular (and horizontal) area of radius `tol` around the point located
-        at `loc`.
+        circular (only horizontaly) area of radius `tol` around the point
+        located at `loc`.
 
         Parameters
         ----------
@@ -1192,7 +1201,7 @@ def _wrap2():
     grids = GridFiles()
     grids.load(fstpar, nsims, griddims, fstcoord, nodesize, -999.9, 0)
     vstats = grids.stats_area(pointloc, tol=rad, lmean=True, lvar=True, lperc=True,
-                               p=0.95)
+                              p=0.95)
     vstats.save(os.path.join(outpath, 'statsmap_t' + str(rad) + '.out'), 'var')
     grids.dump()
     return vstats
@@ -1214,10 +1223,10 @@ if __name__ == '__main__':
                     number=10))
     for rad in xrange(0, 5):  # (0, 3):
 
-    # """ timer
-#     print 'calculating grid stats + drill'
-#     print(timeit.timeit("_wrap1()", setup="from __main__ import _wrap1",
-#                         number=100))
+        # """ timer
+        #     print 'calculating grid stats + drill'
+        #     print(timeit.timeit("_wrap1()", setup="from __main__ import _wrap1",
+        #                         number=100))
         print 'calculating vline stats'
         print 'tolerance: ', rad
         print(timeit.timeit("_wrap2()", setup="from __main__ import _wrap2",
@@ -1227,9 +1236,9 @@ if __name__ == '__main__':
 #     snirh = '/home/julio/Testes/snirh500_dssim_narrow/snirh.prn'
 #     bench = '/Users/julio/Desktop/testes/cost-home/rede000005/1900_1909.txt'
 #
-#     # """
+# """
 #     pset = PointSet()
-#     # pset.load(snirh, header=False)
+# pset.load(snirh, header=False)
 #     pset.load(bench, header=True)
     # pset.save(os.path.join(outpath, 'psetout.prn'))
     # """
