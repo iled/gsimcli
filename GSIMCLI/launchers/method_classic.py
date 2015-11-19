@@ -426,7 +426,7 @@ def batch_decade(par_path, variograms_file, print_status=False,
         results_folder = os.path.join(outpath, decade[1].ix['decade'])
         if not os.path.isdir(results_folder):
             os.mkdir(results_folder)
-        fields = ['data', 'model', 'nugget', 'sill', 'ranges', 'zz_minimum',
+        fields = ['data', 'model', 'nugget', 'sill', 'ranges', 'ZZ_minimum',
                   'results']
         values = [data_file, decade[1].ix['model'][0],
                   str(nugget), str(psill),
