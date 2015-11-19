@@ -5,6 +5,8 @@ Created on 6 de Dez de 2013
 @author: julio
 '''
 
+import warnings
+
 from utils import yes_no
 
 
@@ -24,7 +26,7 @@ class ParametersFile(object):
     Fields are separated from values with a given separator (field_sep). Values
     can be a single value or a list of values, which are separated with yet
     another given separator (values_sep).
-    
+
     Only one field per line will be parsed. This allows values containing
     field_sep.
 
@@ -148,6 +150,8 @@ class ParametersFile(object):
         for i, field in enumerate(fields):
             if field in self.fields + self.optional:
                 self.set_field(field, values[i])
+            else:
+                warnings.warn("Error while setting field: {}".format(field))
         if save:
             self.save(par_path)
 
