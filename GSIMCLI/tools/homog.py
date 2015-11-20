@@ -586,6 +586,12 @@ def station_order(method, pset_file=None, nd=-999.9, header=True,
 
     stations_list = list_stations(pset, header=header)
 
+    # pandas' na_last argument got deprecated
+    if md_last:
+        md_last = 'last'
+    else:
+        md_last = 'first'
+
     if method == 'random':
         shuffle(stations_list)
 
@@ -597,14 +603,14 @@ def station_order(method, pset_file=None, nd=-999.9, header=True,
             raise TypeError('Method variance requires the stations point-set')
         values = pset.values.replace(nd, np.nan)
         varsort = values.groupby('station', sort=False).clim.var()
-        varsort = varsort.order(ascending=ascending, na_last=md_last)
+        varsort = varsort.sort_values(ascending=ascending, na_position=md_last)
         stations_list = list(varsort.index)
 
     elif method == 'network deviation':
         values = pset.values.replace(nd, np.nan)
         stations_mean = values.groupby('station', sort=False).clim.mean()
         network_dev = ((stations_mean - values.clim.mean()).abs()
-                       .order(ascending=ascending, na_last=md_last))
+                       .sort_values(ascending=ascending, na_position=md_last))
         stations_list = list(network_dev.index)
 
     elif method == 'user' and userset:
