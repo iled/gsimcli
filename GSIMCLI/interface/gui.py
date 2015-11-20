@@ -1630,8 +1630,12 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 
         """
         cores = self.SO_spinCores.value()
-        if not progress:
+        # calculate simulations progress
+        if not progress and not self.skip_sim:
             progress = 100 * (self.current_sim - cores) / self.total_sims
+        elif self.skip_sim:
+            # TODO: count progress from other steps
+            progress = 0
 
         self.progressBar.setValue(progress)
 
