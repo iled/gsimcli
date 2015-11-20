@@ -10,7 +10,6 @@ Created on 12 de Out de 2013
 """
 
 import os
-from scipy.stats import skew
 import time
 
 import bottleneck as bn
@@ -98,10 +97,10 @@ class PointSet(object):
             self.values = pd.DataFrame(values)
             if len(self.values.columns) == len(self.varnames):
                 self.values.columns = self.varnames
-                
+
     def add_var(self, values, varname=None):
         """Append a new variable to an existing PointSet.
-        
+
         Parameters
         ----------
         values : array_like
@@ -196,6 +195,7 @@ class PointSet(object):
             if 'Flag' in varnames:
                 varnames.remove('Flag')  # TODO: this is a hack!
             self.values.columns = varnames
+            self.varnames = varnames
         else:
             self.values.columns = self.varnames
 
