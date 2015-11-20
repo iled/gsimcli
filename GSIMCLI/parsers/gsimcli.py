@@ -106,7 +106,7 @@ class GsimcliParam(ParametersFile):
         search_radius: search ellipsoid radius (dir. 1, dir. 2, dir. 3), in the
                        data scale
         search_angles: search anisotropy angles
-        
+
         --- DSS: grid ---
         XX_nodes_number: number of nodes in x-axis
         XX_minimum: minimum coordinate in x-axis
@@ -126,10 +126,11 @@ class GsimcliParam(ParametersFile):
               - consider every dss parameters as optional?
         """
         par_set = 'GSIMCLI'
-        text = ['st_order', 'correct_method', 'results', 'dss_exe']
+        text = ['variables', 'st_order', 'correct_method', 'results',
+                'dss_exe']
         real_n = ['detect_prob', 'no_data']
         boolean = ['data_header', 'detect_save', 'sim_purge']
-        opt_text = ['data', 'dss_par', 'name', 'variables', 'krig_type',
+        opt_text = ['data', 'dss_par', 'name', 'krig_type',
                     'model', 'results_file']
         opt_int = ['st_user', 'number_simulations', 'search_strategy',
                    'min_data', 'max_samples', 'max_search_nodes', 'angles',
