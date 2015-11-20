@@ -95,8 +95,7 @@ def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
             - lstd: standard deviation;
             - lcoefvar: coefficient of variation;
             - lperc: percentile of detection.
-        Each key must have a boolean value (however, there is no point in
-        passing a `False` value).
+        Each key must have a boolean value.
 
     Returns
     -------
@@ -254,9 +253,15 @@ def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
     if optional_stats:
         for key, value in optional_stats.iteritems():
             if value and key == 'lperc':
+                # median required to find which percentile is closer
+                if 'median' in local_stats.columns:
+                    med = local_stats['median']
+                else:
+                    med = grids.stats_area(obs_xy, rad, lmed=True,
+                                           save=False).values['median']
                 percentiles = np.where(
-                    obs.values['clim'] > local_stats['rperc'],
-                    local_stats['rperc'], local_stats['lperc'])
+                    obs.values['clim'] >= med, local_stats['rperc'],
+                    local_stats['lperc'])
                 homogenised.add_var(varname='pdet', values=percentiles)
             elif value:
                 varname = stats_names[key]
