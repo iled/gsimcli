@@ -484,7 +484,7 @@ def take_candidate(pset_file, station, header=True, save=False, path=None):
     neighbours = neighbours.drop(drop_vars, axis=1, errors='ignore')
     nvars = candidate.shape[1]
     varnames = list(candidate.columns)
-        
+
     candidate_pset = gr.PointSet('Candidate_' + str(station), pset.nodata,
                                  nvars, varnames, candidate)
     neighbours_pset = gr.PointSet('References_' + str(station), pset.nodata,
@@ -498,49 +498,44 @@ def take_candidate(pset_file, station, header=True, save=False, path=None):
     return candidate_pset, neighbours_pset
 
 
-def append_homog_station(pset_file, station, header=True):
-    """Append a station to an existing PointSet.
+def update_station(stations_pset, station, header=True):
+    """Update a station in an existing PointSet.
 
-    This is necessary to consider already homogenised stations in the
+    This is necessary to update already homogenised stations in the
     iterative homogenising process.
 
     Parameters
     ----------
-    pset_file : PointSet object or string
+    stations_pset : PointSet object or string
         Instance of PointSet or string with the full path to the PointSet file
-        on which the `station` PointSet will be appended to.
+        that will be updated with data on the `station` PointSet.
     station : PointSet object
-        Instance of PointSet that will be appended to the `pset_file` PointSet.
+        Instance of PointSet that will update the `stations_pset` PointSet.
     header : boolean, default True
-        True if `pset_file` has the GSLIB standard header lines.
+        True if `stations_pset` has the GSLIB standard header lines.
 
     Returns
     -------
     pset : PointSet object
-        Instance of PointSet containing the concatenated stations.
+        Instance of PointSet containing the updated stations.
 
     """
-    if isinstance(pset_file, gr.PointSet):
-        pset = pset_file
+    if isinstance(stations_pset, gr.PointSet):
+        pset = stations_pset
     else:
         pset = gr.PointSet()
-        pset.load(pset_file, header)
+        pset.load(stations_pset, header)
 
-    # check if 'Flag' column already exists, and create it if not
-    if 'Flag' not in pset.varnames:
-        pset.add_var(np.repeat(pset.nodata, pset.values.shape[0]), 'Flag')
     # make sure both PointSet's have the same variables, if not find missing
     if sorted(pset.varnames) != sorted(station.varnames):
         missing_vars = list(set(station.varnames) - set(pset.varnames))
     else:
         missing_vars = []
-    # fill the missing variables
+    # fill the missing variables with NaN's
     for var in missing_vars:
         pset.add_var(np.repeat(np.nan, pset.values.shape[0]), var)
-    # append the rows of the station PointSet into the other PointSet
-    pset.values = pset.values.append(station.values, ignore_index=True)
-    # FIXME: hack to fix the columns order -- shouldn't be necessary
-    pset.values = pset.values[pset.varnames]
+    # update the rows of the stations PointSet
+    pset.values.update(station.values)
     return pset
 
 
@@ -694,12 +689,12 @@ def save_output(pset_file, outfile, fformat='gsimcli', outvars=None,
                           - set(['x', 'y', 'time', 'station', 'clim', 'Flag']))
         csvheader = [str(stations[i]) + '_' + varname
                      for i in xrange(len(stations)) for varname in outvars]
-        
+
         outdf = pd.DataFrame(index=np.arange(pset.values['time'].min(),
                                              pset.values['time'].max()
                                              + 1),
                              columns=csvheader)  # [1:])
-        
+
         for i in xrange(len(stations)):
             stations_bool = pset.values['station'] == stations[i]
             tempdf = pset.values[stations_bool][outvars]  # ['time', 'clim', 'Flag']]
@@ -708,16 +703,16 @@ def save_output(pset_file, outfile, fformat='gsimcli', outvars=None,
             nvars = len(outvars)
             tempdf.columns = csvheader[nvars * i:nvars * (i + 1)]
             outdf.update(tempdf)
-        
+
         if append_year:  # TODO: perhaps for monthly data
             raise NotImplementedError
             years = 0
             outdf.insert(0, 'year', years)
-        
+
         # remove empty columns -- optional stats for stations that were not
         # homogenised
         outdf.dropna(axis=1, how='all', inplace=True)
-        
+
         outdf.to_csv(outfile, index_label='year')  # code smell: only yearly?
 
     elif fformat.lower() == 'gslib':

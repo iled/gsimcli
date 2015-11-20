@@ -225,7 +225,7 @@ def gsimcli(stations_file, stations_header, no_data, stations_order,
         dnumber_list.append(detected_number)
         fnumber_list.append(filled_number)
         # prepare next iteration
-        stations_pset = hmg.append_homog_station(references, homogenised)
+        stations_pset = hmg.update_station(stations_pset, homogenised)
         if not detect_save:
             [os.remove(fpath) for fpath in
              [reffile, parfile]]  # , dsspar.transfile]]
@@ -289,8 +289,8 @@ def run_par(par_path, print_status=False, **kwargs):
 
     if hasattr(gscpar, 'name'):
         stations_pset.name = gscpar.name
-    if hasattr(gscpar, 'variables'):
-        stations_pset.varnames = gscpar.variables
+#     if hasattr(gscpar, 'variables'):
+#         stations_pset.varnames = gscpar.variables
 
     if gscpar.st_order == 'user':
         stations_set = gscpar.st_user
@@ -301,11 +301,11 @@ def run_par(par_path, print_status=False, **kwargs):
         ascending = gscpar.ascending
         md_last = gscpar.md_last
 
-    stations_order = (hmg.station_order
-                      (method=gscpar.st_order, nd=gscpar.no_data,
+    stations_order = hmg.station_order(
+                       method=gscpar.st_order, nd=gscpar.no_data,
                        pset_file=stations_pset, header=gscpar.data_header,
                        userset=stations_set, ascending=ascending,
-                       md_last=md_last))
+                       md_last=md_last)
 
     detect_flag = True
     skew = None
