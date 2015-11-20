@@ -905,6 +905,9 @@ class GridFiles(object):
             statspset.varnames.append('rperc')
             statspset.values.iloc[:, -2:] = percline
 
+        # reset the reading pointer in each grid file
+        self.reset_read()
+        # update varnames
         statspset.flush_varnames()
         return statspset
 
