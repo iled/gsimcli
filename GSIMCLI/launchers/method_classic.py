@@ -18,6 +18,9 @@ Created on 22 de Out de 2013
 @author: julio
 
 """
+from guppy import hpy
+import objgraph as obj
+# from memory_profiler import profile
 
 import glob
 import ntpath
@@ -25,6 +28,7 @@ import os
 import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+sys.path.append('/home/julio/git/gsimcli/GSIMCLI/')
 
 import launchers.dss as dss
 import multiprocessing as mp
@@ -40,7 +44,7 @@ import tools.utils as ut
 
 is_alive = True
 
-
+# @profile
 def gsimcli(stations_file, stations_header, no_data, stations_order,
             correct_method, detect_prob, detect_flag, detect_save, exe_path,
             par_file, outfolder, purge_sims, rad=0, correct_skew=None,
@@ -550,8 +554,27 @@ if __name__ == '__main__':
                 os.path.join(base, 'rede000020')]
     #"""
     networks = [os.path.join(base, 'rede000009')]
-    batch_networks(par, networks, decades=True,
-                   print_status=True, skip_dss=True)
+#    batch_networks(par, networks, decades=True,
+#                   print_status=True, skip_dss=True)
 #     variog = os.path.join(networks[0], "rede09_variografia_media.csv")
 #     batch_decade(par, variog, print_status=True, skip_dss=False)
+    # mem test
+    par = '/home/julio/Testes/cost-home/rede000009/optstats/mem/gsimcli_mem'
+    networks = ['/home/julio/Testes/cost-home/rede000009']
+    decades = True
+    print_status = True
+    kwargs = {
+        'cores': 4,
+        'optional_stats': {
+            'lcoefvar': False,
+            'lperc': True,
+            'lvar': False,
+            'lstd': True,
+            'lmean': True,
+            'lmed': True,
+            'lskew': False
+        },
+        'skip_dss': False
+    }
+    batch_networks(par, networks, decades, print_status, **kwargs)
     print 'done'
