@@ -335,6 +335,9 @@ def mp_exec(dss_path, par_path, output, simnum, totalsim=None, dbg=None,
     runs = list()
     dssenv = DssEnvironment(dss_path, par_path, output, simnum)
 
+    pool = mp.pool(cores)
+    pool.map(run_exec, )
+
     for run in xrange(cores):
         if totalsim and simnum + run > totalsim:
             break
@@ -350,6 +353,47 @@ def mp_exec(dss_path, par_path, output, simnum, totalsim=None, dbg=None,
     dssenv.reset_par_path()
     if purge:
         dssenv.purge()
+
+
+def run_exec(dss_path, par_path, output, simnum, totalsim=None, dbg=None,
+            print_dss_status=False, cores=None, print_mp_status=False,
+            purge=False):
+    """Launch multiple threads of DSS at the same time, running at different
+    cores.
+
+    Parameters
+    ----------
+    dss_path : string
+        Binary file full path.
+    par_path : string or DssParam object
+        Parameters file full path or DssParam instance.
+    output : string
+        Simulation output file full path.
+    simnum : int
+        Number of the next realization.
+    totalsim : int, optional
+        Total number of realizations.
+    dbg : string, optional
+        Debug output file path. Write DSS console output to a file.
+    print_dss_status : boolean, default False
+        Print DSS execution status.
+    cores : int, optional
+        Maximum number of cores to be used. If None, it will use all available
+        cores.
+    print_mp_status : boolean, default False
+        Print threads execution status.
+    purge : boolean, default False
+        Remove all temporary files and directories created.
+
+    """
+
+    dssenv = DssEnvironment(dss_path, par_path, output, simnum)
+
+    dss_run, par_run = dssenv.new()
+    run_exe = mp.Process(target=exec_ssdir, args=(dss_run, par_run,
+                                                  dbg, print_dss_status))
+    run_exe.start()
+
 
 
 if __name__ == '__main__':
