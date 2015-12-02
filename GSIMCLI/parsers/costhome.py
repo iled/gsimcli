@@ -585,8 +585,6 @@ class Network(object):
         for i, station_col in enumerate(data_cols):
             stid = station_ids[i]
             data = pd.DataFrame(xlstable[station_col] / div)
-            if data.iloc[0].values > 500:
-                pass
             if not yearly:
                 data.columns = [month]
             if stid in self.stations_id:

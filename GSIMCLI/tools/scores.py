@@ -13,6 +13,7 @@ Created on 21/01/2014
 @author: julio
 """
 
+import bottleneck as bn
 import numpy as np
 import pandas as pd
 import parsers.costhome as ch
@@ -59,12 +60,12 @@ def crmse(homog, orig, centered=True, crop=None):
         homog = homog[crop:-crop]
         orig = orig[crop:-crop]
 
+    # squeeze to support both dataframe's (monthly) and series (yearly)
     if centered:
-        homog -= homog.mean().mean()
-        orig -= orig.mean().mean()
-#    diff = (homog - orig).std()
+        homog -= bn.nanmean(np.squeeze(homog.values))
+        orig -= bn.nanmean(np.squeeze(orig.values))
 
-    diff = np.sqrt(np.power((homog - orig), 2).mean().mean())
+    diff = np.sqrt(bn.nanmean(np.squeeze(np.power((homog - orig).values, 2))))
 
     return diff
 
