@@ -567,7 +567,7 @@ class Network(object):
             div = 1.0
 
         xlsfile = pd.ExcelFile(path)
-        xlstable = xlsfile.parse(sheetname='All stations', header=False,
+        xlstable = xlsfile.parse(sheetname='All stations', header=0,
                                  na_values=self.no_data, index_col=0)
 
         # filter out FLAG columns

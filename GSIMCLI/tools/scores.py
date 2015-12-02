@@ -294,6 +294,7 @@ def gsimcli_improvement(gsimcli_results, no_data=-999.9, keys_path=None,
             raise ValueError("Mismatch between number of results files and "
                              "keys_path files")
 
+    yearly = kwargs['yearly']
     yearly_sum = kwargs.pop("yearly_sum")
 
     submission = ch.Submission(no_data=no_data)
@@ -306,10 +307,15 @@ def gsimcli_improvement(gsimcli_results, no_data=-999.9, keys_path=None,
         else:
             key = None
 
-        for results in gsimcli_results[network_id]:
+        if yearly:
+            results_paths = [gsimcli_results[network_id]]
+        else:
+            results_paths = gsimcli_results[network_id]
+
+        for results in results_paths:
             network.load_gsimcli(path=results, keys_path=key,
                                  yearly_sum=yearly_sum,
-                                 yearly=kwargs['yearly'])
+                                 yearly=yearly)
             # send update
             update.current += 1
             update.send()
