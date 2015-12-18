@@ -408,6 +408,7 @@ class Scores(QtGui.QWidget):
         self.comboFormat.currentIndexChanged.connect(self.file_format)
 
         # lines
+        self.lineOrig.textChanged.connect(self.guess_inho)
         self.lineInho.textChanged.connect(self.enable_improvement)
 
         # table
@@ -436,6 +437,7 @@ class Scores(QtGui.QWidget):
                  self.progressBar
                  ])
 
+        self.file_format()
         self.time_resolution()
 
     def browse_homog_dir(self, index):
@@ -516,31 +518,46 @@ class Scores(QtGui.QWidget):
         else:
             if not os.path.isdir(self.lineOrig.text()):
                 raise ValueError("Original data path is not valid.")
-            if not all([len(self.gsimcli_results),
-                        len(self.network_ids),
-                        len(self.keys)]):
+            if self.format_is_gsimcli and not all([len(self.results_files),
+                   len(self.network_ids), len(self.keys)]):
                 raise ValueError("Incomplete or invalid gsimcli results.")
 
         self.show_status(True)
         self.set_progress_max()
 
+        if self.format_is_gsimcli:
+            results_arg = 'gsimcli_results'
+        else:
+            results_arg = 'network_path'
+
+        # arguments for both formats
         kwargs = {
-            'gsimcli_results': self.gsimcli_results,
+            results_arg: self.results_files,
             'no_data': self.spinNoData.value(),
-            'keys_path': self.keys,
-            'costhome_path': self.lineSaveCost.text(),
             'orig_path': self.lineOrig.text(),
             'inho_path': self.lineInho.text(),
             'yearly': self.resolution == 'yearly',
-            'yearly_sum': self.checkAverageYearly.isChecked(),
             'over_network': self.groupNetwork.isChecked(),
             'over_station': self.groupStation.isChecked(),
             'skip_missing': self.checkSkipMissing.isChecked(),
             'skip_outlier': self.checkSkipOutlier.isChecked(),
         }
+        # arguments for specific format
+        if self.format_is_gsimcli:
+            kwargs.update({
+                'keys_path': self.keys,
+                'costhome_path': self.lineSaveCost.text(),
+                'yearly_sum': self.checkAverageYearly.isChecked(),
+            })
+        else:
+            kwargs['networks_id'] = self.network_ids
 
         # set up the job
-        job = scores.gsimcli_improvement
+        if self.format_is_gsimcli:
+            job = scores.gsimcli_improvement
+        else:
+            job = scores.cost_improvement
+
         updater = scores.update.progress
         self.office = ui.Office(self, job, updater=updater, **kwargs)
         # self.office.worker.time_elapsed.connect(self.set_time)
@@ -553,11 +570,19 @@ class Scores(QtGui.QWidget):
         keys files.
 
         """
-        keys = self.tableResultsModel.get_key("Keys file", True)
-
         stations = 0
-        for key in keys:
-            stations += sum(1 for line in open(key)) - 1  # @UnusedVariable
+
+        if self.format_is_gsimcli:
+            keys = self.tableResultsModel.get_key("Keys file", True)
+
+            for key in keys:
+                stations += sum(1 for line in open(key)) - 1  # @UnusedVariable
+
+        else:
+            paths = self.tableResultsModel.get_key("Results file", True)
+            # simple guess based on the number of files and folders
+            for path in paths:
+                stations += len(os.listdir(path))
 
         return stations
 
@@ -621,18 +646,31 @@ class Scores(QtGui.QWidget):
         """
         results = self.tableResultsModel.get_key('Results file', True)
         network_ids = self.tableResultsModel.get_key('Network ID', True)
-        keys = self.tableResultsModel.get_key('Keys file', True)
 
-        if self.resolution == "yearly":
-            gsimcli_results = results
-        elif self.resolution == "monthly":
-            networks = list()
-            for i, network in enumerate(results):
-                networks.append(self.find_results(network, network_ids[i]))
-            gsimcli_results = networks
-        self.gsimcli_results = dict(zip(network_ids, gsimcli_results))
-        self.network_ids = network_ids
-        self.keys = keys
+        if self.format_is_gsimcli:
+            keys = self.tableResultsModel.get_key('Keys file', True)
+
+        if self.format_is_gsimcli:
+            if self.resolution == "yearly":
+                results_files = results
+            elif self.resolution == "monthly":
+                networks = list()
+                for i, network in enumerate(results):
+                    networks.append(self.find_results(network, network_ids[i]))
+                results_files = networks
+            self.results_files = dict(zip(network_ids, results_files))
+            self.keys = keys
+            self.network_ids = network_ids
+
+        else:  # format is cost-home
+            self.results_files = results.tolist()[0]
+            # FIXME: [0] will give a wrong number of networks to set_progress
+            self.keys = None
+            ids_list = network_ids.tolist()
+            if ids_list:
+                self.network_ids = ids_list[0].split()
+            else:
+                self.network_ids = None
 
     def file_format(self):
         """Handle the different file formats accepted.
@@ -646,14 +684,26 @@ class Scores(QtGui.QWidget):
         elif fformat == "COST-HOME":
             toggle_save = False
 
+        self.format_is_gsimcli = toggle_save
         self.enable_save_cost(toggle_save and self.checkSaveCost.isChecked())
         self.checkSaveCost.setEnabled(toggle_save)
+        keys_index = self.tableResultsModel.header.index('Keys file')
+        self.tableResultsView.setColumnHidden(keys_index, not toggle_save)
 
     def find_results(self, path, network_id=''):
         """Find gsimcli results files.
 
         """
         return glob2.glob(os.path.join(path, '**/*' + network_id + '*.xls'))
+
+    def guess_inho(self):
+        """Try to guess the inho path.
+
+        """
+        inho = self.lineOrig.text().replace(os.sep + 'orig' + os.sep,
+                                            os.sep + 'inho' + os.sep)
+        if os.path.isdir(inho):
+            self.lineInho.setText(inho)
 
     def print_results(self):
         """Display the results in the lineEdits widgets.
@@ -748,7 +798,7 @@ class Scores(QtGui.QWidget):
         over_network = self.groupNetwork.isChecked()
         over_station = self.groupStation.isChecked()
 
-        networks = len(self.gsimcli_results)
+        networks = len(self.results_files)
         stations = self.count_stations()
         total = networks + 1
         if over_network:

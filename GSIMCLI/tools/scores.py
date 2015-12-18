@@ -325,6 +325,7 @@ def gsimcli_improvement(gsimcli_results, no_data=-999.9, keys_path=None,
 
     orig_path = kwargs.pop("orig_path")
     inho_path = kwargs.pop("inho_path")
+
     submission.setup(orig_path, inho_path)
 
     if inho_path:
@@ -334,6 +335,31 @@ def gsimcli_improvement(gsimcli_results, no_data=-999.9, keys_path=None,
 
     if costhome_path:
         submission.save(costhome_path)
+
+    update.reset()
+    return results
+
+
+def cost_improvement(network_path, networks_id=None, no_data=-999.9, **kwargs):
+    """Calculate the improvement of a COST-HOME submission.
+
+    Parameters
+    ----------
+    network_path : string
+        Path to the directory containing the networks folders.
+    no_data : number, default -999.9
+        Missing data value.
+
+    """
+    orig_path = kwargs.pop("orig_path")
+    inho_path = kwargs.pop("inho_path")
+    submission = ch.Submission(network_path, no_data, networks_id, orig_path,
+                               inho_path)
+
+    if inho_path:
+        results = improvement(submission, **kwargs)
+    else:
+        results = [crmse_submission(submission, **kwargs)]
 
     update.reset()
     return results
@@ -423,7 +449,7 @@ if __name__ == '__main__':
     sub = ch.Submission(netw_path, md,  # ['000009', '000005'],
                         orig_path=orig_path, inho_path=inho_path)  # , ['000010'])
     print improvement(sub, over_station=True, over_network=True,
-                      skip_missing=False, skip_outlier=True, yearly=False)
+                      skip_missing=False, skip_outlier=True, yearly=True)
 
 #     print gsimcli_improvement(gsimcli_results, yearly_sum=True,
 #                               keys_path=kis, orig_path=orig_path, inho_path=inho_path,
