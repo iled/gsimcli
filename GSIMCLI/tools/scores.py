@@ -431,12 +431,13 @@ if __name__ == '__main__':
     inho_path = basepath + "/benchmark/inho/precip/sur1"
     # """
 
-    """ # GSIMCLI monthly
+    # """ # GSIMCLI monthly
     import glob
 
     rede5 = glob.glob('/home/julio/Área de Trabalho/testes 5+9/d095c095_xls/5/' + '*.xls')
     rede9 = glob.glob('/home/julio/Área de Trabalho/testes 5+9/d095c095_xls/9/' + '*.xls')
-    gsimcli_results = {'000005': rede5, '000009': rede9}
+    gsimcli_results = {'000005': rede5,
+                       '000009': rede9}
 
     kis = [basepath + 'cost-home/rede000005/keys.txt',
            basepath + 'cost-home/rede000009/keys.txt']
@@ -446,13 +447,13 @@ if __name__ == '__main__':
 
 #    netw_path = basepath + 'benchmark/h011/precip/sur1'
     # network_id = ['000009', '000010']
-    sub = ch.Submission(netw_path, md,  # ['000009', '000005'],
-                        orig_path=orig_path, inho_path=inho_path)  # , ['000010'])
-    print improvement(sub, over_station=True, over_network=True,
-                      skip_missing=False, skip_outlier=True, yearly=True)
+#     sub = ch.Submission(netw_path, md,  # ['000009', '000005'],
+#                         orig_path=orig_path, inho_path=inho_path)  # , ['000010'])
+#     print improvement(sub, over_station=True, over_network=True,
+#                       skip_missing=False, skip_outlier=True, yearly=True)
 
-#     print gsimcli_improvement(gsimcli_results, yearly_sum=True,
-#                               keys_path=kis, orig_path=orig_path, inho_path=inho_path,
-#                               yearly=False)
+    print gsimcli_improvement(gsimcli_results, yearly_sum=True,
+                              keys_path=kis, orig_path=orig_path, inho_path=inho_path,
+                              yearly=False)
 
     print 'done'
