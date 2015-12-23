@@ -163,20 +163,26 @@ class Station(object):
         elif self.content == 'f' and os.path.isfile(self.path):
             self.quality = pc.qualityfile(self.path, self.resolution)
 
-    def load_outliers(self, path=None):
-        """List the dates with detected outliers.
+    def load_detected(self, outliers=False, breaks=False, path=None):
+        """List the dates with detected outliers and breaks.
 
         Parameters
         ----------
+        outliers : boolean, default False
+            Load corresponding outliers.
+        breaks : boolean, default False
+            Load corresponding break points.
         path : string, optional
             Breakpoints file path.
 
         Returns
         -------
-        Sets attribute `outliers`
+        Sets attributes `outliers` and `breaks`.
 
         outliers : pandas.Series
             Dates with detected outliers.
+        breaks : pandas.Series
+            Dates with detected breakpoints.
 
         Notes
         -----
@@ -194,10 +200,19 @@ class Station(object):
                 raise os.error('breakpoints file not found in directory {}'.
                                format(path))
 
-        detected = pc.breakpointsfile(detected_file)
-        select_station = detected["Station"].map(lambda x: self.id in x)
-        select_outlier = detected["Type"] == "OUTLIE"
-        self.outliers = detected[select_station & select_outlier].ix[:, 2:]
+        if outliers or breaks:
+            detected = pc.breakpointsfile(detected_file)
+            select_station = detected["Station"].map(lambda x: self.id in x)
+
+        if outliers:
+            select_outlier = detected["Type"] == "OUTLIE"
+            self.outliers = detected[select_station & select_outlier].drop(
+                               ['Station', 'Type'], axis=1)
+
+        if breaks:
+            select_breaks = detected["Type"] == 'BREAK'
+            self.breaks = detected[select_station & select_breaks].drop(
+                             ['Station', 'Type'], axis=1)
 
     def match_orig(self, path=None):
         """Try to fetch the matching original station data.
@@ -284,14 +299,17 @@ class Station(object):
         elif func == 'sum':
             return self.data.sum(axis=1)
 
-    def setup(self, outliers=False, inho=False, orig_path=None,
+    def setup(self, outliers=False, breaks=False, inho=False, orig_path=None,
               inho_path=None):
-        """Load station homogenised data, original and outliers.
+        """Load station homogenised data, original, outliers and break points
+        dates. It won't override existing loaded outliers/breaks.
 
         Parameters
         ----------
         outliers : boolean, default False
             Load corresponding outliers.
+        breaks : boolean, default False
+            Load corresponding break points.
         inho : boolean, default False
             Load corresponding inhomogenous data.
         orig_path : string, optional
@@ -301,12 +319,12 @@ class Station(object):
 
         Returns
         -------
-        Set attributes `outliers`, `orig` and `inho`.
+        Set attributes `outliers`, `breaks`, `orig` and `inho`.
 
         See Also
         --------
         load : load data.
-        load_outliers : load outliers.
+        load_detected : load dates with outliers and break points.
         match_orig : fetch corresponding original data.
         match_inho : fetch corresponding inhomogenous.
 
@@ -316,10 +334,13 @@ class Station(object):
         if not hasattr(self, 'orig'):
             self.match_orig(orig_path)
         self.orig.load()
-        if outliers and not hasattr(self, 'outliers'):
+        # don't override existing outliers/breaks
+        outliers = outliers and not hasattr(self, 'outliers')
+        breaks = breaks and not hasattr(self, 'breaks')
+        if outliers or breaks:
             if 'orig' not in self.path.lower():
-                warnings.warn('loading outliers from non ORIG submission')
-            self.load_outliers()
+                warnings.warn('Loading detected from non-ORIG submission.')
+            self.load_detected(outliers, breaks)
         if inho and not hasattr(self, 'inho'):
             self.match_inho(inho_path)
 
@@ -342,13 +363,13 @@ class Station(object):
                          float_format='%6.1f')
 
     def skip_outliers(self, yearly=True):
-        """Replaced by NaN the values marked as outliers in the original data.
+        """Replace the values marked as outliers in the original data by NaN.
 
         If working with yearly data, it will delete the corresponding rows
         instead.
 
         """
-        self.orig.load_outliers()
+        self.orig.load_detected(outliers=True)
         orig = self.orig.data
         if yearly:
             skip = list(np.unique(self.orig.outliers.Year))
