@@ -844,6 +844,62 @@ class Submission(object):
 
         self.stations_id = list(np.unique(self.stations_id))
 
+    def load_gsimcli(self, gsimcli_results, keys_paths=None, yearly=True,
+                     yearly_sum=False, orig_path=None, inho_path=None):
+        """Load and initialise the results of a gsimcli process as a COST-HOME
+        submission.
+
+        Parameters
+        ----------
+        gsimcli_results : dict
+            List of results files per network organised in a dictionary.
+            Example:
+                { '000005' : ['1.xls', '2.xls'],
+                  '000009' : ['1.xls', '2.xls', '3.xls'] }
+        keys_paths : array_like of string, optional
+            Paths to the files containing the keys which converted the stations
+            IDs. If given, it must have the same length as `gsimcli_results`.
+        yearly : boolean, default True
+            Average monthly data to yearly data.
+        yearly_sum : boolean, default False
+            Convert yearly summed data into monthly average.
+        orig_path : string, optional
+            Directory with the original files for the submission.
+        inho_path : string, optional
+            Directory with the inhomogised files for the submission.
+
+        """
+        # accept str or list of str
+        if isinstance(keys_paths, str) or isinstance(keys_paths, unicode):
+            keys_paths = [keys_paths]
+
+        if keys_paths is not None:
+            number_of_keys = len(keys_paths)
+            number_of_results = len(gsimcli_results)
+            if number_of_keys != number_of_results:
+                raise ValueError("Mismatch between number of results files "
+                                 "({0}) and keys_paths files ({1})").format(
+                                   number_of_keys, number_of_results)
+
+        for i, network_id in enumerate(gsimcli_results.keys()):
+            network = Network(no_data=self.no_data, network_id=network_id)
+
+            if keys_paths is not None:
+                keypath = keys_paths[i]
+            else:
+                keypath = None
+
+            for results in gsimcli_results[network_id]:
+                network.load_gsimcli(path=results, keys_path=keypath,
+                                     yearly_sum=yearly_sum, yearly=yearly)
+                # send update  # FIXME: not adjusted yet
+                # update.current += 1
+                # update.send()
+
+            self.add(network)
+
+        self.setup(orig_path, inho_path)
+
     def save(self, path):
         """Write all networks included in the submission, according to the
         COST-HOME format.

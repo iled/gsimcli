@@ -266,67 +266,25 @@ def improvement(submission, **kwargs):
     return homog_crmse, inho_crmse, improve
 
 
-def gsimcli_improvement(gsimcli_results, no_data=-999.9, keys_path=None,
-                        costhome_path=None, **kwargs):
+def gsimcli_improvement(gsimcli_submission, costhome_path=None, **kwargs):
     """Calculate the improvement of a GSIMCLI process.
 
     Parameters
     ----------
-    gsimcli_results : dict
-        List of results files per network organised in a dictionary. Example:
-            { '000005' : ['1.xls', '2.xls'],
-              '000009' : ['1.xls', '2.xls', '3.xls'] }
-    no_data : number, default -999.9
-        Missing data value.
-    keys_path : string, optional
-        Path to the file containing the keys which converted the stations IDs.
+    gsimcli_submission : Submission object
+        Instance of Submission containing the gsimcli process' results.
     costhome_path : string, optional
         Provide a path to a directory if you want to save the results files
         converted into the COST-HOME format.
 
     """
-    # accept str or list of str
-    if isinstance(keys_path, str) or isinstance(keys_path, unicode):
-        keys_path = [keys_path]
-
-    if keys_path is not None:
-        if len(keys_path) != len(gsimcli_results):
-            raise ValueError("Mismatch between number of results files and "
-                             "keys_path files")
-
-    yearly_sum = kwargs.pop("yearly_sum")
-
-    submission = ch.Submission(no_data=no_data)
-
-    for i, network_id in enumerate(gsimcli_results.keys()):
-        network = ch.Network(no_data=no_data, network_id=network_id)
-
-        if keys_path is not None:
-            key = keys_path[i]
-        else:
-            key = None
-
-        for results in gsimcli_results[network_id]:
-            network.load_gsimcli(path=results, keys_path=key,
-                                 yearly_sum=yearly_sum,
-                                 yearly=kwargs['yearly'])
-            # send update
-            update.current += 1
-            update.send()
-
-        submission.add(network)
-
-    orig_path = kwargs.pop("orig_path")
-    inho_path = kwargs.pop("inho_path")
-    submission.setup(orig_path, inho_path)
-
-    if inho_path:
-        results = improvement(submission, **kwargs)
+    if gsimcli_submission.inho_path:
+        results = improvement(gsimcli_submission, **kwargs)
     else:
-        results = [crmse_submission(submission, **kwargs)]
+        results = [crmse_submission(gsimcli_submission, **kwargs)]
 
     if costhome_path:
-        submission.save(costhome_path)
+        gsimcli_submission.save(costhome_path)
 
     update.reset()
     return results
@@ -398,7 +356,7 @@ if __name__ == '__main__':
     inho_path = basepath + "/benchmark/inho/precip/sur1"
     # """
 
-    """ # GSIMCLI monthly
+    # """ # GSIMCLI monthly
     import glob
 
     rede5 = glob.glob('/home/julio/Área de Trabalho/testes 5+9/d095c095_xls/5/' + '*.xls')
@@ -409,17 +367,20 @@ if __name__ == '__main__':
            basepath + 'cost-home/rede000009/keys.txt']
     orig_path = basepath + "/benchmark/orig/precip/sur1"
     inho_path = basepath + "/benchmark/inho/precip/sur1"
+
+    sub = ch.Submission(no_data=md)
+    sub.load_gsimcli(gsimcli_results, kis, yearly=False, yearly_sum=True,
+                     orig_path=orig_path, inho_path=inho_path)
     # """
 
 #    netw_path = basepath + 'benchmark/h011/precip/sur1'
     # network_id = ['000009', '000010']
-    sub = ch.Submission(netw_path, md,  # ['000009', '000005'],
-                        orig_path=orig_path, inho_path=inho_path)  # , ['000010'])
-    print improvement(sub, over_station=True, over_network=True,
-                      skip_missing=False, skip_outlier=True, yearly=False)
+#     sub = ch.Submission(netw_path, md,  # ['000009', '000005'],
+#                         orig_path=orig_path, inho_path=inho_path)  # , ['000010'])
+#     print improvement(sub, over_station=True, over_network=True,
+#                       skip_missing=False, skip_outlier=True, yearly=False)
 
-#     print gsimcli_improvement(gsimcli_results, yearly_sum=True,
-#                               keys_path=kis, orig_path=orig_path, inho_path=inho_path,
-#                               yearly=False)
+    print gsimcli_improvement(sub, over_station=True, over_network=True,
+                     skip_missing=False, skip_outlier=True, yearly=False)
 
     print 'done'
