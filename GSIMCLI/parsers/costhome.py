@@ -89,6 +89,7 @@ class Station(object):
     TODO: separate quality flag from data
 
     """
+
     def __init__(self, path=None, no_data=-999.9, spec=None):
         """Initialise a Station instance.
 
@@ -207,12 +208,12 @@ class Station(object):
         if outliers:
             select_outlier = detected["Type"] == "OUTLIE"
             self.outliers = detected[select_station & select_outlier].drop(
-                               ['Station', 'Type'], axis=1)
+                ['Station', 'Type'], axis=1)
 
         if breaks:
             select_breaks = detected["Type"] == 'BREAK'
             self.breaks = detected[select_station & select_breaks].drop(
-                             ['Station', 'Type'], axis=1)
+                ['Station', 'Type'], axis=1)
 
     def match_orig(self, path=None):
         """Try to fetch the matching original station data.
@@ -405,6 +406,7 @@ class Network(object):
         Number of stations in the network.
 
     """
+
     def __init__(self, path=None, no_data=-999.9, network_id=None):
         """Initialise a Network instance.
 
@@ -543,7 +545,7 @@ class Network(object):
         """
         self.setup()
         for station in self.stations:
-            station.setup(orig_path=orig_path)
+            station.setup(orig_path=orig_path, outliers=True)
             station.skip_outliers(yearly)
 
     def setup(self):
@@ -758,6 +760,7 @@ class Submission(object):
         Directory where the inhomogeneous station files are located.
 
     """
+
     def __init__(self, path=None, no_data=-999.9, networks_id=None,
                  orig_path=None, inho_path=None):
         """Initialise a Submission instance.
@@ -807,6 +810,14 @@ class Submission(object):
         self.stations_number += network.stations_number
         self.stations_id.extend(network.stations_id)
         self.stations_id = list(set(self.stations_id))
+
+    def iter_stations(self):
+        """Iterates over the stations in the Submission.
+
+        """
+        for network in self.networks:
+            for station in network.stations:
+                yield station
 
     def load(self):
         """Load all networks included in the submission.
@@ -879,7 +890,7 @@ class Submission(object):
             if number_of_keys != number_of_results:
                 raise ValueError("Mismatch between number of results files "
                                  "({0}) and keys_paths files ({1})").format(
-                                   number_of_keys, number_of_results)
+                    number_of_keys, number_of_results)
 
         for i, network_id in enumerate(gsimcli_results.keys()):
             network = Network(no_data=self.no_data, network_id=network_id)
@@ -913,7 +924,8 @@ class Submission(object):
         for network in self.networks:
             network.save(path)
 
-    def setup(self, orig_path=None, inho_path=None):
+    def setup(self, outliers=False, breaks=False, orig_path=None,
+              inho_path=None):
         """Load all networks (and its stations) in the submission.
 
         Set the original and the inhomogenised directories. Each one these
@@ -922,6 +934,10 @@ class Submission(object):
 
         Parameters
         ----------
+        outliers : boolean, default False
+            Load corresponding outliers.
+        breaks : boolean, default False
+            Load corresponding break points.
         orig_path : string, optional
             Directory with the original files for the submission.
         inho_path : string, optional
@@ -953,7 +969,7 @@ class Submission(object):
                     if inho_path:
                         inho_file = glob.glob(inho_netw + file_pattern)[0]
                         station.match_inho(inho_file)
-                    station.setup()
+                    station.setup(outliers, breaks)
 
 
 def extract_month(path):
