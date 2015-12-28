@@ -11,8 +11,10 @@ Created on 23/12/2015
 
 @author: julio
 """
+from __future__ import division
 
 from collections import namedtuple
+
 from interface.ui_utils import Updater
 import numpy as np
 import parsers.costhome as ch
@@ -59,9 +61,33 @@ def count_hits(homog, orig, size=np.nan):
 
 
 def crawl(submission, orig_path):
+    total_hits = np.zeros(4)
     for stid, size, homog, orig in setup_skill(submission, orig_path):
         hits = count_hits(homog, orig, size)
+        total_hits += hits
         print stid, hits
+    print total_hits
+    return Hits(*total_hits.tolist())
+
+
+def peirce(true_positives, false_positives, false_negatives, true_negatives):
+    pod = true_positives / (true_positives + false_negatives)
+    pofd = false_positives / (false_positives + true_negatives)
+    pss = pod - pofd
+    peirce_skillscore = namedtuple('PeirceSkillScore',
+                                   ['POD', 'POFD', 'Peirce'])
+    return peirce_skillscore(pod, pofd, pss)
+
+
+def heidke(true_positives, false_positives, false_negatives, true_negatives):
+    n = true_negatives + false_positives + false_negatives + true_negatives
+    p = (true_positives + true_negatives) / n
+    r_std = n * ((true_positives + false_negatives)
+                 * (true_positives + false_positives)
+                 + (false_positives + true_negatives)
+                 * (false_negatives + true_negatives))
+    hss_std = (p - r_std) / (1 - r_std)
+    return hss_std
 
 if __name__ == '__main__':
     md = -999.9
@@ -102,8 +128,8 @@ if __name__ == '__main__':
     # """
 
     # """ # MASH Marinova precip
-    # yearly: st 3.6 0.56 netw 1.6 0.69
-    # monthly: st 8.5 0.84 netw 3.8 1.03
+    # pod=0.23 pofd=0.03 peirce=0.20
+    # heidke=0.22 heidke special=0.27
     netw_path = basepath + 'benchmark/h009/precip/sur1'
     orig_path = basepath + 'benchmark/orig/precip/sur1'
     inho_path = basepath + 'benchmark/inho/precip/sur1'
@@ -154,6 +180,8 @@ if __name__ == '__main__':
 
     # sub.setup(True, True, orig_path, inho_path)
 
-    crawl(sub, orig_path)
+    hits = crawl(sub, orig_path)
+    print peirce(*hits)
+    print heidke(*hits)
 
     print 'done'
