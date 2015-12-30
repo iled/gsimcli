@@ -164,7 +164,7 @@ class Homogenisation(object):
         values : array_like, optional
             Set of values which will be used to fill the target time series.
             Must have a length equal to the number of items in the time series.
-            If not provided, will use the mean values.
+            If not provided, the mean values will be used.
         time_seq: tuple of numbers, optional
             The first and last values in the desired time series and the space
             between them (min, max, step). If not provided, will use the grids
@@ -172,7 +172,7 @@ class Homogenisation(object):
 
         """
         if self.obs.values.shape[0] < self.grids.dz:
-            continue
+            pass
         else:
             return self
 
