@@ -98,7 +98,11 @@ class PointSet(object):
             if len(self.values.columns) == len(self.varnames):
                 self.values.columns = self.varnames
 
-<<<<<<< HEAD
+    def __repr__(self):
+        """Print a PointSet instance like a pd.DataFrame.
+        """
+        return str(self.values)
+
     def add_var(self, values, varname=None):
         """Append a new variable to an existing PointSet.
 
@@ -121,11 +125,6 @@ class PointSet(object):
             varname += '_new'
         self.varnames.append(varname)
         self.values[varname] = values
-
-=======
->>>>>>> refs/heads/simstats
-    def __repr__(self):
-        return str(self.values)
 
     def load(self, psetfile, nd=-999.9, header=True):
         """Load a point-set from a file in GSLIB format.
@@ -722,7 +721,8 @@ class GridFiles(object):
             retdict['stdmap'] = stdgrid
         if lcoefvar:
             coefvargrid = GridArr(name='coefvarmap', dx=self.dx, dy=self.dy,
-                              dz=self.dz, nodata=self.nodata, val=coefvarmap)
+                                  dz=self.dz, nodata=self.nodata,
+                                  val=coefvarmap)
             retdict['coefvarmap'] = coefvargrid
         if lperc:
             percgrid = GridArr(name='percmap', dx=self.dx, dy=self.dy,
@@ -854,8 +854,8 @@ class GridFiles(object):
                                    ['x', 'y', 'value'],
                                    values=np.zeros((self.nfiles, 3)))
                 arrout = os.path.join(os.path.dirname(self.files[0].name),
-                                      'sim values at ({}, {}, {}).prn'.
-                                   format(loc[0], loc[1], layer * self.cellz
+                                      'sim values at ({}, {}, {}).prn'.format(
+                                          loc[0], loc[1], layer * self.cellz
                                           + self.zi))
                 arrpset.values.iloc[:, 2] = arr
                 arrpset.values.iloc[:, :2] = np.repeat(np.array(loc)
@@ -1206,8 +1206,8 @@ def _wrap2():
     # print 'loading grids'
     grids = GridFiles()
     grids.load(fstpar, nsims, griddims, fstcoord, nodesize, -999.9, 0)
-    vstats = grids.stats_area(pointloc, tol=rad, lmean=True, lvar=True, lperc=True,
-                              p=0.95)
+    vstats = grids.stats_area(pointloc, tol=rad, lmean=True, lvar=True,
+                              lperc=True, p=0.95)
     vstats.save(os.path.join(outpath, 'statsmap_t' + str(rad) + '.out'), 'var')
     grids.dump()
     return vstats
