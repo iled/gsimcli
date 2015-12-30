@@ -160,7 +160,7 @@ class TableModel(QtCore.QAbstractTableModel):
         """Remove the row in the given position.
 
         """
-        if row < 0 or row > self.rowCount():
+        if not(0 <= row <= self.rowCount()):
             return False
 
         self.beginRemoveRows(parent, row, row)
