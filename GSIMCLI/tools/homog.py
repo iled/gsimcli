@@ -960,7 +960,7 @@ def read_specfile(file_path):
     # check specs
     specs = ['xnodes', 'ynodes', 'xmin', 'ymin', 'xmax', 'ymax',
              'xsize', 'ysize']
-    if not all([spec in specs for spec in grid.columns]):
+    if not all(spec in specs for spec in grid.columns):
         raise ValueError('Missing or invalid grid specifications file')
     return grid
 

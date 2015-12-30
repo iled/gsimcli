@@ -109,7 +109,7 @@ def convert_files():
 
         for root, dirs, files in os.walk(folder):  # @UnusedVariable
             if (len(dirs) > 0 and all(
-                              [len(d) == 6 and d.isdigit() for d in dirs])):
+                                  len(d) == 6 and d.isdigit() for d in dirs)):
                 print 'processing ' + root
                 parsed_files = pcost.directory_walk_v1(root)
                 selected_files = pcost.files_select(parsed_files, ftype='data',

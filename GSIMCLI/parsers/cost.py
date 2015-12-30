@@ -58,7 +58,7 @@ def directory_convert(fpath, ftype=None, variable=None, content=None,
                    network=None, merge=False, to_year=None, coords=None,
                    md=-999.9):
     for root, dirs, files in os.walk(fpath):  # @UnusedVariable
-        if len(dirs) > 0 and all([len(d) == 6 and d.isdigit() for d in dirs]):
+        if len(dirs) > 0 and all(len(d) == 6 and d.isdigit() for d in dirs):
             print 'processing ' + root
             parsed_files = directory_walk_v1(root)
             selected_files = files_select(parsed=parsed_files, ftype=ftype,
@@ -130,7 +130,7 @@ def filename_parse(filepath, station_n=8, network_n=3):
             raise NameError('Unrecognized data resolution.')
 
         # ssssssss: Station number (number of characters to be
-                    # specified by the user, default is station_n = 8)
+        #           specified by the user, default is station_n = 8)
         ssssssss = bn[5:5 + station_n]
         if len(ssssssss) != len(bn) - 6:
             raise NameError('Invalid station number {0}.'.format(ssssssss))
@@ -139,7 +139,7 @@ def filename_parse(filepath, station_n=8, network_n=3):
         # 'd': #data, meteorological variables
         # 'f': #quality flags
         # 'g': #graphics and pictures (it may come with an extra suffix, hence
-                # the file name might be longer)
+        #      the file name might be longer)
         # 'c': #corrections
         c = bn[5 + station_n]
         if c not in ['d', 'f', 'g', 'c']:  # nunca vai encontrar o g...

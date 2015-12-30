@@ -120,7 +120,7 @@ class Station(object):
         months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
-        if all([month in months for month in self.data.columns]):
+        if all(month in months for month in self.data.columns):
             self.data = self.data.reindex_axis(months, axis=1)
 
     def load(self, path=None, content=None):
