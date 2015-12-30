@@ -98,6 +98,7 @@ class PointSet(object):
             if len(self.values.columns) == len(self.varnames):
                 self.values.columns = self.varnames
 
+<<<<<<< HEAD
     def add_var(self, values, varname=None):
         """Append a new variable to an existing PointSet.
 
@@ -121,6 +122,8 @@ class PointSet(object):
         self.varnames.append(varname)
         self.values[varname] = values
 
+=======
+>>>>>>> refs/heads/simstats
     def __repr__(self):
         return str(self.values)
 
