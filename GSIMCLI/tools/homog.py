@@ -21,7 +21,7 @@ import pandas as pd
 import tools.grid as gr
 
 
-_ntuple_stations = namedtuple('Stations', 'stations total')
+list_of_stations = namedtuple('Stations', 'stations total')
 
 
 def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
@@ -435,7 +435,7 @@ def list_networks_stations(networks, variables, secdir=None, header=True,
 
         stations[os.path.basename(network)] = ids
 
-    return _ntuple_stations(stations, total)
+    return list_of_stations(stations, total)
 
 
 def take_candidate(pset_file, station, header=True, save=False, path=None):

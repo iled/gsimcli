@@ -1502,7 +1502,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             else:
                 total = 0
 
-        return hmg._ntuple_stations(stations_list, total)
+        return hmg.list_of_stations(stations_list, total)
 
     def find_data_file(self):
         """Find a data file in the decade or selected network.
