@@ -381,7 +381,7 @@ def list_stations(pset_file, header=True, variables=None):
 
 
 def list_networks_stations(networks, variables, secdir=None, header=True,
-                           nvars=None, exts=["*.txt", "*.prn"]):
+                           nvars=None, exts=None):
     """List all the stations in a list of networks. It does so by trying to
     find a point-set file for each network.
 
@@ -401,8 +401,9 @@ def list_networks_stations(networks, variables, secdir=None, header=True,
     nvars : int, optional
         Miniumum expected number of variables. For point-set files acceptable
         as GSIMCLI process data files, use nvars=5.
-    exts : list of string, default ["*.txt", "*.prn"]
-        List of acceptable file extensions.
+    exts : list of string, optional
+        List of acceptable file extensions. If not present, will default to
+        `["*.txt", "*.prn"]`.
 
     Returns
     -------
@@ -414,7 +415,7 @@ def list_networks_stations(networks, variables, secdir=None, header=True,
     find_pset_file : Find a point-set file in a given directory tree.
 
     """
-
+    exts = exts or ["*.txt", "*.prn"]
     stations = dict()
     total = 0
     for network in networks:
@@ -902,8 +903,7 @@ def clean_leftovers(tree, maps=True, pars=True, trn=True, dbg=True, cands=True,
                     os.remove(os.path.join(root, basename))
 
 
-def find_pset_file(directory, header=True, nvars=None,
-                   exts=["*.txt", "*.prn"]):
+def find_pset_file(directory, header=True, nvars=None, exts=None):
     """Find a point-set file in a given directory tree.
 
     Parameters
@@ -915,8 +915,9 @@ def find_pset_file(directory, header=True, nvars=None,
     nvars : int, optional
         Miniumum expected number of variables. For point-set files acceptable
         as GSIMCLI process data files, use nvars=5.
-    exts : list of string, default ["*.txt", "*.prn"]
-        List of acceptable file extensions.
+    exts : list of string, optional
+        List of acceptable file extensions. If not present, will default to
+        `["*.txt", "*.prn"]`.
 
     Returns
     -------
@@ -925,6 +926,7 @@ def find_pset_file(directory, header=True, nvars=None,
         the given criteria (extension, header and number of variables).
 
     """
+    exts = exts or ["*.txt", "*.prn"]
     for ext in exts:
         for name in glob.iglob(os.path.join(directory, ext)):
             try:

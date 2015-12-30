@@ -32,26 +32,26 @@ class ParametersFile(object):
 
     """
 
-    def __init__(self, field_sep, value_sep, par_set=str(), par_file=str(),
-                 text=list(), real_n=list(), int_n=list(), boolean=list(),
-                 opt_text=list(), opt_real=list(), opt_int=list(),
-                 opt_boolean=list(), parpath=None, order=None):
+    def __init__(self, field_sep, value_sep, par_set=None, par_file=None,
+                 text=None, real_n=None, int_n=None, boolean=None,
+                 opt_text=None, opt_real=None, opt_int=None,
+                 opt_boolean=None, parpath=None, order=None):
         """Constructor.
 
         """
         self.path = parpath
         self.field_sep = field_sep
         self.value_sep = value_sep
-        self.par_set = par_set
-        self.par_file = par_file
-        self.text = text
-        self.real = real_n
-        self.int = int_n
-        self.boolean = boolean
-        self.opt_text = opt_text
-        self.opt_real = opt_real
-        self.opt_int = opt_int
-        self.opt_boolean = opt_boolean
+        self.par_set = par_set or ''
+        self.par_file = par_file or ''
+        self.text = text or []
+        self.real = real_n or []
+        self.int = int_n or []
+        self.boolean = boolean or []
+        self.opt_text = opt_text or []
+        self.opt_real = opt_real or []
+        self.opt_int = opt_int or []
+        self.opt_boolean = opt_boolean or []
         self.optional = (self.opt_text + self.opt_real + self.opt_int
                          + self.opt_boolean)
         self.fields = self.text + self.real + self.int + self.boolean

@@ -66,34 +66,37 @@ class PointSet(object):
 
     """
 
-    def __init__(self, name='', nodata=-999.9, nvars=0, varnames=list(),
-                 values=np.zeros((0, 0)), psetpath=str(), header=True):
+    def __init__(self, name=None, nodata=-999.9, nvars=0, varnames=None,
+                 values=None, psetpath=None, header=True):
         """Constructor to initialise a PointSet instance.
 
         Parameters
-        __________
-        name : string
+        ----------
+        name : string, optional
             Descriptive name.
-        nvars : int
+        nodata : number, default -999.9
+            Missing data value.
+        nvars : int, default 0
             Number of variables.
-        varnames : list of string
+        varnames : list of string, optional
             Variables names.
-        values : pandas.DataFrame
+        values : pandas.DataFrame, optional
             Variables values.
-        psetpath : string
+        psetpath : string, optional
             File path.
         header : boolean, default True
             PointSet file has the GSLIB standard header lines.
 
         """
         self.path = psetpath
-        if os.path.isfile(self.path):
+        if self.path and os.path.isfile(self.path):
             self.load(self.path, nodata, header)
         else:
-            self.name = name
+            self.name = name or ''
             self.nvars = nvars
             self.nodata = nodata
-            self.varnames = varnames
+            self.varnames = varnames or []
+            values = values or np.zeros((0, 0))
             self.values = pd.DataFrame(values)
             if len(self.values.columns) == len(self.varnames):
                 self.values.columns = self.varnames
