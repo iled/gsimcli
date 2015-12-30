@@ -14,6 +14,7 @@ import os
 import sys
 from tempfile import NamedTemporaryFile
 import time
+import warnings
 
 base = os.path.dirname(os.path.dirname(__file__))
 sys.path.append(base)
@@ -1109,7 +1110,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             ui.pylist_to_qlist(self.params.variables, self.DL_listVarNames)
         except(AttributeError):
             # ignore if attributes are not present
-            pass
+            warnings.warn("params 'name' and/or 'variables' are not present")
 
         # Simulation / Options
         # self.SO_lineParPath.setText(self.params.dss_par)

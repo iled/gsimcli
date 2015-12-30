@@ -8,6 +8,7 @@ from PySide import QtGui, QtCore
 from collections import namedtuple
 import os
 import sys
+import warnings
 
 from external_libs.pyside_dynamic import loadUi
 from interface.checktable import TableModel, TableView
@@ -229,11 +230,9 @@ class SelectStations(QtGui.QDialog):
             stations = np.unique(self.pset.values.ix[:, id_col])
             # stations_list = map(int, stations)
         except AttributeError:
-            # the point set was not correctly loaded yet
-            pass
+            warnings.warn('the point set was not correctly loaded yet.')
         except KeyError:
-            # the ID column must be wrong
-            pass
+            warnings.warn('the ID column may be wrong.')
         else:
             # stations_list = map(unicode, stations.astype('int'))
             self.locations(stations)
