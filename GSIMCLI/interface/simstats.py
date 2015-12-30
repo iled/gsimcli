@@ -421,7 +421,7 @@ class SimStats(QtGui.QWidget):
 
         """
         simdir = self.lineSimsPath.text()
-        if not len(simdir):
+        if not simdir:
             return None
         elif os.path.isdir(simdir):
             simfiles = glob2.glob(os.path.join(simdir, "**/*." + ext))

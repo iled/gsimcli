@@ -190,7 +190,7 @@ class SelectStations(QtGui.QDialog):
 
         """
         filepath = self.linePath.text()
-        if not len(filepath):
+        if not filepath:
             return None
         try:
             with open(filepath, 'r+') as datafile:

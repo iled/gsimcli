@@ -134,13 +134,13 @@ def convert_files():
                           'default: first): ')
         header = raw_input('Which line has the header (e.g., 0; '
                            'default: none): ')
-        if len(nd) == 0:
+        if not nd:
             nd = -999.9
-        if len(cols) == 0:
+        if not cols:
             cols = None
-        if len(sheet) == 0:
+        if not sheet:
             sheet = 0
-        if len(header) == 0:
+        if not header:
             header = None
         else:
             header = int(header)
