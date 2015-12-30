@@ -11,25 +11,25 @@ import numpy.testing as nt
 import parsers.shapefile as shp
 
 
-class Test_Shapefile(unittest.TestCase):
+class TestShapefile(unittest.TestCase):
 
     @classmethod
-    def setup_class(self):
-        self.ascii1_path = 'data/b17000asc.txt'
-        self.ascii1_dx = 81
-        self.ascii1_dy = 122
-        self.ascii1_dz = 10
-        self.ascii1_xi = 1770000
-        self.ascii1_yi = 7094000
-        self.ascii1_zi = 1900
-        self.ascii1_cellx = 1000
-        self.ascii1_celly = 1000
-        self.ascii1_cellz = 1
-        self.ascii1_nodata = -9999
-        self.shpfile = shp.Shapefile()
-        
+    def setup_class(cls):
+        cls.ascii1_path = 'data/b17000asc.txt'
+        cls.ascii1_dx = 81
+        cls.ascii1_dy = 122
+        cls.ascii1_dz = 10
+        cls.ascii1_xi = 1770000
+        cls.ascii1_yi = 7094000
+        cls.ascii1_zi = 1900
+        cls.ascii1_cellx = 1000
+        cls.ascii1_celly = 1000
+        cls.ascii1_cellz = 1
+        cls.ascii1_nodata = -9999
+        cls.shpfile = shp.Shapefile()
+
     @classmethod
-    def teardown_class(self):
+    def teardown_class(cls):
         os.remove('data/test_grid_save.out')
 
     def test_load_ascii_file(self):
@@ -55,7 +55,7 @@ class Test_Shapefile(unittest.TestCase):
         self.shpfile.load_ascii(self.ascii1_path)
         ascii2grid = self.shpfile.ascii2grid()
         self.assertEqual(ascii2grid.val.shape, (self.ascii1_dx * self.ascii1_dy
-                                            * self.ascii1_dz,))
+                                                * self.ascii1_dz,))
 
     def test_ascii2grid_order(self):
         self.shpfile.load_ascii(self.ascii1_path)
