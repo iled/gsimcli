@@ -155,7 +155,7 @@ class Station(object):
                 self.quality = pc.qualityfile(path, self.resolution)
             self.path = path
         elif self.ftype != 'data':
-            raise ValueError('The file {} was not parsed as a data file.'.
+            raise ValueError('The file {0} was not parsed as a data file.'.
                              format(self.path))
         # FIXME: check if this is a problem; path optional?
         elif self.content == 'd' and os.path.isfile(self.path):
@@ -191,7 +191,7 @@ class Station(object):
             try:
                 detected_file = glob.glob('*detected.txt')[0]
             except:
-                raise os.error('breakpoints file not found in directory {}'.
+                raise os.error('breakpoints file not found in directory {0}'.
                                format(path))
 
         detected = pc.breakpointsfile(detected_file)
@@ -919,6 +919,6 @@ def match_sub(path, sub, level=3):
         os.chdir(dirname)
         match = os.path.join(dirname, glob.glob('*' + str(basename[2:]))[0])
         if not os.path.isfile(match):
-            raise os.error('no such file: \'{}\''.format(match))
+            raise os.error('no such file: \'{0}\''.format(match))
 
     return match

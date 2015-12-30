@@ -150,7 +150,7 @@ def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
         lmed = False
         lskew = False
     else:
-        raise ValueError('Method {} invalid or incomplete.'.format(method))
+        raise ValueError('Method {0} invalid or incomplete.'.format(method))
 
     selected_stats = {
         'lmean': lmean,
@@ -617,7 +617,7 @@ def station_order(method, pset_file=None, nd=-999.9, header=True,
     elif method == 'user' and userset:
         stations_list = userset
     else:
-        raise TypeError('Method {} not understood or invalid userset ({}).'
+        raise TypeError('Method {0} not understood or invalid userset ({1}).'
                         .format(method, userset))
 
     return stations_list
@@ -844,7 +844,7 @@ def ask_add_header(pset):
     print 'Insert the point-set header metadata'
     pset.name = raw_input('Point-set name: ')
     for i in xrange(pset.nvars):
-        pset.varnames[i] = (raw_input('Variable {} name: '.format(i + 1)).
+        pset.varnames[i] = (raw_input('Variable {0} name: '.format(i + 1)).
                             strip())
     return pset
 

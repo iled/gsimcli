@@ -1192,7 +1192,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 
         self.actionGSIMCLI.setEnabled(True)
 
-        self.statusBar().showMessage("Parameters loaded from: {}".
+        self.statusBar().showMessage("Parameters loaded from: {0}".
                                      format(self.params.path), 5000)
         if self.print_status:
             print "loaded from: ", self.params.path

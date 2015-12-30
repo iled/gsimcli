@@ -455,7 +455,7 @@ class SimStats(QtGui.QWidget):
         """Update the text in the SimFiles label.
 
         """
-        self.labelSimFiles.setText(self.sim_label + " ({} files)".
+        self.labelSimFiles.setText(self.sim_label + " ({0} files)".
                                    format(self.listSimFiles.count()))
 
 

@@ -29,7 +29,7 @@ def directory_walk_v1(base):
         network = os.path.basename(root)
         if network in networks.keys():
             raise ValueError('There is no support for networks with the same'
-                             'ID in the same submission directory tree: {}'.
+                             'ID in the same submission directory tree: {0}'.
                              format(network))
         if network.isdigit() and len(network) == 6:
             networks[network] = files
@@ -133,7 +133,7 @@ def filename_parse(filepath, station_n=8, network_n=3):
                     # specified by the user, default is station_n = 8)
         ssssssss = bn[5:5 + station_n]
         if len(ssssssss) != len(bn) - 6:
-            raise NameError('Invalid station number {}.'.format(ssssssss))
+            raise NameError('Invalid station number {0}.'.format(ssssssss))
 
         # c: Content
         # 'd': #data, meteorological variables
@@ -559,7 +559,7 @@ def match_sets(subset_path, mainset_path):
 
     mainset_parsed = list(itertools.chain.from_iterable(mainset_parsed))
     if len(subset_parsed) != len(mainset_parsed):
-        raise ValueError('{} is not a subset of {}'.format(subset_path,
+        raise ValueError('{0} is not a subset of {1}'.format(subset_path,
                                                             mainset_path))
     return mainset_parsed
 

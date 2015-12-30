@@ -109,7 +109,7 @@ class ParametersFile(object):
                 if field in self.fields:
                     checklist.remove(field)
         if checklist:
-            raise AttributeError('There are missing parameters: {}.'
+            raise AttributeError('There are missing parameters: {0}.'
                                  .format(', '.join(map(str, checklist))))
 
     def save(self, par_path=None):
@@ -122,7 +122,7 @@ class ParametersFile(object):
             self.path = par_path
         par = open(par_path, 'w')
         par.write('·' * (25 + len(self.par_set)) + '\n')
-        par.write('·····  {} parameters  ·····\n'.format(self.par_set))
+        par.write('·····  {0} parameters  ·····\n'.format(self.par_set))
         par.write('·' * (25 + len(self.par_set)) + '\n')
         if self.order:
             fields = self.order
@@ -151,7 +151,7 @@ class ParametersFile(object):
             if field in self.fields + self.optional:
                 self.set_field(field, values[i])
             else:
-                warnings.warn("Error while setting field: {}".format(field))
+                warnings.warn("Error while setting field: {0}".format(field))
         if save:
             self.save(par_path)
 

@@ -242,7 +242,7 @@ def exec_ssdir(dss_path, par_path, dbg=None, print_status=False):
 
     """
     if print_status:
-        print "Computing: {}".format(mp.current_process().name)
+        print "Computing: {0}".format(mp.current_process().name)
 
     if os.name == 'posix':
         env = 'wine '
@@ -267,7 +267,7 @@ def exec_ssdir(dss_path, par_path, dbg=None, print_status=False):
                 # sys.stdout.write(nextline)
                 # sys.stdout.flush()
             # if 'progress' in nextline:
-                # print 'Progress: {}'.format(nextline.split()[-1])
+                # print 'Progress: {0}'.format(nextline.split()[-1])
                 # sys.stdout.write(nextline)
                 # sys.stdout.flush()
             if 'error' in nextline.lower():
@@ -329,8 +329,8 @@ def mp_exec(dss_path, par_path, output, simnum, totalsim=None, dbg=None,
     if not cores:
         cores = mp.cpu_count()
     if print_mp_status:
-        print 'Running {} in {} cores'.format(os.path.basename(dss_path),
-                                              cores)
+        print 'Running {0} in {1} cores'.format(os.path.basename(dss_path),
+                                                cores)
 
     runs = list()
     dssenv = DssEnvironment(dss_path, par_path, output, simnum)

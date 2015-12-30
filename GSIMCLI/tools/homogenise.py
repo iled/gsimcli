@@ -347,4 +347,5 @@ class Homogenisation(object):
             self.stats['lmed'] = True
             self.stats['lskew'] = True
         else:
-            raise ValueError('Method {} invalid or incomplete.'.format(method))
+            raise ValueError('Method {0} invalid or incomplete.'
+                             .format(method))

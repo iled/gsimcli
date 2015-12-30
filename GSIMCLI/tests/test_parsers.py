@@ -66,7 +66,7 @@ class TestShapefile(unittest.TestCase):
                 at_grid = grid_2d[i + self.ascii1_dx * j]
                 at_orig = self.shpfile.data[-1 - j, i]
                 self.assertEqual(at_grid, at_orig, 'order mismatch at (i,j) = '
-                                 '({},{}), {} != {}'.
+                                 '({0},{1}), {2} != {4}'.
                                  format(i, j, at_grid, (at_orig, -1 - i, j)))
 
     def test_ascii2grid_save_load(self):

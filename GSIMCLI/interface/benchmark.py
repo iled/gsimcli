@@ -344,7 +344,7 @@ class TableView(ct.TableView):
 
         for action in self.results_menu.actions():
             if action.text().startswith("Browse"):
-                action.setText("Browse {}".format(label))
+                action.setText("Browse {0}".format(label))
             elif action.text().startswith("Show included"):
                 action.setVisible(toggle_show)
 
@@ -470,7 +470,7 @@ class Scores(QtGui.QWidget):
 
         # open file
         if col in [0, 2]:
-            caption = "Select {} file".format(target)
+            caption = "Select {0} file".format(target)
             filepath = QtGui.QFileDialog.getOpenFileName(self, caption,
                                                          dir=self.default_dir)
 
@@ -495,7 +495,7 @@ class Scores(QtGui.QWidget):
             what = "to save the converted files"
             target = self.lineSaveCost
 
-        caption = "Select the directory {}".format(what)
+        caption = "Select the directory {0}".format(what)
         path = QtGui.QFileDialog.getExistingDirectory(self, caption,
                                                       dir=self.default_dir)
 
@@ -752,7 +752,7 @@ class Scores(QtGui.QWidget):
                     "\t\tStation\t\tNetwork\n"
                     "CRMSE:\t\t{}\t{}\n".format(self.station_crmse,
                                                 self.network_crmse) +
-                    "Improvement:\t{}\t{}".format(self.station_improvement,
+                    "Improvement:\t{0}\t{1}".format(self.station_improvement,
                                                   self.network_improvement))
             with open(filepath[0], 'w') as afile:
                 afile.write(text)
