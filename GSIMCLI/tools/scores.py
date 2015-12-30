@@ -287,7 +287,7 @@ def gsimcli_improvement(gsimcli_results, no_data=-999.9, keys_path=None,
 
     """
     # accept str or list of str
-    if isinstance(keys_path, str) or isinstance(keys_path, unicode):
+    if isinstance(keys_path, (str, unicode)):
         keys_path = [keys_path]
 
     if keys_path is not None:
