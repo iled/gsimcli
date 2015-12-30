@@ -267,7 +267,7 @@ class TableView(QtGui.QTableView):
 
         """
         indexes = self.selectedIndexes()
-        rows = sorted(set([index.row() for index in indexes]))
+        rows = sorted({index.row() for index in indexes})
         for n, row in enumerate(rows):
             self.model().removeRow(row - n)
 

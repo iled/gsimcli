@@ -887,7 +887,7 @@ def extract_month(path):
                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'])
     filename = os.path.splitext(os.path.basename(path))[0]
     names = re.split('\W+|_', filename)
-    names = set([name.capitalize() for name in names])
+    names = {name.capitalize() for name in names}
 
     return list(months & names)[0]
 
