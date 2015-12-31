@@ -199,16 +199,16 @@ def seconds_convert(seconds):
     days, seconds = divmod(seconds, 86400)
     # months
     if months > 1:
-        m_str = "{} months ".format(months)
+        m_str = "{0} months ".format(months)
     elif months > 0:
-        m_str = "{} month ".format(months)
+        m_str = "{0} month ".format(months)
     else:
         m_str = ""
     # days
     if days > 1:
-        d_str = "{} days ".format(days)
+        d_str = "{0} days ".format(days)
     elif days > 0:
-        d_str = "{} day ".format(days)
+        d_str = "{0} day ".format(days)
     else:
         d_str = ""
     # HH:MM:ss

@@ -150,7 +150,7 @@ def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
         lmed = False
         lskew = False
     else:
-        raise ValueError('Method {} invalid or incomplete.'.format(method))
+        raise ValueError('Method {0} invalid or incomplete.'.format(method))
 
     selected_stats = {
         'lmean': lmean,
@@ -381,7 +381,7 @@ def list_stations(pset_file, header=True, variables=None):
 
 
 def list_networks_stations(networks, variables, secdir=None, header=True,
-                           nvars=None, exts=["*.txt", "*.prn"]):
+                           nvars=None, exts=None):
     """List all the stations in a list of networks. It does so by trying to
     find a point-set file for each network.
 
@@ -401,8 +401,9 @@ def list_networks_stations(networks, variables, secdir=None, header=True,
     nvars : int, optional
         Miniumum expected number of variables. For point-set files acceptable
         as GSIMCLI process data files, use nvars=5.
-    exts : list of string, default ["*.txt", "*.prn"]
-        List of acceptable file extensions.
+    exts : list of string, optional
+        List of acceptable file extensions. If not present, will default to
+        `["*.txt", "*.prn"]`.
 
     Returns
     -------
@@ -414,7 +415,7 @@ def list_networks_stations(networks, variables, secdir=None, header=True,
     find_pset_file : Find a point-set file in a given directory tree.
 
     """
-
+    exts = exts or ["*.txt", "*.prn"]
     stations = dict()
     total = 0
     for network in networks:
@@ -616,7 +617,7 @@ def station_order(method, pset_file=None, nd=-999.9, header=True,
     elif method == 'user' and userset:
         stations_list = userset
     else:
-        raise TypeError('Method {} not understood or invalid userset ({}).'
+        raise TypeError('Method {0} not understood or invalid userset ({1}).'
                         .format(method, userset))
 
     return stations_list
@@ -843,7 +844,7 @@ def ask_add_header(pset):
     print 'Insert the point-set header metadata'
     pset.name = raw_input('Point-set name: ')
     for i in xrange(pset.nvars):
-        pset.varnames[i] = (raw_input('Variable {} name: '.format(i + 1)).
+        pset.varnames[i] = (raw_input('Variable {0} name: '.format(i + 1)).
                             strip())
     return pset
 
@@ -902,8 +903,7 @@ def clean_leftovers(tree, maps=True, pars=True, trn=True, dbg=True, cands=True,
                     os.remove(os.path.join(root, basename))
 
 
-def find_pset_file(directory, header=True, nvars=None,
-                   exts=["*.txt", "*.prn"]):
+def find_pset_file(directory, header=True, nvars=None, exts=None):
     """Find a point-set file in a given directory tree.
 
     Parameters
@@ -915,8 +915,9 @@ def find_pset_file(directory, header=True, nvars=None,
     nvars : int, optional
         Miniumum expected number of variables. For point-set files acceptable
         as GSIMCLI process data files, use nvars=5.
-    exts : list of string, default ["*.txt", "*.prn"]
-        List of acceptable file extensions.
+    exts : list of string, optional
+        List of acceptable file extensions. If not present, will default to
+        `["*.txt", "*.prn"]`.
 
     Returns
     -------
@@ -925,6 +926,7 @@ def find_pset_file(directory, header=True, nvars=None,
         the given criteria (extension, header and number of variables).
 
     """
+    exts = exts or ["*.txt", "*.prn"]
     for ext in exts:
         for name in glob.iglob(os.path.join(directory, ext)):
             try:
@@ -958,7 +960,7 @@ def read_specfile(file_path):
     # check specs
     specs = ['xnodes', 'ynodes', 'xmin', 'ymin', 'xmax', 'ymax',
              'xsize', 'ysize']
-    if not all([spec in specs for spec in grid.columns]):
+    if not all(spec in specs for spec in grid.columns):
         raise ValueError('Missing or invalid grid specifications file')
     return grid
 

@@ -66,34 +66,37 @@ class PointSet(object):
 
     """
 
-    def __init__(self, name='', nodata=-999.9, nvars=0, varnames=list(),
-                 values=np.zeros((0, 0)), psetpath=str(), header=True):
+    def __init__(self, name=None, nodata=-999.9, nvars=0, varnames=None,
+                 values=None, psetpath=None, header=True):
         """Constructor to initialise a PointSet instance.
 
         Parameters
-        __________
-        name : string
+        ----------
+        name : string, optional
             Descriptive name.
-        nvars : int
+        nodata : number, default -999.9
+            Missing data value.
+        nvars : int, default 0
             Number of variables.
-        varnames : list of string
+        varnames : list of string, optional
             Variables names.
-        values : pandas.DataFrame
+        values : pandas.DataFrame, optional
             Variables values.
-        psetpath : string
+        psetpath : string, optional
             File path.
         header : boolean, default True
             PointSet file has the GSLIB standard header lines.
 
         """
         self.path = psetpath
-        if os.path.isfile(self.path):
+        if self.path and os.path.isfile(self.path):
             self.load(self.path, nodata, header)
         else:
-            self.name = name
+            self.name = name or ''
             self.nvars = nvars
             self.nodata = nodata
-            self.varnames = varnames
+            self.varnames = varnames or []
+            values = values or np.zeros((0, 0))
             self.values = pd.DataFrame(values)
             if len(self.values.columns) == len(self.varnames):
                 self.values.columns = self.varnames
@@ -120,7 +123,7 @@ class PointSet(object):
         """
         self.nvars += 1
         if varname is None:
-            varname = 'var{}'.format(self.nvars)
+            varname = 'var{0}'.format(self.nvars)
         if varname in self.varnames:
             varname += '_new'
         self.varnames.append(varname)
@@ -156,7 +159,7 @@ class PointSet(object):
         if not header:
             self.name = os.path.splitext(os.path.basename(psetfile))[0]
             self.nvars = values.shape[1]
-            self.varnames = ['var{}'.format(i)
+            self.varnames = ['var{0}'.format(i)
                              for i in xrange(1, self.nvars + 1)]
         self.values = pd.DataFrame(values, columns=self.varnames)
         fid.close()
@@ -500,7 +503,7 @@ class GridFiles(object):
             if os.path.isfile(another):
                 self.files.append(open(another, 'rb'))
             else:
-                raise IOError('File {} not found.'.
+                raise IOError('File {0} not found.'.
                               format(os.path.basename(another)))
 
     def open_files(self, files_list, dims, first_coord, cells_size, no_data,
@@ -568,7 +571,7 @@ class GridFiles(object):
                 open_file(gridfile)
             except IOError, msg:
                 print(msg)
-                raise IOError('File {} not found.'.format(gridfile))
+                raise IOError('File {0} not found.'.format(gridfile))
 
     def reset_read(self):
         """Reset the  pointer that reads each file to the beginning.
@@ -848,13 +851,13 @@ class GridFiles(object):
             if save and tol == 0:
                 # FIXME: not working with the tolerance feature
                 # need to adjust the arrpset or cherry-pick arr
-                arrpset = PointSet('realisations at location ({}, {}, {})'.
+                arrpset = PointSet('realisations at location ({0}, {1}, {2})'.
                                    format(loc[0], loc[1], layer * self.cellz +
                                           self.zi), self.nodata, 3,
                                    ['x', 'y', 'value'],
                                    values=np.zeros((self.nfiles, 3)))
                 arrout = os.path.join(os.path.dirname(self.files[0].name),
-                                      'sim values at ({}, {}, {}).prn'.format(
+                                      'sim values at ({0}, {1}, {2}).prn'.format(
                                           loc[0], loc[1], layer * self.cellz
                                           + self.zi))
                 arrpset.values.iloc[:, 2] = arr
@@ -866,7 +869,7 @@ class GridFiles(object):
         ncols = sum((lmean, lmed, lvar, lstd, lcoefvar, lskew))
         if lperc:
             ncols += 2
-        statspset = PointSet(name='vertical line stats at (x,y) = ({},{})'.
+        statspset = PointSet(name='vertical line stats at (x,y) = ({0},{1})'.
                              format(loc[0], loc[1]), nodata=self.nodata,
                              nvars=3 + ncols, varnames=['x', 'y', 'z'],
                              values=np.zeros((self.dz, 3 + ncols)))
@@ -1026,12 +1029,12 @@ def loadcheck(s, header):
         return s
     elif isinstance(s, str):
         if not os.path.isfile(s):
-            raise IOError("file {} not found".format(s))
+            raise IOError("file {0} not found".format(s))
         pset = PointSet()
         pset.load(s, header)
         return pset
     else:
-        raise TypeError("need string or PointSet, {} found".format(type(s)))
+        raise TypeError("need string or PointSet, {0} found".format(type(s)))
 
 
 def add_header(path, name=None, varnames=None, out=None):
@@ -1063,7 +1066,7 @@ def add_header(path, name=None, varnames=None, out=None):
         f.write(name + '\n')
         if varnames is None:
             nvars = values.shape[1]
-            varnames = ['var {}'.format(i) for i in xrange(nvars)]
+            varnames = ['var {0}'.format(i) for i in xrange(nvars)]
         else:
             nvars = len(varnames)
         f.write(str(nvars) + '\n')

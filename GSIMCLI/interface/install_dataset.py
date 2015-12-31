@@ -103,7 +103,7 @@ class InstallDialog(QtGui.QDialog):
             status = "File integrity verified."
             ok = True
         else:
-            status = "Test failed in the file {}.".format(test)
+            status = "Test failed in the file {0}.".format(test)
             ok = False
         if set_status:
             self.set_status(status)

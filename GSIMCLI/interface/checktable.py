@@ -160,7 +160,7 @@ class TableModel(QtCore.QAbstractTableModel):
         """Remove the row in the given position.
 
         """
-        if row < 0 or row > self.rowCount():
+        if not(0 <= row <= self.rowCount()):
             return False
 
         self.beginRemoveRows(parent, row, row)
@@ -267,7 +267,7 @@ class TableView(QtGui.QTableView):
 
         """
         indexes = self.selectedIndexes()
-        rows = sorted(set([index.row() for index in indexes]))
+        rows = sorted({index.row() for index in indexes})
         for n, row in enumerate(rows):
             self.model().removeRow(row - n)
 

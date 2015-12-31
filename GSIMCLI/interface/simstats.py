@@ -8,6 +8,7 @@ from PySide import QtGui, QtCore
 import glob2
 import os
 import sys
+import warnings
 
 from external_libs.pyside_dynamic import loadUi
 from interface.select_stations import SelectStations
@@ -319,8 +320,7 @@ class SimStats(QtGui.QWidget):
                         item.setSelected(False)
                         continue
                 except ValueError:
-                    # the first simulation does not have a number
-                    pass
+                    warnings.warn("the first simulation doesn't have a number")
                 item.setSelected(True)
                 self.filtered_sim.append(item)
         else:
@@ -421,7 +421,7 @@ class SimStats(QtGui.QWidget):
 
         """
         simdir = self.lineSimsPath.text()
-        if not len(simdir):
+        if not simdir:
             return None
         elif os.path.isdir(simdir):
             simfiles = glob2.glob(os.path.join(simdir, "**/*." + ext))
@@ -455,7 +455,7 @@ class SimStats(QtGui.QWidget):
         """Update the text in the SimFiles label.
 
         """
-        self.labelSimFiles.setText(self.sim_label + " ({} files)".
+        self.labelSimFiles.setText(self.sim_label + " ({0} files)".
                                    format(self.listSimFiles.count()))
 
 

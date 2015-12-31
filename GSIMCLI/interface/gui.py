@@ -14,6 +14,7 @@ import os
 import sys
 from tempfile import NamedTemporaryFile
 import time
+import warnings
 
 base = os.path.dirname(os.path.dirname(__file__))
 sys.path.append(base)
@@ -1109,7 +1110,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             ui.pylist_to_qlist(self.params.variables, self.DL_listVarNames)
         except(AttributeError):
             # ignore if attributes are not present
-            pass
+            warnings.warn("params 'name' and/or 'variables' are not present")
 
         # Simulation / Options
         # self.SO_lineParPath.setText(self.params.dss_par)
@@ -1191,7 +1192,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 
         self.actionGSIMCLI.setEnabled(True)
 
-        self.statusBar().showMessage("Parameters loaded from: {}".
+        self.statusBar().showMessage("Parameters loaded from: {0}".
                                      format(self.params.path), 5000)
         if self.print_status:
             print "loaded from: ", self.params.path
@@ -1502,7 +1503,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             else:
                 total = 0
 
-        return hmg._ntuple_stations(stations_list, total)
+        return hmg.list_of_stations(stations_list, total)
 
     def find_data_file(self):
         """Find a data file in the decade or selected network.

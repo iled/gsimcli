@@ -125,7 +125,7 @@ def gsimcli(stations_file, stations_header, no_data, stations_order,
     if not cores or cores > mp.cpu_count():
         cores = mp.cpu_count()
     if print_status:
-        print 'GSIMCLI using {} cores'.format(cores)
+        print 'GSIMCLI using {0} cores'.format(cores)
 
     # load data and prepare the iterative process
     if isinstance(stations_file, gr.PointSet):
@@ -152,9 +152,9 @@ def gsimcli(stations_file, stations_header, no_data, stations_order,
         if not is_alive:
             raise SystemError("process aborted")
         if print_status:
-            print ('Processing candidate {} out of {} with ID {}.'.
+            print ('Processing candidate {0} out of {1} with ID {2}.'.
                    format(i + 1, len(stations_order), stations_order[i]))
-        print "STATUS: candidate {}".format(stations_order[i])
+        print "STATUS: candidate {0}".format(stations_order[i])
         # manage stations
         candidate, references = hmg.take_candidate(stations_pset,
                                                    stations_order[i])
@@ -190,9 +190,9 @@ def gsimcli(stations_file, stations_header, no_data, stations_order,
                 if not is_alive:
                     raise SystemError("process aborted")
                 if print_status:
-                    print ('[{}/{}] Working on realization {}'.
+                    print ('[{0}/{1}] Working on realization {2}'.
                            format(i + 1, len(stations_order), sim))
-                print "STATUS: realization {}".format(sim)
+                print "STATUS: realization {0}".format(sim)
                 if sim >= dsspar.nsim + 1 - cores:
                     purge_temp = True
                 dss.mp_exec(dss_path=exe_path, par_path=oldpar, dbg=dbgfile,
@@ -221,7 +221,7 @@ def gsimcli(stations_file, stations_header, no_data, stations_order,
                                     optional_stats=optional_stats)
         homogenised, detected_number, filled_number = homogenisation
         if print_status:
-            print 'Inhomogeneities detected: {}'.format(detected_number)
+            print 'Inhomogeneities detected: {0}'.format(detected_number)
         dnumber_list.append(detected_number)
         fnumber_list.append(filled_number)
         # prepare next iteration
@@ -400,7 +400,7 @@ def batch_decade(par_path, variograms_file, print_status=False,
     for decade in variograms.iterrows():
         if print_status:
             print "Processing decade: ", decade[1].ix['decade']
-        print "STATUS: decade {}".format(decade[1].ix['decade'])
+        print "STATUS: decade {0}".format(decade[1].ix['decade'])
         os.chdir(os.path.dirname(variograms_file))
         first_year = decade[1].ix['decade'].split('-')[0].strip()
         # try to use the directory containing the decadal data, otherwise try
@@ -507,7 +507,7 @@ def batch_networks(par_path, networks, decades=False, print_status=False,
         network_id = os.path.basename(network)
         if print_status:
             print "Processing network: ", network_id
-        print "STATUS: network {}".format(network_id)
+        print "STATUS: network {0}".format(network_id)
         os.chdir(network)
         specfile = os.path.join(network, glob.glob('*grid*.csv')[0])
         network_results = os.path.join(results_dir, network_id)
