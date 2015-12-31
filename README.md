@@ -2,6 +2,8 @@
 Geostatistical SIMulation for the homogenisation and interpolation of
 CLImate data
 
+[![Documentation Status](https://readthedocs.org/projects/gsimcli/badge/?version=latest)](http://gsimcli.readthedocs.org/en/latest/?badge=latest) [![Documentation Status](https://readthedocs.org/projects/gsimcli/badge/?version=dev)](http://gsimcli.readthedocs.org/en/latest/?badge=dev) [![Code Issues](https://www.quantifiedcode.com/api/v1/project/d5107719f2724f41bc1b18665a164616/snapshot/origin:dev:HEAD/badge.svg)](https://www.quantifiedcode.com/app/project/d5107719f2724f41bc1b18665a164616)
+
 ## What is it
 
 **gsimcli** is a proposed method to homogenise climate data using
