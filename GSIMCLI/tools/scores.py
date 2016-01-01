@@ -59,13 +59,13 @@ def crmse(homog, orig, centered=True, crop=None):
     if crop is not None:
         homog = homog[crop:-crop]
         orig = orig[crop:-crop]
-
-    # squeeze to support both dataframe's (monthly) and series (yearly)
+        
+    # access .values to support both dataframe's (monthly) and series (yearly)
     if centered:
-        homog -= bn.nanmean(np.squeeze(homog.values))
-        orig -= bn.nanmean(np.squeeze(orig.values))
+        homog -= bn.nanmean(homog.values)
+        orig -= bn.nanmean(orig.values)
 
-    diff = np.sqrt(bn.nanmean(np.squeeze(np.power((homog - orig).values, 2))))
+    diff = np.sqrt(bn.nanmean(np.power((homog - orig).values, 2)))
 
     return diff
 
@@ -368,9 +368,9 @@ def cost_improvement(network_path, networks_id=None, no_data=-999.9, **kwargs):
 if __name__ == '__main__':
     md = -999.9
 
-    macpath = '/Users/julio/Desktop/testes/'
+    macpath = '/Users/julio/Desktop/testes/cost-home/'
     mintpath = '/home/julio/Testes/'
-    basepath = mintpath
+    basepath = macpath
 
     """ # inho syn1
     netw_path = basepath + 'benchmark/inho/precip/syn1'
@@ -403,7 +403,7 @@ if __name__ == '__main__':
     variable = None  # 'tn'
     # """
 
-    # """ # MASH Marinova precip
+    """ # MASH Marinova precip
     # yearly: st 3.6 0.56 netw 1.6 0.69
     # monthly: st 8.5 0.84 netw 3.8 1.03
     netw_path = basepath + 'benchmark/h009/precip/sur1'
@@ -412,8 +412,9 @@ if __name__ == '__main__':
     variable = 'rr'
     # """
 
-    """ # PRODIGE main precip
-    # st 4.7 0.63 netw 3.3 1.07
+    # """ # PRODIGE main precip
+    # yearly: st 4.7 0.63 netw 3.3 1.07
+    # monthly: st 9.0 0.85 netw 5.0 1.16
     netw_path = basepath + 'benchmark/h002/precip/sur1'
     orig_path = basepath + 'benchmark/orig/precip/sur1'
     inho_path = basepath + 'benchmark/inho/precip/sur1'
@@ -431,7 +432,7 @@ if __name__ == '__main__':
     inho_path = basepath + "/benchmark/inho/precip/sur1"
     # """
 
-    # """ # GSIMCLI monthly
+    """ # GSIMCLI monthly
     import glob
 
     rede5 = glob.glob('/home/julio/Área de Trabalho/testes 5+9/d095c095_xls/5/' + '*.xls')
@@ -447,13 +448,15 @@ if __name__ == '__main__':
 
 #    netw_path = basepath + 'benchmark/h011/precip/sur1'
     # network_id = ['000009', '000010']
-#     sub = ch.Submission(netw_path, md,  # ['000009', '000005'],
-#                         orig_path=orig_path, inho_path=inho_path)  # , ['000010'])
-#     print improvement(sub, over_station=True, over_network=True,
-#                       skip_missing=False, skip_outlier=True, yearly=True)
+    sub = ch.Submission(netw_path, md,  # ['000009', '000005'],
+                        orig_path=orig_path, inho_path=inho_path)  # , ['000010'])
+    print improvement(sub, over_station=True, over_network=True,
+                      skip_missing=False, skip_outlier=True, yearly=False)
 
+    """
     print gsimcli_improvement(gsimcli_results, yearly_sum=True,
                               keys_path=kis, orig_path=orig_path, inho_path=inho_path,
                               yearly=False)
+    # """
 
     print 'done'
