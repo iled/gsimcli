@@ -56,3 +56,30 @@ http://link.springer.com/article/10.1023/A:1012246006212.
 [2]: Costa, AC, and A Soares. *Homogenization of Climate Data: Review and New
 Perspectives Using Geostatistics.* Mathematical Geosciences 41, no. 3 (November
 28, 2009): 291-305. doi:10.1007/s11004-008-9203-3.
+
+
+## Project Publications
+
+### Scientific Journals
+
+Ribeiro, S., Caineta, J., Costa, A. C., Henriques, R., Soares, A. (2016) [Detection of inhomogeneities in precipitation time series in Portugal using direct sequential simulation](http://doi.org/10.1016/j.atmosres.2015.11.014). Atmospheric Research 171, 147–158. doi: 10.1016/j.atmosres.2015.11.014
+
+Ribeiro, S., Caineta, J., Costa, A. C., (2015) [Review and discussion of homogenisation methods for climate data. Physics and Chemistry of the Earth](http://doi.org/10.1016/j.pce.2015.08.007). In press. doi: 10.1016/j.pce.2015.08.007
+
+### Proceedings
+
+Ribeiro, S., Caineta, J., Costa, A. C., Soares, A. (2015). [Establishment of detection and correction parameters for a geostatistical homogenisation approach](http://doi.org/10.1016/j.proenv.2015.07.115). Procedia Environmental Sciences, 27, 83-88. doi: 10.1016/j.proenv.2015.07.115
+
+Caineta, J., Ribeiro, S., Soares, A., Costa, A. C. (2015). [Workflow for the homogenisation of climate data using geostatistical simulation](http://sgem.org/sgemlib/spip.php?article5707). In: Conference Proceedings of the 15th SGEM GeoConference on Informatics, Geoinformatics and Remote Sensing. Albena, Bulgaria, 16-25 June 2015, Vol. 1, pp. 921-929.
+
+Ribeiro, S., Caineta, J., Costa, A. C., Henriques, R. (2015). [Analysing the detection and correction parameters in the homogenisation of climate data series using gsimcli](https://agile-online.org/Conference_Paper/cds/agile_2015/shortpapers/59/59_Paper_in_PDF.pdf ). In: F. Bacao, M. Y. Santos, M. Painho (Eds.), The 18th AGILE International Conference on Geographic Information Science, Lisbon, Portugal, 9-12 June 2015.
+
+Caineta, J., Ribeiro, S., Henriques, R., Costa, A. C. (2015). [A Package for the homogenisation of climate data using geostatistical simulation](https://www.thinkmind.org/index.php?view=article&articleid=geoprocessing_2015_6_40_30130). In: GEOProcessing 2015: The Seventh International Conference on Advanced Geographic Information Systems, Applications, and Services, Lisbon, Portugal, 22-27 February 2015.
+
+### Other Publications
+
+Caineta, J., Ribeiro, S., Henriques, R., Soares, A., Costa, A. C. (2014). [Benchmarking a geostatistical procedure for the homogenisation of annual precipitation series](http://meetingorganizer.copernicus.org/EGU2014/EGU2014-7605.pdf). In: Geophysical Research Abstracts, Vol. 16, EGU2014-7605, European Geosciences Union General Assembly 2014. (Vienna, Austria, 27 April –2 May 2014)
+
+Caineta, J., Ribeiro, S., Costa, A. C., Henriques, R., Soares, A. (2014). [Inhomogeneities detection in annual precipitation time series in Portugal using direct sequential simulation](http://meetingorganizer.copernicus.org/EGU2014/EGU2014-7849.pdf). In: Geophysical Research Abstracts, Vol. 16, EGU2014-7849, European Geosciences Union General Assembly 2014. (Vienna, Austria, 27 April –2 May 2014)
+
+Ribeiro, S., Caineta, J., Henriques, R., Soares, A., Costa, A. C. (2014). [Advantages and applicability of commonly used homogenisation methods for climate data](http://meetingorganizer.copernicus.org/EGU2014/EGU2014-7725.pdf). In: Geophysical Research Abstracts, Vol. 16, EGU2014-7725, European Geosciences Union General Assembly 2014. (Vienna, Austria, 27 April –2 May 2014)
