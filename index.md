@@ -38,15 +38,14 @@ The [Issues](https://github.com/iled/gsimcli/issues) page lists the tasks and
 ideas that were not implemented and/or completed, as well as known limitations.
 Those may be a source of ideas for any eventual future development.
 
-![NOVA IMS](/images/IMS_Preto_logo.png) ![FCT](/images/logo_FCT.png)
+![NOVA IMS](/gsimcli/images/IMS_Preto_logo.png) ![FCT](/gsimcli/images/logo_FCT.png)
 
 ## Documentation
 
 The documentation (user manual) is hosted at readthedocs.org:
-http://gsimcli.readthedocs.org
+[http://gsimcli.readthedocs.org](http://gsimcli.readthedocs.org)
 
-Browse and post issues and contributions [here]
-(https://github.com/iled/gsimcli/issues).
+Browse and post issues and contributions [here](https://github.com/iled/gsimcli/issues).
 
 ## Dependencies
 
@@ -65,7 +64,7 @@ GPLv3
 
 <a name="ref1"></a>[1]: Soares, Amílcar. *Direct Sequential Simulation and Cosimulation.*
 Mathematical Geology 33, no. 8 (2001): 911-926.
-http://link.springer.com/article/10.1023/A:1012246006212.
+[http://link.springer.com/article/10.1023/A:1012246006212](http://link.springer.com/article/10.1023/A:1012246006212).
 
 <a name="ref2"></a>[2]: Costa, AC, and A Soares. *Homogenization of Climate Data: Review and New
 Perspectives Using Geostatistics.* Mathematical Geosciences 41, no. 3 (November
