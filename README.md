@@ -24,9 +24,9 @@ Tecnologia" ([FCT](http://www.fct.pt)), Portugal, through the research project
 PTDC/GEO-MET/4026/2012. See [approval and funding notice]
 (http://www.novaims.unl.pt/documentos/P_GSIMCLI_EN.pdf).
 
-The outcomes of this project include three peer-reviewed papers.
-See the [Project Publications](#publications) below.
-
+The outcomes of this project also include three peer-reviewed papers published in
+scientific journals. See the complete list of the [Project Publications](#publications)
+below.
 
 ### Note by the programmer
 
@@ -43,7 +43,7 @@ Those may be a source of ideas for any eventual future development.
 
 ## Documentation
 
-The documentation is hosted at readthedocs.org:
+The documentation (user manual) is hosted at readthedocs.org:
 http://gsimcli.readthedocs.org
 
 Browse and post issues and contributions [here]
