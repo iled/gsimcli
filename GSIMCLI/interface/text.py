@@ -32,7 +32,7 @@ def ask_add_header(pset):
     print 'Insert the point-set header metadata'
     pset.name = raw_input('Point-set name: ')
     for i in xrange(pset.nvars):
-        pset.varnames[i] = (raw_input('Variable {} name: '.format(i + 1)).
+        pset.varnames[i] = (raw_input('Variable {0} name: '.format(i + 1)).
                             strip())
     return pset
 
@@ -51,13 +51,13 @@ def ask_format(way):
         if i == str(1):
             pass
         elif i == str(2):
-            print 'Option {} not implemented yet.\n'.format(i)
+            print 'Option {0} not implemented yet.\n'.format(i)
             ask_format(1)
         elif i == str(3):
-            print 'Option {} not implemented yet.\n'.format(i)
+            print 'Option {0} not implemented yet.\n'.format(i)
             ask_format(1)
         else:
-            print 'Option {} not available.\n'.format(i)
+            print 'Option {0} not available.\n'.format(i)
             ask_format(1)
         return i
     else:
@@ -69,13 +69,13 @@ def ask_format(way):
         if i == str(1):
             pass
         elif i == str(2):
-            print 'Option {} not implemented yet.\n'.format(i)
+            print 'Option {0} not implemented yet.\n'.format(i)
             ask_format(1)
         elif i == str(3):
-            print 'Option {} not implemented yet.\n'.format(i)
+            print 'Option {0} not implemented yet.\n'.format(i)
             ask_format(1)
         else:
-            print 'Option {} not available.\n'.format(i)
+            print 'Option {0} not available.\n'.format(i)
             ask_format(1)
         return i
 
@@ -108,8 +108,8 @@ def convert_files():
         amerge = False
 
         for root, dirs, files in os.walk(folder):  # @UnusedVariable
-            if (len(dirs) > 0 and
-                all([len(d) == 6 and d.isdigit() for d in dirs])):
+            if (len(dirs) > 0 and all(
+                                  len(d) == 6 and d.isdigit() for d in dirs)):
                 print 'processing ' + root
                 parsed_files = pcost.directory_walk_v1(root)
                 selected_files = pcost.files_select(parsed_files, ftype='data',
@@ -134,13 +134,13 @@ def convert_files():
                           'default: first): ')
         header = raw_input('Which line has the header (e.g., 0; '
                            'default: none): ')
-        if len(nd) == 0:
+        if not nd:
             nd = -999.9
-        if len(cols) == 0:
+        if not cols:
             cols = None
-        if len(sheet) == 0:
+        if not sheet:
             sheet = 0
-        if len(header) == 0:
+        if not header:
             header = None
         else:
             header = int(header)
@@ -165,7 +165,7 @@ def convert_files():
         resolution = raw_input('Data temporal resolution (default: y): ')
         content = raw_input('Data content (default: d): ')
         # TODO: yearly_sum, keys_path
-        ss.xls2costhome(xlspath=gsimclipath, outpath=outpath, nd=no_data,
+        ss.xls2costhome(xlspath=gsimclipath, outpath=outpath, nd=nd,
                         sheet=sheet, header=False, skip_rows=None, cols=None,
                         network_id=network_id, status=status,
                         variable=variable, resolution=resolution,
@@ -188,7 +188,7 @@ def convert_files():
     elif i == str(0):
         main()
     else:
-        print 'Invalid option: "{}". Press [ENTER] to try again.'.format(i)
+        print 'Invalid option: "{0}". Press [ENTER] to try again.'.format(i)
         raw_input()
         convert_files()
 
@@ -225,7 +225,7 @@ def dss_par():
     elif i == str(0):
         main()
     else:
-        print 'Invalid option: "{}". Press [ENTER] to try again.'.format(i)
+        print 'Invalid option: "{0}". Press [ENTER] to try again.'.format(i)
         raw_input()
         par = dss_par()
 
@@ -237,7 +237,7 @@ def ask_save_vars(pset):
     """
     print 'Select which variables should be written in the output file.\n'
     for i, var in enumerate(pset.varnames):
-        print '{}. {}'.format(i, var)
+        print '{0}. {1}'.format(i, var)
     lvars = raw_input('\nChoose by writing each variable number in the desired'
                      ' order (separated with [SPACE]): ')
     return [int(v) for v in lvars.split()]
@@ -283,7 +283,7 @@ def ask_stations_method(pset, header=True):
     elif i == str(0):
         main()
     else:
-        print 'Invalid option: "{}". Press [ENTER] to try again.'.format(i)
+        print 'Invalid option: "{0}". Press [ENTER] to try again.'.format(i)
         raw_input()
         stations = ask_stations_method(pset, header)
 
@@ -355,7 +355,7 @@ def main():
     elif i == str(5):
         pass
     else:
-        print 'Invalid option: "{}". Press [ENTER] to try again.'.format(i)
+        print 'Invalid option: "{0}". Press [ENTER] to try again.'.format(i)
         raw_input()
         main()
 

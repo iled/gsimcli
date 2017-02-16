@@ -21,11 +21,12 @@ import pandas as pd
 import tools.grid as gr
 
 
-_ntuple_stations = namedtuple('Stations', 'stations total')
+list_of_stations = namedtuple('Stations', 'stations total')
 
 
 def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
-           percentile=None, flag=True, save=False, outfile=None, header=True):
+           percentile=None, flag=True, save=False, outfile=None, header=True,
+           optional_stats=None):
     """Try to detect and homogenise irregularities in data series, following
     the geostatistical simulation approach:
 
@@ -83,6 +84,18 @@ def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
     header : boolean, default True
         True if `obs_file` has the GSLIB standard header lines. The resulting
         `homogenised` PointSet will follow.
+    optional_stats : dict, optional
+        Calculate and append additional statistics to the homogenised PointSet.
+        This dict will overwrite the arguments passed to grids.stats_area. It
+        may have one or more optional keys:
+            - lmean: mean;
+            - lmed: median;
+            - lskew: skewness;
+            - lvar: variance;
+            - lstd: standard deviation;
+            - lcoefvar: coefficient of variation;
+            - lperc: percentile of detection.
+        Each key must have a boolean value.
 
     Returns
     -------
@@ -106,6 +119,12 @@ def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
         - if no homogenisation took place in that cell, Flag = no_data_value
         - otherwise, Flag = observed_value
 
+    See Also
+    --------
+    grid.stats_area : Calculate some statistics among every realisation,
+        considering a circular (and horizontal) area of a given radius around
+        a given point.
+
     References
     ----------
     .. [1] Costa, A., & Soares, A. (2009). Homogenization of climate data
@@ -113,6 +132,7 @@ def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
         Geosciences, 41(3), 291–305. doi:10.1007/s11004-008-9203-3
 
     """
+    # required statistics according to the selected correction method
     if method == 'mean':
         lmean = True
         lmed = False
@@ -130,10 +150,21 @@ def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
         lmed = False
         lskew = False
     else:
-        raise ValueError('Method {} invalid or incomplete.'.format(method))
+        raise ValueError('Method {0} invalid or incomplete.'.format(method))
+
+    selected_stats = {
+        'lmean': lmean,
+        'lmed': lmed,
+        'lskew': lskew,
+    }
+
+    # update the selected statistics according to the optional ones
+    if optional_stats:
+        selected_stats.update(optional_stats)
 
     # FIXME: lmean must always be True in order to fill missing data
-    lmean = True
+    selected_stats['lmean'] = True
+    selected_stats['lperc'] = True  # always required for the detection
 
     if isinstance(obs_file, gr.PointSet):
         obs = obs_file
@@ -141,10 +172,10 @@ def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
         obs = gr.PointSet()
         obs.load(obs_file, header)
 
-    obs_xy = list(obs.values.iloc[0, :2])
-    # calculate stats
-    local_stats = grids.stats_area(obs_xy, rad, lmean, lmed, lskew, lperc=True,
-                                   p=prob, save=save)
+    obs_xy = list(obs.values.loc[obs.values.first_valid_index(), ['x', 'y']])
+    # calculate local stats and fetch inner dataframe
+    local_stats = grids.stats_area(obs_xy, rad, p=prob, save=save,
+                                   **selected_stats).values
 
     # remove lines with no-data and flags
     if 'Flag' in obs.values.columns:
@@ -157,7 +188,7 @@ def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
     obs.values = obs.values.replace(obs.nodata, np.nan)
 
     # mean values
-    meanvalues = pd.Series(local_stats.values['mean'].values, name='clim')
+    meanvalues = pd.Series(local_stats['mean'].values, name='clim')
 
     # find and fill missing values with the mean values
     fn = 0
@@ -170,43 +201,72 @@ def detect(grids, obs_file, rad=0, method='mean', prob=0.95, skewness=None,
     obs.values.update(meanvalues, overwrite=False)
 
     # detect irregularities
-    hom_where = ~obs.values['clim'].between(local_stats.values['lperc'],
-                                            local_stats.values['rperc'])
+    hom_where = ~obs.values['clim'].between(local_stats['lperc'],
+                                            local_stats['rperc'])
     detected_number = hom_where.sum()  # + fn
 
     # homogenise irregularities
     homogenised = gr.PointSet(obs.name + '_homogenised', obs.nodata, obs.nvars,
                               list(obs.varnames), obs.values.copy())
+    # remove columns that are placeholders for optional statistics
+    homogenised.values.dropna(axis=1, inplace=True)
+    homogenised.varnames = list(homogenised.values.columns)
 
     if method == 'mean':
-        fixvalues = local_stats.values['mean'].values
+        fixvalues = local_stats['mean'].values
     elif method == 'median':
-        fixvalues = local_stats.values['median'].values
+        fixvalues = local_stats['median'].values
     elif method == 'skewness' and skewness:
-        fixvalues = np.where(local_stats.values['skewness'] > skewness,
-                             local_stats.values['median'],
-                             local_stats.values['mean'])
+        fixvalues = np.where(local_stats['skewness'] > skewness,
+                             local_stats['median'], local_stats['mean'])
     elif method == 'percentile':
         # allow a different percentile value for the detection and for the
         # correction
         if percentile != prob:
             grids.reset_read()
             vline_perc = grids.stats_area(obs_xy, rad, lperc=True,
-                                          p=percentile, save=False)
+                                          p=percentile, save=False).values
         else:
             vline_perc = local_stats
 
-        fixvalues = np.where(obs.values['clim'] > local_stats.values['rperc'],
-                             vline_perc.values['rperc'],
-                             vline_perc.values['lperc'])
+        fixvalues = np.where(obs.values['clim'] > local_stats['rperc'],
+                             vline_perc['rperc'], vline_perc['lperc'])
 
     homogenised.values['clim'] = obs.values['clim'].where(~hom_where,
                                                           fixvalues)
     if flag:
         flag_col = obs.values['clim'].where(hom_where, obs.nodata)
-        homogenised.nvars += 1
-        homogenised.varnames.append('Flag')
-        homogenised.values['Flag'] = flag_col
+        homogenised.add_var(flag_col, 'Flag')
+
+    # append the additional statistics required by the user, if any
+    # first, map the local_stats keys and their names in the PointSet dataframe
+    stats_names = {
+        'lmean': 'mean',
+        'lmed': 'median',
+        'lskew': 'skewness',
+        'lvar': 'variance',
+        'lstd': 'std',
+        'lcoefvar': 'coefvar',
+        'lperc': 'lperc',  # rperc
+    }
+    # second, add each corresponding column to the homogenised PointSet
+    if optional_stats:
+        for key, value in optional_stats.iteritems():
+            if value and key == 'lperc':
+                # median required to find which percentile is closer
+                if 'median' in local_stats.columns:
+                    med = local_stats['median']
+                else:
+                    med = grids.stats_area(obs_xy, rad, lmed=True,
+                                           save=False).values['median']
+                percentiles = np.where(
+                    obs.values['clim'] >= med, local_stats['rperc'],
+                    local_stats['lperc'])
+                homogenised.add_var(varname='pdet', values=percentiles)
+            elif value:
+                varname = stats_names[key]
+                homogenised.add_var(varname=varname,
+                                    values=local_stats[varname].values)
 
     if save and outfile:
         homogenised.save(outfile, header)
@@ -313,6 +373,7 @@ def list_stations(pset_file, header=True, variables=None):
     if variables:
         pset.flush_varnames(variables)
 
+    # FIXME: .station wont work if the columns order is previously changed
     stations = np.unique(pset.values.station)
     stations_list = map(int, stations)
 
@@ -320,7 +381,7 @@ def list_stations(pset_file, header=True, variables=None):
 
 
 def list_networks_stations(networks, variables, secdir=None, header=True,
-                           nvars=None, exts=["*.txt", "*.prn"]):
+                           nvars=None, exts=None):
     """List all the stations in a list of networks. It does so by trying to
     find a point-set file for each network.
 
@@ -340,8 +401,9 @@ def list_networks_stations(networks, variables, secdir=None, header=True,
     nvars : int, optional
         Miniumum expected number of variables. For point-set files acceptable
         as GSIMCLI process data files, use nvars=5.
-    exts : list of string, default ["*.txt", "*.prn"]
-        List of acceptable file extensions.
+    exts : list of string, optional
+        List of acceptable file extensions. If not present, will default to
+        `["*.txt", "*.prn"]`.
 
     Returns
     -------
@@ -353,13 +415,13 @@ def list_networks_stations(networks, variables, secdir=None, header=True,
     find_pset_file : Find a point-set file in a given directory tree.
 
     """
-
+    exts = exts or ["*.txt", "*.prn"]
     stations = dict()
     total = 0
     for network in networks:
         if secdir:
-            directory = os.path.join(network, glob.glob(
-                                            os.path.join(network, secdir))[0])
+            directory = os.path.join(
+                network, glob.glob(os.path.join(network, secdir))[0])
         else:
             directory = network
         pset_path = find_pset_file(directory, header, nvars, exts)
@@ -374,7 +436,7 @@ def list_networks_stations(networks, variables, secdir=None, header=True,
 
         stations[os.path.basename(network)] = ids
 
-    return _ntuple_stations(stations, total)
+    return list_of_stations(stations, total)
 
 
 def take_candidate(pset_file, station, header=True, save=False, path=None):
@@ -421,18 +483,18 @@ def take_candidate(pset_file, station, header=True, save=False, path=None):
     candidate = pset.values[pset.values['station'] == int(station)]
     neighbours = pset.values[pset.values['station'] != int(station)]
 
-    if 'Flag' in candidate.columns:
-        candidate = candidate.drop('Flag', axis=1)
-        cand_nvars = pset.nvars - 1
-        cand_varnames = list(candidate.columns)
-    else:
-        cand_nvars = pset.nvars
-        cand_varnames = pset.varnames
+    # remove existing optional columns
+    drop_vars = ['Flag', 'mean', 'median', 'std', 'pdet', 'variance',
+                 'coefvar', 'skewness']
+    candidate = candidate.drop(drop_vars, axis=1, errors='ignore')
+    neighbours = neighbours.drop(drop_vars, axis=1, errors='ignore')
+    nvars = candidate.shape[1]
+    varnames = list(candidate.columns)
 
     candidate_pset = gr.PointSet('Candidate_' + str(station), pset.nodata,
-                                 cand_nvars, cand_varnames, candidate)
+                                 nvars, varnames, candidate)
     neighbours_pset = gr.PointSet('References_' + str(station), pset.nodata,
-                                  pset.nvars, pset.varnames, neighbours)
+                                  nvars, varnames, neighbours)
 
     if save and path:
         base, ext = os.path.splitext(path)
@@ -442,46 +504,44 @@ def take_candidate(pset_file, station, header=True, save=False, path=None):
     return candidate_pset, neighbours_pset
 
 
-def append_homog_station(pset_file, station, header=True):
-    """Append a station to an existing PointSet.
+def update_station(stations_pset, station, header=True):
+    """Update a station in an existing PointSet.
 
-    This is necessary to consider already homogenised stations in the
+    This is necessary to update already homogenised stations in the
     iterative homogenising process.
 
     Parameters
     ----------
-    pset_file : PointSet object or string
+    stations_pset : PointSet object or string
         Instance of PointSet or string with the full path to the PointSet file
-        on which the `station` PointSet will be appended to.
+        that will be updated with data on the `station` PointSet.
     station : PointSet object
-        Instance of PointSet that will be appended to the `pset_file` PointSet.
+        Instance of PointSet that will update the `stations_pset` PointSet.
     header : boolean, default True
-        True if `pset_file` has the GSLIB standard header lines.
+        True if `stations_pset` has the GSLIB standard header lines.
 
     Returns
     -------
     pset : PointSet object
-        Instance of PointSet containing the concatenated stations.
+        Instance of PointSet containing the updated stations.
 
     """
-    if isinstance(pset_file, gr.PointSet):
-        pset = pset_file
+    if isinstance(stations_pset, gr.PointSet):
+        pset = stations_pset
     else:
         pset = gr.PointSet()
-        pset.load(pset_file, header)
+        pset.load(stations_pset, header)
 
-    # checks if 'Flag' column already exists
-    if 'Flag' not in pset.varnames:
-        pset.varnames.append('Flag')
-        pset.nvars += 1
-        pset.values = (pset.values.join
-                       (pd.Series(np.repeat(pset.nodata, pset.values.shape[0]),
-                                  name='Flag')))
-    elif pset.nvars != station.nvars:
-        raise ValueError('PointSets {} and {} have different number of '
-                         'variables.'.format(pset.name, station.name))
-
-    pset.values = pset.values.append(station.values, ignore_index=True)
+    # make sure both PointSet's have the same variables, if not find missing
+    if sorted(pset.varnames) != sorted(station.varnames):
+        missing_vars = list(set(station.varnames) - set(pset.varnames))
+    else:
+        missing_vars = []
+    # fill the missing variables with NaN's
+    for var in missing_vars:
+        pset.add_var(np.repeat(np.nan, pset.values.shape[0]), var)
+    # update the rows of the stations PointSet
+    pset.values.update(station.values)
     return pset
 
 
@@ -527,6 +587,12 @@ def station_order(method, pset_file=None, nd=-999.9, header=True,
 
     stations_list = list_stations(pset, header=header)
 
+    # pandas' na_last argument got deprecated
+    if md_last:
+        md_last = 'last'
+    else:
+        md_last = 'first'
+
     if method == 'random':
         shuffle(stations_list)
 
@@ -538,28 +604,28 @@ def station_order(method, pset_file=None, nd=-999.9, header=True,
             raise TypeError('Method variance requires the stations point-set')
         values = pset.values.replace(nd, np.nan)
         varsort = values.groupby('station', sort=False).clim.var()
-        varsort = varsort.order(ascending=ascending, na_last=md_last)
+        varsort = varsort.sort_values(ascending=ascending, na_position=md_last)
         stations_list = list(varsort.index)
 
     elif method == 'network deviation':
         values = pset.values.replace(nd, np.nan)
         stations_mean = values.groupby('station', sort=False).clim.mean()
         network_dev = ((stations_mean - values.clim.mean()).abs()
-                       .order(ascending=ascending, na_last=md_last))
+                       .sort_values(ascending=ascending, na_position=md_last))
         stations_list = list(network_dev.index)
 
     elif method == 'user' and userset:
         stations_list = userset
     else:
-        raise TypeError('Method {} not understood or invalid userset ({}).'
+        raise TypeError('Method {0} not understood or invalid userset ({1}).'
                         .format(method, userset))
 
     return stations_list
 
 
-def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
-                network_split=True, save_stations=False, keys=None,
-                append_year=False):
+def save_output(pset_file, outfile, fformat='gsimcli', outvars=None,
+                header=True, network_split=True, save_stations=False,
+                keys=None, append_year=False):
     """Write homogenisation results to given format.
 
     Parameters
@@ -577,8 +643,8 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
             - gslib: GSLIB standard with header, useful for visualisation
             - cost-home: COST-HOME format, prepare results to the benchmark
               process
-    lvars : array_like of int, optional
-        Only save certain columns.
+    outvars : array_like of int, optional
+        Only save certain columns. Only used if `fformat == 'normal'`.
     header : boolean, default True
         True if `pset_file` has the GSLIB standard header lines.
     network_split : boolean, default True
@@ -612,39 +678,54 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
     if fformat == 'normal':
         with open(outfile, 'wb') as csvfile:
             out = csv.writer(csvfile, dialect='excel')
-            if not lvars:
+            if not outvars:
                 out.writerow(pset.varnames)
                 out.writerows(pset.values)
             else:
-                out.writerow([pset.varnames[i] for i in lvars])
-                out.writerows(pset.values.iloc[:, np.array(lvars)])
+                out.writerow([pset.varnames[i] for i in outvars])
+                out.writerows(pset.values.iloc[:, np.array(outvars)])
 
     elif fformat == 'gsimcli':
         # year, time (month)
-        csvheader = ['time']
-        # year, time (month), stationID_VAR, stationID_FLAG
+        # csvheader = ['time']  # not being used
+        # year, time (month), stationID_VAR, stationID_FLAG, optional_stats
         stations = list_stations(pset, header)
-        varname = pset.varnames[-2]
-        headerline = [[str(stations[i]) + '_' + varname,
-                       str(stations[i]) + '_FLAG']
-                      for i in xrange(len(stations))]
-        csvheader += itertools.chain.from_iterable(headerline)
+        # varname = pset.varnames[-2]  # code smell: what if using optional cols
+#         headerline = [[str(stations[i]) + '_' + varname,
+#                        str(stations[i]) + '_FLAG']
+#                       for i in xrange(len(stations))]
+        # csvheader += itertools.chain.from_iterable(headerline)
+        # outvars deduced from varnames in excess of x, y, time, station
+        outvars = ['clim', 'Flag']
+        outvars += sorted(set(pset_file.varnames)
+                          - set(['x', 'y', 'time', 'station', 'clim', 'Flag']))
+        csvheader = [str(stations[i]) + '_' + varname
+                     for i in xrange(len(stations)) for varname in outvars]
+
         outdf = pd.DataFrame(index=np.arange(pset.values['time'].min(),
                                              pset.values['time'].max()
                                              + 1),
-                             columns=csvheader[1:])
+                             columns=csvheader)  # [1:])
+
         for i in xrange(len(stations)):
-            temp = pset.values[pset.values['station'] == stations[i]
-                               ][['time', 'clim', 'Flag']]
-            tempdf = pd.DataFrame(temp[['clim', 'Flag']])
-            tempdf.index = temp['time']
-            tempdf.columns = csvheader[2 * i + 1:2 * i + 3]
+            stations_bool = pset.values['station'] == stations[i]
+            tempdf = pset.values[stations_bool][outvars]  # ['time', 'clim', 'Flag']]
+            # tempdf = pd.DataFrame(temp[['clim', 'Flag']])
+            tempdf.index = pset.values[stations_bool]['time']
+            nvars = len(outvars)
+            tempdf.columns = csvheader[nvars * i:nvars * (i + 1)]
             outdf.update(tempdf)
+
         if append_year:  # TODO: perhaps for monthly data
             raise NotImplementedError
             years = 0
             outdf.insert(0, 'year', years)
-        outdf.to_csv(outfile, index_label='year')
+
+        # remove empty columns -- optional stats for stations that were not
+        # homogenised
+        outdf.dropna(axis=1, how='all', inplace=True)
+
+        outdf.to_csv(outfile, index_label='year')  # code smell: only yearly?
 
     elif fformat.lower() == 'gslib':
         if network_split and 'network' in pset.varnames:
@@ -665,13 +746,13 @@ def save_output(pset_file, outfile, fformat='gsimcli', lvars=None, header=True,
     if save_stations:
         stations = list_stations(pset, header)
         stations_out = os.path.join(os.path.dirname(outfile),
-                                os.path.splitext(os.path.basename(outfile))
-                                [0] + '_stations.csv')
+                                    os.path.splitext(os.path.basename(outfile))
+                                    [0] + '_stations.csv')
         stationsdf = pd.DataFrame(index=stations, columns=['x', 'y'])
 
         for i, st in enumerate(stations):
-            stationsdf.iloc[i] = pset.values[pset.values['station'] == st
-                                             ].iloc[0, :2]
+            temp = pset.values[pset.values['station'] == st]
+            stationsdf.iloc[i] = temp.loc[temp.first_valid_index(), ['x', 'y']]
         if keys:
             keysdf = pd.read_csv(keys, sep='\t', index_col=0)
 
@@ -763,7 +844,7 @@ def ask_add_header(pset):
     print 'Insert the point-set header metadata'
     pset.name = raw_input('Point-set name: ')
     for i in xrange(pset.nvars):
-        pset.varnames[i] = (raw_input('Variable {} name: '.format(i + 1)).
+        pset.varnames[i] = (raw_input('Variable {0} name: '.format(i + 1)).
                             strip())
     return pset
 
@@ -822,8 +903,7 @@ def clean_leftovers(tree, maps=True, pars=True, trn=True, dbg=True, cands=True,
                     os.remove(os.path.join(root, basename))
 
 
-def find_pset_file(directory, header=True, nvars=None,
-                   exts=["*.txt", "*.prn"]):
+def find_pset_file(directory, header=True, nvars=None, exts=None):
     """Find a point-set file in a given directory tree.
 
     Parameters
@@ -835,8 +915,9 @@ def find_pset_file(directory, header=True, nvars=None,
     nvars : int, optional
         Miniumum expected number of variables. For point-set files acceptable
         as GSIMCLI process data files, use nvars=5.
-    exts : list of string, default ["*.txt", "*.prn"]
-        List of acceptable file extensions.
+    exts : list of string, optional
+        List of acceptable file extensions. If not present, will default to
+        `["*.txt", "*.prn"]`.
 
     Returns
     -------
@@ -845,6 +926,7 @@ def find_pset_file(directory, header=True, nvars=None,
         the given criteria (extension, header and number of variables).
 
     """
+    exts = exts or ["*.txt", "*.prn"]
     for ext in exts:
         for name in glob.iglob(os.path.join(directory, ext)):
             try:
@@ -878,7 +960,7 @@ def read_specfile(file_path):
     # check specs
     specs = ['xnodes', 'ynodes', 'xmin', 'ymin', 'xmax', 'ymax',
              'xsize', 'ysize']
-    if not all([spec in specs for spec in grid.columns]):
+    if not all(spec in specs for spec in grid.columns):
         raise ValueError('Missing or invalid grid specifications file')
     return grid
 

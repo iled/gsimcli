@@ -14,6 +14,7 @@ import os
 import sys
 from tempfile import NamedTemporaryFile
 import time
+import warnings
 
 base = os.path.dirname(os.path.dirname(__file__))
 sys.path.append(base)
@@ -25,6 +26,7 @@ from install_dataset import InstallDialog
 from launchers import method_classic
 import pandas as pd
 from parsers.gsimcli import GsimcliParam
+from simstats import SimStats
 import tools.homog as hmg
 from tools.utils import seconds_convert
 import ui_utils as ui
@@ -68,7 +70,9 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 
         # pages
         self.tools_benchmark = benchmark.Scores(self)
+        self.tools_simstats = SimStats(self)
         self.stackedWidget.addWidget(self.tools_benchmark)
+        self.stackedWidget.addWidget(self.tools_simstats)
 
         # set params
         self.params = GsimcliParam()
@@ -154,6 +158,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.actionAbout.triggered.connect(self.about)
         self.actionBenchmarkScores.triggered.connect(self.set_tools)
         self.actionInstallDataSet.triggered.connect(self.install_dataset)
+        self.actionSimulationStatistics.triggered.connect(self.set_tools)
 
         # spin
         self.set_cpu_cores()
@@ -172,7 +177,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             self.SA_labelMaxSamples, self.SA_spinMaxSamples,
             self.HD_groupUserOrder, self.HD_groupTolerance,
             self.HC_groupSkewness, self.HC_groupPercentile,
-            ])
+        ])
 
         # default
         self.default_varnames()
@@ -378,10 +383,26 @@ class GsimcliMainWindow(QtGui.QMainWindow):
                              gsimcli_name="results")
         r_name = ui.GuiParam("results_name", self.HR_lineResultsName, group=gp,
                              gsimcli_name="results_file")
-        add([detect_save, sim_purge, r_path, r_name])
+        stats_mean = ui.GuiParam("stats_mean", self.HR_checkMean, group=gp,
+                                 gsimcli_name="opt_stats_mean")
+        stats_median = ui.GuiParam("stats_median", self.HR_checkMedian,
+                                   group=gp, gsimcli_name="opt_stats_median")
+        stats_std = ui.GuiParam("stats_std", self.HR_checkStd, group=gp,
+                                gsimcli_name="opt_stats_std")
+        stats_var = ui.GuiParam("stats_var", self.HR_checkVariance, group=gp,
+                                gsimcli_name="opt_stats_variance")
+        stats_coefvar = ui.GuiParam("stats_coefvar", self.HR_checkCoefVar,
+                                    group=gp, gsimcli_name="opt_stats_coefvar")
+        stats_skew = ui.GuiParam("stats_skew", self.HR_checkSkewness, group=gp,
+                                 gsimcli_name="opt_stats_skewness")
+        stats_percdet = ui.GuiParam("stats_percdet", self.HR_checkPercDet,
+                                    group=gp, gsimcli_name="opt_stats_percdet")
+        add([detect_save, sim_purge, r_path, r_name, stats_mean, stats_median,
+             stats_std, stats_var, stats_coefvar, stats_skew, stats_percdet])
 
-        #    Tools / Benchmark
+        #    Tools
         add(self.tools_benchmark.guiparams)
+        add(self.tools_simstats.guiparams)
 
     def about(self):
         """The About box. """
@@ -480,6 +501,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         who = self.sender().objectName().lower()
         if "scores" in who:
             self.stackedWidget.setCurrentWidget(self.tools_benchmark)
+        elif "statistics" in who:
+            self.stackedWidget.setCurrentWidget(self.tools_simstats)
 
     def set_tools_item(self, current, previous):
         """Connect the Tools right menu (QTreeWidget) with the panels on the
@@ -497,6 +520,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 
         if tree_item == "Scores calculation":
             self.stackedWidget.setCurrentWidget(self.tools_benchmark)
+        elif tree_item == "Statistics":
+            self.stackedWidget.setCurrentWidget(self.tools_simstats)
 
     def install_dataset(self):
         """Pop up the dialog to download and install the benchmark data set.
@@ -698,8 +723,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         # self.SimulationVariogram.setDisabled(toggle)
         # self.SV_labelBatchDecades.setVisible(toggle)
         tree_item = self.treeSettings.findItems("Variogram",
-                                              QtCore.Qt.MatchRecursive,
-                                              QtCore.Qt.MatchExactly)[0]
+                                                QtCore.Qt.MatchRecursive,
+                                                QtCore.Qt.MatchExactly)[0]
         tree_item.setDisabled(toggle)
         if toggle:
             tool_tip = ("Batch mode for decades is enabled, variograms "
@@ -1085,14 +1110,14 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             ui.pylist_to_qlist(self.params.variables, self.DL_listVarNames)
         except(AttributeError):
             # ignore if attributes are not present
-            pass
+            warnings.warn("params 'name' and/or 'variables' are not present")
 
         # Simulation / Options
         # self.SO_lineParPath.setText(self.params.dss_par)
         self.SO_lineExePath.setText(self.params.dss_exe)
         self.SO_spinNumberSims.setValue(self.params.number_simulations)
         self.SO_comboKrigType.setCurrentIndex(self.SO_comboKrigType.findText(
-                       self.params.krig_type[0], QtCore.Qt.MatchStartsWith))
+            self.params.krig_type[0], QtCore.Qt.MatchStartsWith))
         self.SO_spinMaxSearchNodes.setValue(self.params.max_search_nodes)
 
         # Simulation / Grid
@@ -1131,8 +1156,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         if st_order == "sorted":
             st_order = "id order"
         self.HD_comboStationOrder.setCurrentIndex(
-                                  self.HD_comboStationOrder.findText(st_order,
-                                                     QtCore.Qt.MatchContains))
+            self.HD_comboStationOrder.findText(st_order,
+                                               QtCore.Qt.MatchContains))
         if st_order == "user":
             ui.pylist_to_qlist(self.params.st_user, self.HD_listUserOrder)
         else:
@@ -1146,7 +1171,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 
         # Homogenisation / Correction
         self.HC_comboCorrectionMethod.setCurrentIndex(
-             self.HC_comboCorrectionMethod.findText(self.params.correct_method,
+            self.HC_comboCorrectionMethod.findText(self.params.correct_method,
                                                    QtCore.Qt.MatchContains))
         if self.params.correct_method == "skewness":
             self.HC_spinSkewness.setValue(self.params.skewness)
@@ -1158,7 +1183,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         self.HR_checkPurgeSims.setChecked(self.params.sim_purge)
         if hasattr(self.params, "results_file"):
             self.HR_lineResultsName.setText(
-                                    self.params.results_file.decode('utf-8'))
+                self.params.results_file.decode('utf-8'))
 #             results = self.params.results_file
 #         else:
 #             results = self.params.results
@@ -1167,7 +1192,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 
         self.actionGSIMCLI.setEnabled(True)
 
-        self.statusBar().showMessage("Parameters loaded from: {}".
+        self.statusBar().showMessage("Parameters loaded from: {0}".
                                      format(self.params.path), 5000)
         if self.print_status:
             print "loaded from: ", self.params.path
@@ -1181,7 +1206,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             name = param.gsimcli_name
             if name is not None:
                 if param.check_dependencies() and param.has_data():
-                    # krigging type
+                    # kriging type
                     if name == "krig_type":
                         krigtype = self.SO_comboKrigType.currentText()
                         if krigtype == "Simple":
@@ -1223,6 +1248,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
         """Create or update GsimcliParams file. Connected to dialogbuttonbox.
 
         """
+        self.set_additional_stats()
         self.save_gsimcli_settings(self.temp_params.name)
 
     def reset_settings(self):
@@ -1477,7 +1503,7 @@ class GsimcliMainWindow(QtGui.QMainWindow):
             else:
                 total = 0
 
-        return hmg._ntuple_stations(stations_list, total)
+        return hmg.list_of_stations(stations_list, total)
 
     def find_data_file(self):
         """Find a data file in the decade or selected network.
@@ -1499,6 +1525,8 @@ class GsimcliMainWindow(QtGui.QMainWindow):
     def deduce_network_id(self):
         """Try to deduce the network ID from the results file.
         Connected to the ResultsFile line.
+
+        TODO: just in case.
 
         """
         pass
@@ -1530,6 +1558,28 @@ class GsimcliMainWindow(QtGui.QMainWindow):
                 filename = os.path.splitext(filename)[0] + ".xls"
             self.HR_lineResultsName.setText(filename)
             self.HR_lineResultsName.setCursorPosition(len(filename) - 4)
+
+    def set_additional_stats(self):
+        """List which additional statistics the user selected. They will be
+        included in the results file.
+        Connected to the Stats groupbox.
+
+        """
+        columns = []
+        varnames = ui.qlist_to_pylist(self.DL_listVarNames)
+        # always include the climatic variable and the Flag
+        columns.append(varnames.index('clim'))
+        columns.append(columns[0] + 1)
+        # look for additional stats
+        self.additional_stats = {
+            'lmean': self.HR_checkMean.isChecked(),
+            'lmed': self.HR_checkMedian.isChecked(),
+            'lskew': self.HR_checkSkewness.isChecked(),
+            'lvar': self.HR_checkVariance.isChecked(),
+            'lstd': self.HR_checkStd.isChecked(),
+            'lcoefvar': self.HR_checkCoefVar.isChecked(),
+            'lperc': self.HR_checkPercDet.isChecked(),
+        }
 
     def run_gsimcli(self):
         """Launch GSIMCLI process according to the existing ui settings.
@@ -1581,8 +1631,12 @@ class GsimcliMainWindow(QtGui.QMainWindow):
 
         """
         cores = self.SO_spinCores.value()
-        if not progress:
+        # calculate simulations progress
+        if not progress and not self.skip_sim:
             progress = 100 * (self.current_sim - cores) / self.total_sims
+        elif self.skip_sim:
+            # TODO: count progress from other steps
+            progress = 0
 
         self.progressBar.setValue(progress)
 
@@ -1674,6 +1728,7 @@ class Homogenising(QtCore.QObject):
         self.is_running = True
         self.timer.start(time.time())
         cores = self.gui.SO_spinCores.value()
+        optional_stats = self.gui.additional_stats
 
         if self.gui.batch_networks:
             networks_list = ui.qlist_to_pylist(self.gui.DB_listNetworksPaths)
@@ -1684,14 +1739,17 @@ class Homogenising(QtCore.QObject):
                                           decades=self.gui.batch_decades,
                                           skip_dss=self.gui.skip_sim,
                                           print_status=self.gui.print_status,
-                                          cores=cores)
+                                          cores=cores,
+                                          optional_stats=optional_stats)
         elif self.gui.batch_decades:
+            variograms_file = str(self.gui.DB_lineVariogPath.text())
+            network_id = self.gui.DB_lineNetworkID.text()
             method_classic.batch_decade(par_path=self.gui.params.path,
-                        variograms_file=str(self.gui.DB_lineVariogPath.text()),
-                        print_status=self.gui.print_status,
-                        skip_dss=self.gui.skip_sim,
-                        network_id=self.gui.DB_lineNetworkID.text(),
-                        cores=cores)
+                                        variograms_file=variograms_file,
+                                        print_status=self.gui.print_status,
+                                        skip_dss=self.gui.skip_sim,
+                                        network_id=network_id, cores=cores,
+                                        optional_stats=optional_stats)
         else:
             method_classic.run_par(par_path=self.gui.params.path,
                                    skip_dss=self.gui.skip_sim,
@@ -1732,8 +1790,8 @@ class EmittingStream(QtCore.QObject):
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
-    app.setOrganizationName("ISEGI-NOVA")
-    app.setOrganizationDomain("www.isegi.unl.pt")
+    app.setOrganizationName("NOVA IMS")
+    app.setOrganizationDomain("www.novaims.unl.pt")
     app.setApplicationName("gsimcli")
     # MainWindow = loadUiWidget("/home/julio/qt/gsimcli.ui")
     MainWindow = GsimcliMainWindow()

@@ -120,7 +120,7 @@ class Station(object):
         months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
-        if all([month in months for month in self.data.columns]):
+        if all(month in months for month in self.data.columns):
             self.data = self.data.reindex_axis(months, axis=1)
 
     def load(self, path=None, content=None):
@@ -155,7 +155,7 @@ class Station(object):
                 self.quality = pc.qualityfile(path, self.resolution)
             self.path = path
         elif self.ftype != 'data':
-            raise ValueError('The file {} was not parsed as a data file.'.
+            raise ValueError('The file {0} was not parsed as a data file.'.
                              format(self.path))
         # FIXME: check if this is a problem; path optional?
         elif self.content == 'd' and os.path.isfile(self.path):
@@ -191,7 +191,7 @@ class Station(object):
             try:
                 detected_file = glob.glob('*detected.txt')[0]
             except:
-                raise os.error('breakpoints file not found in directory {}'.
+                raise os.error('breakpoints file not found in directory {0}'.
                                format(path))
 
         detected = pc.breakpointsfile(detected_file)
@@ -567,7 +567,7 @@ class Network(object):
             div = 1.0
 
         xlsfile = pd.ExcelFile(path)
-        xlstable = xlsfile.parse(sheetname='All stations', header=False,
+        xlstable = xlsfile.parse(sheetname='All stations', header=0,
                                  na_values=self.no_data, index_col=0)
 
         # filter out FLAG columns
@@ -585,8 +585,6 @@ class Network(object):
         for i, station_col in enumerate(data_cols):
             stid = station_ids[i]
             data = pd.DataFrame(xlstable[station_col] / div)
-            if data.iloc[0].values > 500:
-                pass
             if not yearly:
                 data.columns = [month]
             if stid in self.stations_id:
@@ -889,7 +887,7 @@ def extract_month(path):
                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'])
     filename = os.path.splitext(os.path.basename(path))[0]
     names = re.split('\W+|_', filename)
-    names = set([name.capitalize() for name in names])
+    names = {name.capitalize() for name in names}
 
     return list(months & names)[0]
 
@@ -921,6 +919,6 @@ def match_sub(path, sub, level=3):
         os.chdir(dirname)
         match = os.path.join(dirname, glob.glob('*' + str(basename[2:]))[0])
         if not os.path.isfile(match):
-            raise os.error('no such file: \'{}\''.format(match))
+            raise os.error('no such file: \'{0}\''.format(match))
 
     return match

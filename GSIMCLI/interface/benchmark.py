@@ -11,6 +11,7 @@ import sys
 
 from external_libs.pyside_dynamic import loadUi
 from external_libs.ui import CheckBoxDelegate
+import interface.checktable as ct
 import interface.ui_utils as ui
 import pandas as pd
 import tools.scores as scores
@@ -20,220 +21,218 @@ from tools.utils import path_up
 base = os.path.dirname(os.path.dirname(__file__))
 
 
-class TableModel(QtCore.QAbstractTableModel):
-
-    """Table model with a column filled with one check box per line. Each check
-    box is centered in the cell and has no text.
-
-    """
-    dataChanged = QtCore.Signal(QtCore.QModelIndex, QtCore.QModelIndex)
-
-    def __init__(self, checkbox_col, parent=None):
-        """Constructor.
-
-        Parameters
-        ----------
-        checkbox_col : int
-            Number of the column with the check boxes.
-        parent : QObject, optional
-            Parent of the model.
-
-        """
-        super(TableModel, self).__init__(parent)
-        self.table = None
-        self.header = None
-        self.vheader = None
-        self.checkbox_col = checkbox_col
-        # signals
-        self.dataChanged.connect(self.add_rows_auto)
-
-    def addItem(self, item):
-        """Append a row to the table.
-
-        Parameters
-        ----------
-        item : array_like
-            Row to be inserted after the last row in the table.
-
-        """
-        count = self.rowCount()
-        self.beginInsertRows(QtCore.QModelIndex(), count, count)
-        self.table.loc[count] = item
-        self.endInsertRows()
-
-    def add_rows_auto(self, index):
-        """Automatically add a new row after entering data in the last row.
-        Connected to the dataChanged signal.
-        This new row is empty and the check box is not checked.
-
-        Parameters
-        ----------
-        index : QModelIndex
-            Index passed by the dataChanged signal.
-
-        """
-        row = index.row()
-        row_content = self.table.values[row, :-1]
-        if row == (self.rowCount() - 1) and all(row_content):
-            self.addItem(['', '', '', False])
-
-    def columnCount(self, parent=QtCore.QModelIndex()):
-        """
-        Return the number of columns in the table.
-
-        """
-        if self.table is not None:
-            return self.table.shape[1]
-
-    def data(self, index, role=QtCore.Qt.DisplayRole):
-        """Return the value in the given index of the table.
-
-        """
-        if role in [QtCore.Qt.DisplayRole, QtCore.Qt.EditRole]:
-            i = index.row()
-            j = index.column()
-            if j == self.checkbox_col:
-                return self.table.iloc[i, j]
-            else:
-                return unicode(self.table.iloc[i, j])
-
-    def flags(self, index):
-        """Return the item flags for the given index.
-
-        """
-        if index.column() == self.checkbox_col:
-            return QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled
-        else:
-            return QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled  # @IgnorePep8
-
-    def headerData(self, idx, orientation, role):
-        """Return the data for the given `role` and `section` in the header
-        with the specified `orientation`.
-
-        """
-        if (orientation == QtCore.Qt.Horizontal and
-                role == QtCore.Qt.DisplayRole):
-            return unicode(self.header[idx])
-        if (orientation == QtCore.Qt.Vertical and
-                role == QtCore.Qt.DisplayRole):
-            return unicode(self.vheader[idx])
-
-    def isChecked(self, index):
-        """Return the check box state in the given `index`.
-
-        """
-        return self.table.iloc[index.row(), self.checkbox_col]
-
-    def get_key(self, key, filter_selected=False):
-        """Return the column named `key` in the table.
-
-        Parameters
-        ----------
-        key : string
-            Column name.
-        filter_selected : boolean, default False
-            Return only the rows with a checked check box.
-
-        """
-        if filter_selected:
-            values = self.table.query(self.checkbox_key)[key]
-        else:
-            values = self.table[key]
-
-        return values
-
-    def get_row(self, row):
-        """Return the data in the given `row` number.
-
-        Parameters
-        ----------
-        row : int
-            Row number
-
-        """
-        return self.table.loc[row]
-
-    def removeRows(self, row, count, parent=QtCore.QModelIndex()):
-        """Remove the row in the given position.
-
-        """
-        if row < 0 or row > self.rowCount():
-            return False
-
-        self.beginRemoveRows(parent, row, row)
-        self.table.drop(row, axis=0, inplace=True)
-        self.table.reset_index(drop=True, inplace=True)
-        self.endRemoveRows()
-        return True
-
-    def rowCount(self, parent=QtCore.QModelIndex()):
-        """Return the number of rows in the table.
-
-        """
-        if self.table is not None:
-            return self.table.shape[0]
-
-    def setChecked(self, index, value, role=QtCore.Qt.EditRole):
-        """Set the check box in the given `index` with the given `value`.
-
-        """
-        if role == QtCore.Qt.EditRole:
-            self.table.iloc[index.row(), self.checkbox_col] = value
-            self.dataChanged.emit(index, index)
-            return True
-        return False
-
-    def setData(self, index, value, role=QtCore.Qt.EditRole):
-        """Set the `role` data for the item at `index` to `value`.
-
-        """
-        if role == QtCore.Qt.EditRole:
-            i = index.row()
-            j = index.column()
-            self.table.iloc[i, j] = value
-            self.dataChanged.emit(index, index)
-            return True
-        return False
-
-    def setHeaderData(self, section, value, orientation=QtCore.Qt.Horizontal,
-                      role=QtCore.Qt.EditRole):
-        """
-        Set the data for the given `role` and `section` in the header with the
-        specified `orientation` to the `value` supplied.
-
-        """
-        if role == QtCore.Qt.EditRole and orientation == QtCore.Qt.Horizontal:
-            self.header[section] = value
-            self.headerDataChanged.emit(orientation, section, section)
-            return True
-        elif role == QtCore.Qt.EditRole and orientation == QtCore.Qt.Vertical:
-            self.vheader = value
-            self.headerDataChanged.emit(orientation, section, section)
-            return True
-        else:
-            return False
-
-    def update(self, data_in):
-        """Change the whole existing table with `data_in`. Headers will be
-        changed accordingly to the names existing in `data_in` table.
-
-        Existing data will be lost.
-
-        Parameters
-        ----------
-        data_in : pandas.DataFrame
-            Table with the new data and headers.
-
-        """
-        self.table = data_in
-        headers = data_in.columns
-        self.header = [unicode(field) for field in headers]
-        indexes = data_in.index
-        self.vheader = [unicode(index + 1) for index in indexes]
-        self.checkbox_key = self.table.columns[self.checkbox_col]
-
-
-class TableView(QtGui.QTableView):
+# class TableModel(QtCore.QAbstractTableModel):
+#     """Table model with a column filled with one check box per line. Each check
+#     box is centered in the cell and has no text.
+#
+#     """
+#     dataChanged = QtCore.Signal(QtCore.QModelIndex, QtCore.QModelIndex)
+#
+#     def __init__(self, checkbox_col, parent=None):
+#         """Constructor.
+#
+#         Parameters
+#         ----------
+#         checkbox_col : int
+#             Number of the column with the check boxes.
+#         parent : QObject, optional
+#             Parent of the model.
+#
+#         """
+#         super(TableModel, self).__init__(parent)
+#         self.table = None
+#         self.header = None
+#         self.vheader = None
+#         self.checkbox_col = checkbox_col
+# signals
+#         self.dataChanged.connect(self.add_rows_auto)
+#
+#     def addItem(self, item):
+#         """Append a row to the table.
+#
+#         Parameters
+#         ----------
+#         item : array_like
+#             Row to be inserted after the last row in the table.
+#
+#         """
+#         count = self.rowCount()
+#         self.beginInsertRows(QtCore.QModelIndex(), count, count)
+#         self.table.loc[count] = item
+#         self.endInsertRows()
+#
+#     def add_rows_auto(self, index):
+#         """Automatically add a new row after entering data in the last row.
+#         Connected to the dataChanged signal.
+#         This new row is empty and the check box is not checked.
+#
+#         Parameters
+#         ----------
+#         index : QModelIndex
+#             Index passed by the dataChanged signal.
+#
+#         """
+#         row = index.row()
+#         row_content = self.table.values[row, :-1]
+#         if row == (self.rowCount() - 1) and all(row_content):
+#             self.addItem(['', '', '', False])
+#
+#     def columnCount(self, parent=QtCore.QModelIndex()):
+#         """Return the number of columns in the table.
+#
+#         """
+#         if self.table is not None:
+#             return self.table.shape[1]
+#
+#     def data(self, index, role=QtCore.Qt.DisplayRole):
+#         """Return the value in the given index of the table.
+#
+#         """
+#         if role in [QtCore.Qt.DisplayRole, QtCore.Qt.EditRole]:
+#             i = index.row()
+#             j = index.column()
+#             if j == self.checkbox_col:
+#                 return self.table.iloc[i, j]
+#             else:
+#                 return unicode(self.table.iloc[i, j])
+#
+#     def flags(self, index):
+#         """Return the item flags for the given index.
+#
+#         """
+#         if index.column() == self.checkbox_col:
+#             return QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled
+#         else:
+# return QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled  # @IgnorePep8
+#
+#     def headerData(self, idx, orientation, role):
+#         """Return the data for the given `role` and `section` in the header
+#         with the specified `orientation`.
+#
+#         """
+#         if (orientation == QtCore.Qt.Horizontal and
+#                 role == QtCore.Qt.DisplayRole):
+# return unicode(self.header[idx])
+#             return self.table.columns.tolist()[idx]
+#         if (orientation == QtCore.Qt.Vertical and
+#                 role == QtCore.Qt.DisplayRole):
+# return unicode(self.vheader[idx])
+#             return self.table.index.tolist()[idx]
+#
+#     def isChecked(self, index):
+#         """Return the check box state in the given `index`.
+#
+#         """
+#         return self.table.iloc[index.row(), self.checkbox_col]
+#
+#     def get_key(self, key, filter_selected=False):
+#         """Return the column named `key` in the table.
+#
+#         Parameters
+#         ----------
+#         key : string
+#             Column name.
+#         filter_selected : boolean, default False
+#             Return only the rows with a checked check box.
+#
+#         """
+#         if filter_selected:
+#             values = self.table.query(self.checkbox_key)[key]
+#         else:
+#             values = self.table[key]
+#
+#         return values
+#
+#     def get_row(self, row):
+#         """Return the data in the given `row` number.
+#
+#         Parameters
+#         ----------
+#         row : int
+#             Row number
+#
+#         """
+#         return self.table.loc[row]
+#
+#     def removeRows(self, row, count, parent=QtCore.QModelIndex()):
+#         """Remove the row in the given position.
+#
+#         """
+#         if row < 0 or row > self.rowCount():
+#             return False
+#
+#         self.beginRemoveRows(parent, row, row)
+#         self.table.drop(row, axis=0, inplace=True)
+#         self.table.reset_index(drop=True, inplace=True)
+#         self.endRemoveRows()
+#         return True
+#
+#     def rowCount(self, parent=QtCore.QModelIndex()):
+#         """Return the number of rows in the table.
+#
+#         """
+#         if self.table is not None:
+#             return self.table.shape[0]
+#
+#     def setChecked(self, index, value, role=QtCore.Qt.EditRole):
+#         """Set the check box in the given `index` with the given `value`.
+#
+#         """
+#         if role == QtCore.Qt.EditRole:
+#             self.table.iloc[index.row(), self.checkbox_col] = value
+#             self.dataChanged.emit(index, index)
+#             return True
+#         return False
+#
+#     def setData(self, index, value, role=QtCore.Qt.EditRole):
+#         """Set the `role` data for the item at `index` to `value`.
+#
+#         """
+#         if role == QtCore.Qt.EditRole:
+#             i = index.row()
+#             j = index.column()
+#             self.table.iloc[i, j] = value
+#             self.dataChanged.emit(index, index)
+#             return True
+#         return False
+#
+#     def setHeaderData(self, section, value, orientation=QtCore.Qt.Horizontal,
+#                       role=QtCore.Qt.EditRole):
+#         """
+#         Set the data for the given `role` and `section` in the header with the
+#         specified `orientation` to the `value` supplied.
+#
+#         """
+#         if role == QtCore.Qt.EditRole and orientation == QtCore.Qt.Horizontal:
+#             self.header[section] = value
+#             self.headerDataChanged.emit(orientation, section, section)
+#             return True
+#         elif role == QtCore.Qt.EditRole and orientation == QtCore.Qt.Vertical:
+#             self.vheader = value
+#             self.headerDataChanged.emit(orientation, section, section)
+#             return True
+#         else:
+#             return False
+#
+#     def update(self, data_in):
+#         """Change the whole existing table with `data_in`. Headers will be
+#         changed accordingly to the names existing in `data_in` table.
+#
+#         Existing data will be lost.
+#
+#         Parameters
+#         ----------
+#         data_in : pandas.DataFrame
+#             Table with the new data and headers.
+#
+#         """
+#         self.table = data_in
+#         headers = data_in.columns
+#         self.header = [unicode(field) for field in headers]
+#         indexes = data_in.index
+#         self.vheader = [unicode(index + 1) for index in indexes]
+#         self.checkbox_key = self.table.columns[self.checkbox_col]
+class TableView(ct.TableView):
 
     """A table view to show and manage the data in the table model with check
     boxes in one column.
@@ -253,14 +252,15 @@ class TableView(QtGui.QTableView):
             Parent of the model.
 
         """
-        super(TableView, self).__init__(parent)
-        self.setAlternatingRowColors(True)
+        super(TableView, self).__init__(checkbox_col=checkbox_col,
+                                        parent=parent)
+        # self.setAlternatingRowColors(True)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         # signals
         self.customContextMenuRequested.connect(self.context_menu)
         self.doubleClicked.connect(self.browse_cell)
         # set delegate
-        self.setItemDelegateForColumn(checkbox_col, CheckBoxDelegate(self))
+        # self.setItemDelegateForColumn(checkbox_col, CheckBoxDelegate(self))
         # build context menu
         self.set_context_menu()
         # set edit triggers
@@ -295,21 +295,6 @@ class TableView(QtGui.QTableView):
             self.network_menu.exec_(point)
         elif column == 2:
             self.keys_menu.exec_(point)
-
-    def remove_rows(self):
-        """Remove the selected rows from the table. If the last row is removed,
-        a new one will be added.
-        Connected to the tableResults View context menu.
-
-        """
-        indexes = self.selectedIndexes()
-        rows = sorted(set([index.row() for index in indexes]))
-        for n, row in enumerate(rows):
-            self.model().removeRow(row - n)
-
-        # keep one row
-        if self.model().rowCount() < 1:
-            self.model().addItem(['', '', '', True])
 
     def set_context_menu(self):
         """Set up the context menus of the tableResults View, in its cells
@@ -359,7 +344,7 @@ class TableView(QtGui.QTableView):
 
         for action in self.results_menu.actions():
             if action.text().startswith("Browse"):
-                action.setText("Browse {}".format(label))
+                action.setText("Browse {0}".format(label))
             elif action.text().startswith("Show included"):
                 action.setVisible(toggle_show)
 
@@ -423,11 +408,12 @@ class Scores(QtGui.QWidget):
         self.comboFormat.currentIndexChanged.connect(self.file_format)
 
         # lines
+        self.lineOrig.textChanged.connect(self.guess_inho)
         self.lineInho.textChanged.connect(self.enable_improvement)
 
         # table
         # model and view
-        self.tableResultsModel = TableModel(3, self)
+        self.tableResultsModel = ct.TableModel(3, self)
         self.tableResultsView = TableView(3, self)
         # initialise the table with blank values
         columns = ['Results file', 'Network ID', 'Keys file', 'Use']
@@ -451,6 +437,7 @@ class Scores(QtGui.QWidget):
                  self.progressBar
                  ])
 
+        self.file_format()
         self.time_resolution()
 
     def browse_homog_dir(self, index):
@@ -483,7 +470,7 @@ class Scores(QtGui.QWidget):
 
         # open file
         if col in [0, 2]:
-            caption = "Select {} file".format(target)
+            caption = "Select {0} file".format(target)
             filepath = QtGui.QFileDialog.getOpenFileName(self, caption,
                                                          dir=self.default_dir)
 
@@ -508,7 +495,7 @@ class Scores(QtGui.QWidget):
             what = "to save the converted files"
             target = self.lineSaveCost
 
-        caption = "Select the directory {}".format(what)
+        caption = "Select the directory {0}".format(what)
         path = QtGui.QFileDialog.getExistingDirectory(self, caption,
                                                       dir=self.default_dir)
 
@@ -531,31 +518,46 @@ class Scores(QtGui.QWidget):
         else:
             if not os.path.isdir(self.lineOrig.text()):
                 raise ValueError("Original data path is not valid.")
-            if not all([len(self.gsimcli_results),
-                        len(self.network_ids),
-                        len(self.keys)]):
+            if self.format_is_gsimcli and not all([len(self.results_files),
+                   len(self.network_ids), len(self.keys)]):
                 raise ValueError("Incomplete or invalid gsimcli results.")
 
         self.show_status(True)
         self.set_progress_max()
 
+        if self.format_is_gsimcli:
+            results_arg = 'gsimcli_results'
+        else:
+            results_arg = 'network_path'
+
+        # arguments for both formats
         kwargs = {
-            'gsimcli_results': self.gsimcli_results,
+            results_arg: self.results_files,
             'no_data': self.spinNoData.value(),
-            'keys_path': self.keys,
-            'costhome_path': self.lineSaveCost.text(),
             'orig_path': self.lineOrig.text(),
             'inho_path': self.lineInho.text(),
             'yearly': self.resolution == 'yearly',
-            'yearly_sum': self.checkAverageYearly.isChecked(),
             'over_network': self.groupNetwork.isChecked(),
             'over_station': self.groupStation.isChecked(),
             'skip_missing': self.checkSkipMissing.isChecked(),
             'skip_outlier': self.checkSkipOutlier.isChecked(),
         }
+        # arguments for specific format
+        if self.format_is_gsimcli:
+            kwargs.update({
+                'keys_path': self.keys,
+                'costhome_path': self.lineSaveCost.text(),
+                'yearly_sum': self.checkAverageYearly.isChecked(),
+            })
+        else:
+            kwargs['networks_id'] = self.network_ids
 
         # set up the job
-        job = scores.gsimcli_improvement
+        if self.format_is_gsimcli:
+            job = scores.gsimcli_improvement
+        else:
+            job = scores.cost_improvement
+
         updater = scores.update.progress
         self.office = ui.Office(self, job, updater=updater, **kwargs)
         # self.office.worker.time_elapsed.connect(self.set_time)
@@ -568,11 +570,19 @@ class Scores(QtGui.QWidget):
         keys files.
 
         """
-        keys = self.tableResultsModel.get_key("Keys file", True)
-
         stations = 0
-        for key in keys:
-            stations += sum(1 for line in open(key)) - 1  # @UnusedVariable
+
+        if self.format_is_gsimcli:
+            keys = self.tableResultsModel.get_key("Keys file", True)
+
+            for key in keys:
+                stations += sum(1 for line in open(key)) - 1  # @UnusedVariable
+
+        else:
+            paths = self.tableResultsModel.get_key("Results file", True)
+            # simple guess based on the number of files and folders
+            for path in paths:
+                stations += len(os.listdir(path))
 
         return stations
 
@@ -636,18 +646,31 @@ class Scores(QtGui.QWidget):
         """
         results = self.tableResultsModel.get_key('Results file', True)
         network_ids = self.tableResultsModel.get_key('Network ID', True)
-        keys = self.tableResultsModel.get_key('Keys file', True)
 
-        if self.resolution == "yearly":
-            gsimcli_results = results
-        elif self.resolution == "monthly":
-            networks = list()
-            for i, network in enumerate(results):
-                networks.append(self.find_results(network, network_ids[i]))
-            gsimcli_results = networks
-        self.gsimcli_results = dict(zip(network_ids, gsimcli_results))
-        self.network_ids = network_ids
-        self.keys = keys
+        if self.format_is_gsimcli:
+            keys = self.tableResultsModel.get_key('Keys file', True)
+
+        if self.format_is_gsimcli:
+            if self.resolution == "yearly":
+                results_files = results
+            elif self.resolution == "monthly":
+                networks = list()
+                for i, network in enumerate(results):
+                    networks.append(self.find_results(network, network_ids[i]))
+                results_files = networks
+            self.results_files = dict(zip(network_ids, results_files))
+            self.keys = keys
+            self.network_ids = network_ids
+
+        else:  # format is cost-home
+            self.results_files = results.tolist()[0]
+            # FIXME: [0] will give a wrong number of networks to set_progress
+            self.keys = None
+            ids_list = network_ids.tolist()
+            if ids_list:
+                self.network_ids = ids_list[0].split()
+            else:
+                self.network_ids = None
 
     def file_format(self):
         """Handle the different file formats accepted.
@@ -661,14 +684,26 @@ class Scores(QtGui.QWidget):
         elif fformat == "COST-HOME":
             toggle_save = False
 
+        self.format_is_gsimcli = toggle_save
         self.enable_save_cost(toggle_save and self.checkSaveCost.isChecked())
         self.checkSaveCost.setEnabled(toggle_save)
+        keys_index = self.tableResultsModel.header.index('Keys file')
+        self.tableResultsView.setColumnHidden(keys_index, not toggle_save)
 
     def find_results(self, path, network_id=''):
         """Find gsimcli results files.
 
         """
         return glob2.glob(os.path.join(path, '**/*' + network_id + '*.xls'))
+
+    def guess_inho(self):
+        """Try to guess the inho path.
+
+        """
+        inho = self.lineOrig.text().replace(os.sep + 'orig' + os.sep,
+                                            os.sep + 'inho' + os.sep)
+        if os.path.isdir(inho):
+            self.lineInho.setText(inho)
 
     def print_results(self):
         """Display the results in the lineEdits widgets.
@@ -717,7 +752,7 @@ class Scores(QtGui.QWidget):
                     "\t\tStation\t\tNetwork\n"
                     "CRMSE:\t\t{}\t{}\n".format(self.station_crmse,
                                                 self.network_crmse) +
-                    "Improvement:\t{}\t{}".format(self.station_improvement,
+                    "Improvement:\t{0}\t{1}".format(self.station_improvement,
                                                   self.network_improvement))
             with open(filepath[0], 'w') as afile:
                 afile.write(text)
@@ -763,7 +798,7 @@ class Scores(QtGui.QWidget):
         over_network = self.groupNetwork.isChecked()
         over_station = self.groupStation.isChecked()
 
-        networks = len(self.gsimcli_results)
+        networks = len(self.results_files)
         stations = self.count_stations()
         total = networks + 1
         if over_network:

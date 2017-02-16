@@ -2040,9 +2040,6 @@
          </widget>
          <widget class="QWidget" name="HomogenisationResults">
           <layout class="QVBoxLayout" name="verticalLayout_22">
-           <property name="spacing">
-            <number>15</number>
-           </property>
            <item>
             <layout class="QVBoxLayout" name="verticalLayout_18">
              <item>
@@ -2088,6 +2085,67 @@
               </widget>
              </item>
             </layout>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="HR_groupStats">
+             <property name="toolTip">
+              <string>The selected statistics will be included in the results file, next to the climatic variable value of each station.</string>
+             </property>
+             <property name="title">
+              <string>Include additional statistics for the simulated distribution</string>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_2">
+              <item row="0" column="0">
+               <widget class="QCheckBox" name="HR_checkMean">
+                <property name="text">
+                 <string>Mean</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QCheckBox" name="HR_checkCoefVar">
+                <property name="text">
+                 <string>Coefficient of variation</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QCheckBox" name="HR_checkMedian">
+                <property name="text">
+                 <string>Median</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QCheckBox" name="HR_checkSkewness">
+                <property name="text">
+                 <string>Skewness</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QCheckBox" name="HR_checkStd">
+                <property name="text">
+                 <string>Standard deviation</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QCheckBox" name="HR_checkPercDet">
+                <property name="text">
+                 <string>Percentile of detection</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QCheckBox" name="HR_checkVariance">
+                <property name="text">
+                 <string>Variance</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
            </item>
            <item>
             <layout class="QVBoxLayout" name="verticalLayout_20">
@@ -2387,6 +2445,16 @@
                </property>
               </item>
              </item>
+             <item>
+              <property name="text">
+               <string>Simulation</string>
+              </property>
+              <item>
+               <property name="text">
+                <string>Statistics</string>
+               </property>
+              </item>
+             </item>
             </widget>
            </item>
           </layout>
@@ -2594,7 +2662,7 @@
      <x>0</x>
      <y>0</y>
      <width>991</width>
-     <height>23</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -2633,6 +2701,7 @@
     </property>
     <addaction name="actionBenchmarkScores"/>
     <addaction name="actionInstallDataSet"/>
+    <addaction name="actionSimulationStatistics"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -2770,15 +2839,23 @@
   </action>
   <action name="actionBenchmarkScores">
    <property name="text">
-    <string>Benchmark scores</string>
+    <string>&amp;Benchmark scores</string>
    </property>
    <property name="shortcut">
-    <string>F8</string>
+    <string>F9</string>
    </property>
   </action>
   <action name="actionInstallDataSet">
    <property name="text">
-    <string>Install bechmark data set</string>
+    <string>&amp;Install bechmark data set</string>
+   </property>
+  </action>
+  <action name="actionSimulationStatistics">
+   <property name="text">
+    <string>&amp;Simulation statistics</string>
+   </property>
+   <property name="shortcut">
+    <string>F10</string>
    </property>
   </action>
  </widget>

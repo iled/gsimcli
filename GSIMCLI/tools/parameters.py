@@ -5,6 +5,8 @@ Created on 6 de Dez de 2013
 @author: julio
 '''
 
+import warnings
+
 from utils import yes_no
 
 
@@ -24,32 +26,32 @@ class ParametersFile(object):
     Fields are separated from values with a given separator (field_sep). Values
     can be a single value or a list of values, which are separated with yet
     another given separator (values_sep).
-    
+
     Only one field per line will be parsed. This allows values containing
     field_sep.
 
     """
 
-    def __init__(self, field_sep, value_sep, par_set=str(), par_file=str(),
-                 text=list(), real_n=list(), int_n=list(), boolean=list(),
-                 opt_text=list(), opt_real=list(), opt_int=list(),
-                 opt_boolean=list(), parpath=None, order=None):
+    def __init__(self, field_sep, value_sep, par_set=None, par_file=None,
+                 text=None, real_n=None, int_n=None, boolean=None,
+                 opt_text=None, opt_real=None, opt_int=None,
+                 opt_boolean=None, parpath=None, order=None):
         """Constructor.
 
         """
         self.path = parpath
         self.field_sep = field_sep
         self.value_sep = value_sep
-        self.par_set = par_set
-        self.par_file = par_file
-        self.text = text
-        self.real = real_n
-        self.int = int_n
-        self.boolean = boolean
-        self.opt_text = opt_text
-        self.opt_real = opt_real
-        self.opt_int = opt_int
-        self.opt_boolean = opt_boolean
+        self.par_set = par_set or ''
+        self.par_file = par_file or ''
+        self.text = text or []
+        self.real = real_n or []
+        self.int = int_n or []
+        self.boolean = boolean or []
+        self.opt_text = opt_text or []
+        self.opt_real = opt_real or []
+        self.opt_int = opt_int or []
+        self.opt_boolean = opt_boolean or []
         self.optional = (self.opt_text + self.opt_real + self.opt_int
                          + self.opt_boolean)
         self.fields = self.text + self.real + self.int + self.boolean
@@ -107,7 +109,7 @@ class ParametersFile(object):
                 if field in self.fields:
                     checklist.remove(field)
         if checklist:
-            raise AttributeError('There are missing parameters: {}.'
+            raise AttributeError('There are missing parameters: {0}.'
                                  .format(', '.join(map(str, checklist))))
 
     def save(self, par_path=None):
@@ -120,7 +122,7 @@ class ParametersFile(object):
             self.path = par_path
         par = open(par_path, 'w')
         par.write('·' * (25 + len(self.par_set)) + '\n')
-        par.write('·····  {} parameters  ·····\n'.format(self.par_set))
+        par.write('·····  {0} parameters  ·····\n'.format(self.par_set))
         par.write('·' * (25 + len(self.par_set)) + '\n')
         if self.order:
             fields = self.order
@@ -148,6 +150,8 @@ class ParametersFile(object):
         for i, field in enumerate(fields):
             if field in self.fields + self.optional:
                 self.set_field(field, values[i])
+            else:
+                warnings.warn("Error while setting field: {0}".format(field))
         if save:
             self.save(par_path)
 

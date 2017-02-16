@@ -107,7 +107,7 @@ class GuiParam(object):
             isinstance(self.widget, QtGui.QRadioButton) or
             (isinstance(self.widget, QtGui.QGroupBox) and
              self.widget.isCheckable())
-             ):
+        ):
             self.value = self.widget.isChecked()
 
     def load(self, value):
@@ -133,7 +133,7 @@ class GuiParam(object):
             isinstance(self.widget, QtGui.QRadioButton) or
             (isinstance(self.widget, QtGui.QGroupBox) and
              self.widget.isCheckable())
-              ):
+        ):
             self.widget.setChecked(to_bool(value))
 
         self.update()

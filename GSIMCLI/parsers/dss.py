@@ -328,182 +328,183 @@ class DssParam:
     def ask_update_default(self):
         """Asks to update or keep existing values.
         """
-        arg = raw_input('Hard-data path/file [{}]: '.format(self.datapath.
+        arg = raw_input('Hard-data path/file [{0}]: '.format(self.datapath.
                                                            strip()))
         if arg:
             self.datapath = arg
 
-        arg = raw_input('Number of columns [{}]: '.format(self.columns))
+        arg = raw_input('Number of columns [{0}]: '.format(self.columns))
         if arg:
             self.columns = arg
 
-        arg = raw_input('Columns for X, Y, Z, Var, Weight, Sec. var [{}]: '
+        arg = raw_input('Columns for X, Y, Z, Var, Weight, Sec. var [{0}]: '
                         .format(self.columns_set))
         if arg:
             self.columns_set = arg.split()
 
-        arg = raw_input('Trimming limits, min and max [{}]: '.
+        arg = raw_input('Trimming limits, min and max [{0}]: '.
                         format(self.trimming))
         if arg:
             self.trimming = arg.split()
 
-        arg = raw_input('Transformation file (1/0 - yes/no) [{}]: '.
+        arg = raw_input('Transformation file (1/0 - yes/no) [{0}]: '.
                         format(self.transflag))
         if arg:
             self.transflag = arg
 
         if self.transflag:
-            arg = raw_input('Transformation path/filename [{}]: '
+            arg = raw_input('Transformation path/filename [{0}]: '
                             .format(self.transfile))
             if arg:
                 self.transfile = arg
         else:
             self.transfile = 'no file'
 
-        arg = raw_input('Data limits (distribution tails) [{}]: '
+        arg = raw_input('Data limits (distribution tails) [{0}]: '
                         .format(self.tails))
         if arg:
             self.tails = arg.split()
 
-        arg = raw_input('Lower tail (interpolation type, min.) [{}]: '
+        arg = raw_input('Lower tail (interpolation type, min.) [{0}]: '
                         .format(self.lowert))
         if arg:
             self.lowert = arg.split()
 
-        arg = raw_input('Upper tail (interpolation type, min.) [{}]: '
+        arg = raw_input('Upper tail (interpolation type, min.) [{0}]: '
                         .format(self.uppert))
         if arg:
             self.uppert = arg.split()
 
-        arg = raw_input('Debugging level (1/2/3) [{}]: '.format(self.debuglvl))
+        arg = raw_input('Debugging level (1/2/3) [{0}]: '
+                        .format(self.debuglvl))
         if arg:
             self.dbglvl = arg
 
-        arg = raw_input('Debugging path/filename [{}]: '.format(self.debugfile.
-                                                               strip()))
+        arg = raw_input('Debugging path/filename [{0}]: '
+                        .format(self.debugfile.strip()))
         if arg:
             self.debugfile = arg
 
-        arg = raw_input('Output path/filename [{}]: '.format(self.output.
-                                                            strip()))
+        arg = raw_input('Output path/filename [{0}]: '.format(self.output.
+                                                              strip()))
         if arg:
             self.output = arg
 
-        arg = raw_input('Number of realizations [{}]: '.format(self.nsim))
+        arg = raw_input('Number of realizations [{0}]: '.format(self.nsim))
         if arg:
             self.nsim = arg
 
         arg = raw_input('Local bias simulation correction, for mean (0/1), for'
-                        'variance (0/1) [{}]: '.format(self.bias))
+                        'variance (0/1) [{0}]: '.format(self.bias))
         if arg:
             self.bias = arg
 
-        arg = raw_input('XX: number of nodes, min., spacing [{}]: '
+        arg = raw_input('XX: number of nodes, min., spacing [{0}]: '
                         .format(self.xx))
         if arg:
             self.xx = arg.split()
 
-        arg = raw_input('YY: number of nodes, min., spacing [{}]: '
+        arg = raw_input('YY: number of nodes, min., spacing [{0}]: '
                         .format(self.yy))
         if arg:
             self.yy = arg.split()
 
-        arg = raw_input('ZZ: number of nodes, min., spacing [{}]: '
+        arg = raw_input('ZZ: number of nodes, min., spacing [{0}]: '
                         .format(self.zz))
         if arg:
             self.zz = arg.split()
 
-        arg = raw_input('Value for unsimulated nodes [{}]: '.format(self.nd))
+        arg = raw_input('Value for unsimulated nodes [{0}]: '.format(self.nd))
         if arg:
             self.nd = arg
 
-        arg = raw_input('Seed for pseudo-random numbers [{}]: '
+        arg = raw_input('Seed for pseudo-random numbers [{0}]: '
                         .format(self.seed))
         if arg:
             self.seed = arg
 
-        arg = raw_input('Number of search samples (min, max) [{}]: '
+        arg = raw_input('Number of search samples (min, max) [{0}]: '
                         .format(self.nsamples))
         if arg:
             self.nsamples = arg.split()
 
-        arg = raw_input('Max. number of previously simulated nodes [{}]: '
+        arg = raw_input('Max. number of previously simulated nodes [{0}]: '
                         .format(self.maxsim))
         if arg:
             self.maxsim = arg
 
         arg = raw_input('Search strategy (0 = two-part search, 1 = data nodes)'
-                        ' [{}]: '.format(self.strategy))
+                        ' [{0}]: '.format(self.strategy))
         if arg:
             self.strategy = arg
 
         arg = raw_input('Two-step simulation (0/1), number of multiple grids'
-                        ' [{}]: '.format(self.simset))
+                        ' [{0}]: '.format(self.simset))
         if arg:
             self.simset = arg.split()
 
-        arg = raw_input('Samples number per octant (0 = no octant) [{}]: '
+        arg = raw_input('Samples number per octant (0 = no octant) [{0}]: '
                         .format(self.octant))
         if arg:
             self.octant = arg.split()
 
         arg = raw_input('Search radius (dir. 1, dir. 2, dir. 3), in the data '
-                        'scale [{}]: '.format(self.srchradius))
+                        'scale [{0}]: '.format(self.srchradius))
         if arg:
             self.srchradius = arg.split()
 
-        arg = raw_input('Search anisotropy angles, in the data scale [{}]: '
+        arg = raw_input('Search anisotropy angles, in the data scale [{0}]: '
                         .format(self.srchangles))
         if arg:
             self.srchangles = arg.split()
 
-        arg = raw_input('Kriging type, global correlation index if = 4 [{}]: '
+        arg = raw_input('Kriging type, global correlation index if = 4 [{0}]: '
                         .format(self.krig))
         if arg:
             self.krig = arg.split()
 
         # TODO: detectar kriging type
-        arg = raw_input('Local correlation indexes path/filename [{}]: '
+        arg = raw_input('Local correlation indexes path/filename [{0}]: '
                         .format(self.corrpath))
         if arg:
             self.corrpath = arg
 
-        arg = raw_input('Secondary information path/filename [{}]: '
+        arg = raw_input('Secondary information path/filename [{0}]: '
                         .format(self.secpath))
         if arg:
             self.secpath = arg
 
         arg = raw_input('Number of columns in secondary file, column of second'
-                        'ary variable [{}]: '.format(self.seccol))
+                        'ary variable [{0}]: '.format(self.seccol))
         if arg:
             self.seccol = arg.split()
 
         arg = raw_input('Number of variogram structures, nugget effect (C0) '
-                        '(normalised variance) [{}]: '.format(self.nstruct))
+                        '(normalised variance) [{0}]: '.format(self.nstruct))
         if arg:
             self.nstruct = arg.split()
             self.struct = self.struct[:int(self.nstruct[0])]
             self.ranges = self.ranges[:int(self.nstruct[0])]
 
         arg = raw_input('Structure 1: Model type, sill (normalised variance), '
-                        'direction angles [{}]: '.format(self.struct))
+                        'direction angles [{0}]: '.format(self.struct))
         if arg:
             self.struct = [arg.split()]
 
         arg = raw_input('Structure 1: Ranges (dir.1, dir. 2, dir. 3), in the '
-                        'data scale [{}]: '.format(self.ranges))
+                        'data scale [{0}]: '.format(self.ranges))
         if arg:
             self.ranges = [arg.split()]
 
         for i in xrange(1, int(self.nstruct[0])):
-            arg = raw_input('Structure {}: Model type, sill (normalised '
-                            'variance), direction angles [{}]: '
+            arg = raw_input('Structure {0}: Model type, sill (normalised '
+                            'variance), direction angles [{0}]: '
                             .format(i, self.struct))
             if arg:
                 self.struct.append(arg.split())
 
-            arg = raw_input('Structure {}: Ranges (dir.1, dir. 2, dir. 3), in '
-                            'the data scale [{}]: '.format(i, self.ranges))
+            arg = raw_input('Structure {0}: Ranges (dir.1, dir. 2, dir. 3), in'
+                            ' the data scale [{0}]: '.format(i, self.ranges))
             if arg:
                 self.ranges.append(arg.split())
 
@@ -513,7 +514,7 @@ class DssParam:
         self.datapath = raw_input('Hard-data path/file: ').strip()
         self.column = int(raw_input('Number of columns: '))
         self.columns_set = map(int, raw_input('Columns for X, Y, Z, Var, '
-                                                'Weight, Sec. var: ').split())
+                                              'Weight, Sec. var: ').split())
         self.trimming = map(float, raw_input('Trimming limits, min and max: ')
                             .split())
         self.transflag = int(raw_input('Transformation file (1/0 - yes/no): '))
@@ -574,11 +575,11 @@ class DssParam:
         self.ranges = [raw_input('Structure 1: Ranges (dir.1, dir. 2, dir. 3),'
                                  ' in the data scale: ').split()]
         for i in xrange(1, int(self.nstruct[0])):
-            self.struct.append(raw_input('Structure {}: Model type, sill '
+            self.struct.append(raw_input('Structure {0}: Model type, sill '
                                          '(normalised variance), direction '
                                          'angles: '.format(i)).split())
-            self.ranges.append(raw_input('Structure {}: Ranges (dir.1, dir. 2,'
-                                          ' dir. 3), in the data scale: '
+            self.ranges.append(raw_input('Structure {0}: Ranges (dir.1, dir. 2'
+                                          ', dir. 3), in the data scale: '
                                           .format(i)).split())
 
 

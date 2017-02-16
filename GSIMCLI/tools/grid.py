@@ -10,15 +10,16 @@ Created on 12 de Out de 2013
 """
 
 import os
-from scipy.stats import skew
 import time
 
+import bottleneck as bn
 import numpy as np
 import pandas as pd
 from tools.utils import skip_lines, filename_indexing
 
 
 class PointSet(object):
+
     """Class for storing point-set data (irregular mesh).
 
     Attributes
@@ -38,7 +39,7 @@ class PointSet(object):
 
     Notes
     -----
-    According to GSLIB standard, a point-set file has the following format
+    According to the GSLIB standard, a point-set file has the following format
         - descriptive name
         - number of variables
         - variables names, one per line (must have two LOCATION variables)
@@ -64,37 +65,69 @@ class PointSet(object):
     GSLIB Help Page: File Formats : http://www.gslib.com/gslib_help/format.html
 
     """
-    def __init__(self, name='', nodata=-999.9, nvars=0, varnames=list(),
-                 values=np.zeros((0, 0)), psetpath=str(), header=True):
+
+    def __init__(self, name=None, nodata=-999.9, nvars=0, varnames=None,
+                 values=None, psetpath=None, header=True):
         """Constructor to initialise a PointSet instance.
 
         Parameters
-        __________
-        name : string
+        ----------
+        name : string, optional
             Descriptive name.
-        nvars : int
+        nodata : number, default -999.9
+            Missing data value.
+        nvars : int, default 0
             Number of variables.
-        varnames : list of string
+        varnames : list of string, optional
             Variables names.
-        values : pandas.DataFrame
+        values : pandas.DataFrame, optional
             Variables values.
-        psetpath : string
+        psetpath : string, optional
             File path.
         header : boolean, default True
             PointSet file has the GSLIB standard header lines.
 
         """
         self.path = psetpath
-        if os.path.isfile(self.path):
+        if self.path and os.path.isfile(self.path):
             self.load(self.path, nodata, header)
         else:
-            self.name = name
+            self.name = name or ''
             self.nvars = nvars
             self.nodata = nodata
-            self.varnames = varnames
+            self.varnames = varnames or []
+            values = values or np.zeros((0, 0))
             self.values = pd.DataFrame(values)
             if len(self.values.columns) == len(self.varnames):
                 self.values.columns = self.varnames
+
+    def __repr__(self):
+        """Print a PointSet instance like a pd.DataFrame.
+        """
+        return str(self.values)
+
+    def add_var(self, values, varname=None):
+        """Append a new variable to an existing PointSet.
+
+        Parameters
+        ----------
+        values : array_like
+            Set of values that will be added to the PointSet as a new variable.
+        varname : string, optional
+            The name of the new variable. If not provided, the new variable
+            will be named as 'varNUMBER', according to the total NUMBER of
+            variables in the PointSet. If there is an existing variable with
+            the same name, it will not be overwritten, and the variable will
+            be added with name `'varname' + '_new'`.
+
+        """
+        self.nvars += 1
+        if varname is None:
+            varname = 'var{0}'.format(self.nvars)
+        if varname in self.varnames:
+            varname += '_new'
+        self.varnames.append(varname)
+        self.values[varname] = values
 
     def load(self, psetfile, nd=-999.9, header=True):
         """Load a point-set from a file in GSLIB format.
@@ -126,7 +159,7 @@ class PointSet(object):
         if not header:
             self.name = os.path.splitext(os.path.basename(psetfile))[0]
             self.nvars = values.shape[1]
-            self.varnames = ['var{}'.format(i)
+            self.varnames = ['var{0}'.format(i)
                              for i in xrange(1, self.nvars + 1)]
         self.values = pd.DataFrame(values, columns=self.varnames)
         fid.close()
@@ -167,6 +200,7 @@ class PointSet(object):
             if 'Flag' in varnames:
                 varnames.remove('Flag')  # TODO: this is a hack!
             self.values.columns = varnames
+            self.varnames = varnames
         else:
             self.values.columns = self.varnames
 
@@ -181,6 +215,7 @@ class PointSet(object):
 
 
 class GridArr(object):
+
     """Class to store a grid (regular mesh).
 
     Attributes
@@ -239,6 +274,7 @@ class GridArr(object):
     .. TODO: support multiple variables in the same grid.
 
     """
+
     def __init__(self, name='', dx=0, dy=0, dz=0, xi=0, yi=0, zi=0, cellx=1,
                  celly=1, cellz=1, nodata=-999.9, val=np.zeros(1)):
         """
@@ -339,7 +375,7 @@ class GridArr(object):
                                                 axis=0)),
                                      np.arange(1, self.dz + 1))))
         xy_nodes = coord_to_grid(wellxy, [self.cellx, self.celly, self.cellz],
-                      [self.xi, self.yi, self.zi])
+                                 [self.xi, self.yi, self.zi])
         for z in xrange(self.dz):
             p = (xy_nodes[0] + self.dx * (xy_nodes[1] - 1) +
                  self.dx * self.dy * z)
@@ -350,6 +386,7 @@ class GridArr(object):
 
 
 class GridFiles(object):
+
     """This class keeps track of all the files containing simulation results,
     i.e., Direct Sequential Simulation (DSS) realisations.
 
@@ -389,6 +426,7 @@ class GridFiles(object):
     .. TODO: make class child of GridArr?
 
     """
+
     def __init__(self):
         """Constructor to initialise a GridFiles instance.
 
@@ -411,7 +449,7 @@ class GridFiles(object):
     def load(self, first_file, n, dims, first_coord, cells_size, no_data,
              headerin=3):
         """Open several grid files and provide a list containing each file
-        handler (delivered in `files` attribute).
+        handler (delivered in the `files` attribute).
 
         Parameters
         ----------
@@ -420,6 +458,8 @@ class GridFiles(object):
             format.
         n : int
             Number of files.
+        dims : array_like
+            Number of nodes in each direction, [dx, dy, dz]
         first_coord : array_like
             First coordinate in each direction, [xi, yi, zi].
         cells_size : array_like
@@ -458,15 +498,80 @@ class GridFiles(object):
         self.header = headerin
         self.nodata = no_data
         self.files.append(open(first_file, 'rb'))
-        # fpath, ext = os.path.splitext(first_file)
         for i in xrange(2, n + 1):
-            # another = fpath + str(i) + ext
             another = filename_indexing(first_file, i)
             if os.path.isfile(another):
                 self.files.append(open(another, 'rb'))
             else:
-                raise IOError('File {} not found.'.
+                raise IOError('File {0} not found.'.
                               format(os.path.basename(another)))
+
+    def open_files(self, files_list, dims, first_coord, cells_size, no_data,
+                   headerin=3, only_paths=False):
+        """Open a list of given grid files and provide a list containing each
+        file handler (delivered in the `files` attribute).
+
+        Parameters
+        ----------
+        files_list : list
+            List of file paths to the files to be opened
+        dims : array_like
+            Number of nodes in each direction, [dx, dy, dz]
+        first_coord : array_like
+            First coordinate in each direction, [xi, yi, zi].
+        cells_size : array_like
+            Nodes size in each direction, [cellx, celly, cellz].
+        no_data : number
+            Missing data value.
+        headerin : int, default 3
+            Number of lines in the header.
+        only_paths : bool
+            Do not open the files, just save their paths.
+
+        Raises
+        ------
+        IOError
+            Could not find a file with an expected file name.
+
+        Notes
+        -----
+        It is assumed that the files are numbered in the following manner:
+
+        - 1st file_with_this_name.extension
+        - 2nd file_with_this_name2.extension
+        - 3rd file_with_this_name3.extension
+        - nth file_with_this_namen.extension
+
+        """
+        def append_opened(path):
+            "Auxiliary function to minimise the number of conditions verified."
+            self.files.append(open(path, 'rb'))
+
+        self.nfiles = len(files_list)
+        self.dx = dims[0]
+        self.dy = dims[1]
+        self.dz = dims[2]
+        self.xi = first_coord[0]
+        self.yi = first_coord[1]
+        self.zi = first_coord[2]
+        self.cellx = cells_size[0]
+        self.celly = cells_size[1]
+        self.cellz = cells_size[2]
+        self.cells = np.prod(dims)
+        self.header = headerin
+        self.nodata = no_data
+
+        if only_paths:
+            open_file = self.files.append
+        else:
+            open_file = append_opened
+
+        for gridfile in files_list:
+            try:
+                open_file(gridfile)
+            except IOError, msg:
+                print(msg)
+                raise IOError('File {0} not found.'.format(gridfile))
 
     def reset_read(self):
         """Reset the  pointer that reads each file to the beginning.
@@ -493,8 +598,8 @@ class GridFiles(object):
         for grid in self.files:
             os.remove(grid.name)
 
-    def stats(self, lmean=False, lmed=False, lvar=False, lstd=False,
-              lcoefvar=False, lperc=False, p=0.95):
+    def stats(self, lmean=False, lmed=False, lskew=False, lvar=False,
+              lstd=False, lcoefvar=False, lperc=False, p=0.95):
         """Calculate some statistics among every realisation.
 
         Each statistic is calculated node-wise along the complete number of
@@ -506,6 +611,8 @@ class GridFiles(object):
             Calculate the mean.
         lmed : boolean, default False
             Calculate the median.
+        lskew : boolean, default False
+            Calculate skewness.
         lvar : boolean, default False
             Calculate the variance.
         lstd : boolean, default False
@@ -519,22 +626,27 @@ class GridFiles(object):
 
         Returns
         -------
-        retlist : list of ndarray
-            List containing one ndarray for each calculated statistic.
+        retdict : dict of GridArr
+            Dictionary containing one GridArr for each calculated statistic.
 
         See Also
         --------
         stats_area : same but considering a circular (and horizontal) area of
         a specified radius around a given point.
 
-        .. TODO: - devolver em GridArr
-                 - handle no data
-
         """
+        # check if the map files are already opened or not
+        if isinstance(self.files[0], file):
+            opened_files = True
+        else:
+            opened_files = False
+
         if lmean:
             meanmap = np.zeros(self.cells)
         if lmed:
             medmap = np.zeros(self.cells)
+        if lskew:
+            skewmap = np.zeros(self.cells)
         if lvar:
             varmap = np.zeros(self.cells)
         if lstd:
@@ -546,54 +658,88 @@ class GridFiles(object):
 
         arr = np.zeros(self.nfiles)
         skip = True
+        offset = os.SEEK_SET
         for cell in xrange(self.cells - self.header):
-            for i, grid in enumerate(self.files):
+            for i, gridfile in enumerate(self.files):
+                # deal with map files not open yet
+                if opened_files:
+                    grid = gridfile
+                else:
+                    grid = open(gridfile, 'rb')
+                    grid.seek(offset)
+
                 if skip:
                     skip_lines(grid, self.header)
                 arr[i] = grid.readline()
 
+            if not opened_files:
+                offset = grid.tell()
+                grid.close()
+
             skip = False
+            # replace no data's with NaN
+            bn.replace(arr, self.nodata, np.nan)
             if lmean:
-                meanmap[cell] = arr.mean()
+                meanmap[cell] = bn.nanmean(arr)
             if lmed:
-                medmap[cell] = np.median(arr)
-                # comparar com bottleneck.median()
+                medmap[cell] = bn.nanmedian(arr)
+            if lskew:
+                skewmap[cell] = pd.Series(arr).skew()
             if lvar:
-                varmap[cell] = np.nanvar(arr, ddof=1)
+                varmap[cell] = bn.nanvar(arr, ddof=1)
             if lstd:
-                stdmap[cell] = arr.std()
+                stdmap[cell] = bn.nanstd(arr, ddof=1)
             if lcoefvar:
                 if lstd and lmean:
                     coefvarmap[cell] = stdmap[cell] / meanmap[cell] * 100
                 else:
-                    coefvarmap[cell] = arr.std() / arr.mean() * 100
+                    std = bn.nanstd(arr, ddof=1)
+                    mean = bn.nanmean(arr)
+                    coefvarmap[cell] = std / mean * 100
             if lperc:
-                percmap[cell] = np.percentile(arr, [(100 - p * 100) / 2,
-                                                    100 - (100 - p * 100) / 2])
+                percmap[cell] = pd.Series(arr).quantile([(1 - p) / 2,
+                                                         1 - (1 - p) / 2])
 
-        retlist = list()
+        retdict = dict()
 
         if lmean:
-            retlist.append(meanmap)
+            meangrid = GridArr(name='meanmap', dx=self.dx, dy=self.dy,
+                               dz=self.dz, nodata=self.nodata, val=meanmap)
+            retdict['meanmap'] = meangrid
         if lmed:
-            retlist.append(medmap)
+            medgrid = GridArr(name='medianmap', dx=self.dx, dy=self.dy,
+                              dz=self.dz, nodata=self.nodata, val=medmap)
+            retdict['medianmap'] = medgrid
+        if lskew:
+            skewgrid = GridArr(name='skewmap', dx=self.dx, dy=self.dy,
+                               dz=self.dz, nodata=self.nodata, val=skewmap)
+            retdict['skewmap'] = skewgrid
         if lvar:
-            retlist.append(varmap)
+            vargrid = GridArr(name='varmap', dx=self.dx, dy=self.dy,
+                              dz=self.dz, nodata=self.nodata, val=varmap)
+            retdict['varmap'] = vargrid
         if lstd:
-            retlist.append(stdmap)
+            stdgrid = GridArr(name='stdmap', dx=self.dx, dy=self.dy,
+                              dz=self.dz, nodata=self.nodata, val=stdmap)
+            retdict['stdmap'] = stdgrid
         if lcoefvar:
-            retlist.append(coefvarmap)
+            coefvargrid = GridArr(name='coefvarmap', dx=self.dx, dy=self.dy,
+                                  dz=self.dz, nodata=self.nodata,
+                                  val=coefvarmap)
+            retdict['coefvarmap'] = coefvargrid
         if lperc:
-            retlist.append(percmap)
+            percgrid = GridArr(name='percmap', dx=self.dx, dy=self.dy,
+                               dz=self.dz, nodata=self.nodata, val=percmap)
+            retdict['percmap'] = percgrid
 
-        return retlist
+        return retdict
 
     def stats_area(self, loc, tol=0, lmean=False, lmed=False, lskew=False,
                    lvar=False, lstd=False, lcoefvar=False, lperc=False,
                    p=0.95, save=False):
         """Calculate some statistics among every realisation, considering a
-        circular (and horizontal) area of radius `tol` around the point located
-        at `loc`.
+        circular (only horizontaly) area of radius `tol` around the point
+        located at `loc`.
 
         Parameters
         ----------
@@ -646,7 +792,7 @@ class GridFiles(object):
 
         # convert the coordinates of the first point to grid nodes
         loc = coord_to_grid(loc, [self.cellx, self.celly, self.cellz],
-                    [self.xi, self.yi, self.zi])[:2]
+                            [self.xi, self.yi, self.zi])[:2]
         # find the nodes coordinates within a circle centred in the first point
         neighbours_nodes = circle(loc[0], loc[1], tol)
         # compute the lines numbers for each point in the neighbourhood, across
@@ -679,35 +825,40 @@ class GridFiles(object):
                     curr_line[j] = line
                     skip = False
 
+            # replace no data's with NaN
+            bn.replace(arr, self.nodata, np.nan)
             # compute the required statistics
             if lmean:
-                meanline[layer] = arr.mean()
+                meanline[layer] = bn.nanmean(arr)
             if lmed:
-                medline[layer] = np.median(arr)
-                # TODO: comparar com bottleneck.median()
+                medline[layer] = bn.nanmedian(arr)
             if lskew:
-                skewline[layer] = skew(arr)
+                skewline[layer] = pd.Series(arr).skew()
             if lvar:
-                varline[layer] = np.nanvar(arr, ddof=1)
+                varline[layer] = bn.nanvar(arr, ddof=1)
             if lstd:
-                stdline[layer] = arr.std()
+                stdline[layer] = bn.nanstd(arr, ddof=1)
             if lcoefvar:
                 if lstd and lmean:
-                    coefvarline[layer] = stdline[line] / meanline[line] * 100
+                    coefvarline[layer] = stdline[layer] / meanline[layer] * 100
                 else:
-                    coefvarline[layer] = arr.std() / arr.mean() * 100
+                    std = bn.nanstd(arr, ddof=1)
+                    mean = bn.nanmean(arr)
+                    coefvarline[layer] = std / mean * 100
             if lperc:
-                percline[layer] = np.percentile(arr, [(100 - p * 100) / 2,
-                                              100 - (100 - p * 100) / 2])
-            if save:
-                arrpset = PointSet('realisations at location ({}, {}, {})'.
+                percline[layer] = pd.Series(arr).quantile([(1 - p) / 2,
+                                                           1 - (1 - p) / 2])
+            if save and tol == 0:
+                # FIXME: not working with the tolerance feature
+                # need to adjust the arrpset or cherry-pick arr
+                arrpset = PointSet('realisations at location ({0}, {1}, {2})'.
                                    format(loc[0], loc[1], layer * self.cellz +
                                           self.zi), self.nodata, 3,
                                    ['x', 'y', 'value'],
                                    values=np.zeros((self.nfiles, 3)))
                 arrout = os.path.join(os.path.dirname(self.files[0].name),
-                                      'sim values at ({}, {}, {}).prn'.
-                                   format(loc[0], loc[1], layer * self.cellz
+                                      'sim values at ({0}, {1}, {2}).prn'.format(
+                                          loc[0], loc[1], layer * self.cellz
                                           + self.zi))
                 arrpset.values.iloc[:, 2] = arr
                 arrpset.values.iloc[:, :2] = np.repeat(np.array(loc)
@@ -718,7 +869,7 @@ class GridFiles(object):
         ncols = sum((lmean, lmed, lvar, lstd, lcoefvar, lskew))
         if lperc:
             ncols += 2
-        statspset = PointSet(name='vertical line stats at (x,y) = ({},{})'.
+        statspset = PointSet(name='vertical line stats at (x,y) = ({0},{1})'.
                              format(loc[0], loc[1]), nodata=self.nodata,
                              nvars=3 + ncols, varnames=['x', 'y', 'z'],
                              values=np.zeros((self.dz, 3 + ncols)))
@@ -760,6 +911,9 @@ class GridFiles(object):
             statspset.varnames.append('rperc')
             statspset.values.iloc[:, -2:] = percline
 
+        # reset the reading pointer in each grid file
+        self.reset_read()
+        # update varnames
         statspset.flush_varnames()
         return statspset
 
@@ -875,12 +1029,12 @@ def loadcheck(s, header):
         return s
     elif isinstance(s, str):
         if not os.path.isfile(s):
-            raise IOError("file {} not found".format(s))
+            raise IOError("file {0} not found".format(s))
         pset = PointSet()
         pset.load(s, header)
         return pset
     else:
-        raise TypeError("need string or PointSet, {} found".format(type(s)))
+        raise TypeError("need string or PointSet, {0} found".format(type(s)))
 
 
 def add_header(path, name=None, varnames=None, out=None):
@@ -912,7 +1066,7 @@ def add_header(path, name=None, varnames=None, out=None):
         f.write(name + '\n')
         if varnames is None:
             nvars = values.shape[1]
-            varnames = ['var {}'.format(i) for i in xrange(nvars)]
+            varnames = ['var {0}'.format(i) for i in xrange(nvars)]
         else:
             nvars = len(varnames)
         f.write(str(nvars) + '\n')
@@ -1055,8 +1209,8 @@ def _wrap2():
     # print 'loading grids'
     grids = GridFiles()
     grids.load(fstpar, nsims, griddims, fstcoord, nodesize, -999.9, 0)
-    vstats = grids.stats_area(pointloc, tol=rad, lmean=True, lvar=True, lperc=True,
-                               p=0.95)
+    vstats = grids.stats_area(pointloc, tol=rad, lmean=True, lvar=True,
+                              lperc=True, p=0.95)
     vstats.save(os.path.join(outpath, 'statsmap_t' + str(rad) + '.out'), 'var')
     grids.dump()
     return vstats
@@ -1076,12 +1230,12 @@ if __name__ == '__main__':
     rad = 0
     print(timeit.timeit("_wrap2()", setup="from __main__ import _wrap2",
                     number=10))
-    for rad in xrange(0, 5):#(0, 3):
+    for rad in xrange(0, 5):  # (0, 3):
 
-    # """ timer
-#     print 'calculating grid stats + drill'
-#     print(timeit.timeit("_wrap1()", setup="from __main__ import _wrap1",
-#                         number=100))
+        # """ timer
+        #     print 'calculating grid stats + drill'
+        #     print(timeit.timeit("_wrap1()", setup="from __main__ import _wrap1",
+        #                         number=100))
         print 'calculating vline stats'
         print 'tolerance: ', rad
         print(timeit.timeit("_wrap2()", setup="from __main__ import _wrap2",
@@ -1091,9 +1245,9 @@ if __name__ == '__main__':
 #     snirh = '/home/julio/Testes/snirh500_dssim_narrow/snirh.prn'
 #     bench = '/Users/julio/Desktop/testes/cost-home/rede000005/1900_1909.txt'
 #
-#     # """
+# """
 #     pset = PointSet()
-#     # pset.load(snirh, header=False)
+# pset.load(snirh, header=False)
 #     pset.load(bench, header=True)
     # pset.save(os.path.join(outpath, 'psetout.prn'))
     # """
