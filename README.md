@@ -21,8 +21,7 @@ been published [[2]](#ref2).
 This research project is hosted at [NOVA IMS](http://www.novaims.unl.pt)
 (Lisbon, Portugal) and it is funded by the "Fundação para a Ciência e
 Tecnologia" ([FCT](http://www.fct.pt)), Portugal, through the research project
-PTDC/GEO-MET/4026/2012. See [approval and funding notice]
-(http://www.novaims.unl.pt/documentos/P_GSIMCLI_EN.pdf).
+PTDC/GEO-MET/4026/2012. See the [approval and funding notice](http://www.novaims.unl.pt/documentos/P_GSIMCLI_EN.pdf).
 
 The outcomes of this project also include three peer-reviewed papers published in
 scientific journals. See the complete list of the [Project Publications](#publications)
