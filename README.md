@@ -6,7 +6,7 @@ CLImate data
 
 ## What is it
 
-**gsimcli** is a proposed method to homogenise climate data using
+**gsimcli** is a method to homogenise climate data using
 geostatistical stochastic simulation methods.
 
 It is presented here as an open source Python project. Some of its
@@ -15,14 +15,29 @@ modules are intended to serve as useful libraries for other projects.
 ## Development
 
 **gsimcli** is implemented using **Direct Sequential
-Simulation** (DSS) [1]. The method description and its application have already
-been published [2].
+Simulation** (DSS) [[1]](#ref1). The method description and its application have already
+been published [[2]](#ref2).
 
 This research project is hosted at [NOVA IMS](http://www.novaims.unl.pt)
 (Lisbon, Portugal) and it is funded by the "Fundação para a Ciência e
 Tecnologia" ([FCT](http://www.fct.pt)), Portugal, through the research project
 PTDC/GEO-MET/4026/2012. See [approval and funding notice]
 (http://www.novaims.unl.pt/documentos/P_GSIMCLI_EN.pdf).
+
+The outcomes of this project include three peer-reviewed papers.
+See the [Project Publications](#publications) below.
+
+
+### Note by the programmer
+
+This software is no longer being developed. Of course, development may continue
+in any fork.
+
+The latest and last version is available in the `master` branch.
+
+The [Issues](https://github.com/iled/gsimcli/issues) page lists the tasks and
+ideas that were not implemented and/or completed, as well as known limitations.
+Those may be a source of ideas for any eventual future development.
 
 ![NOVA IMS](/images/IMS_Preto_logo.png) ![FCT](/images/logo_FCT.png)
 
@@ -49,22 +64,24 @@ GPLv3
 
 ## References
 
-[1]: Soares, Amílcar. *Direct Sequential Simulation and Cosimulation.*
+<a name="ref1"></a>[1]: Soares, Amílcar. *Direct Sequential Simulation and Cosimulation.*
 Mathematical Geology 33, no. 8 (2001): 911-926.
 http://link.springer.com/article/10.1023/A:1012246006212.
 
-[2]: Costa, AC, and A Soares. *Homogenization of Climate Data: Review and New
+<a name="ref2"></a>[2]: Costa, AC, and A Soares. *Homogenization of Climate Data: Review and New
 Perspectives Using Geostatistics.* Mathematical Geosciences 41, no. 3 (November
 28, 2009): 291-305. doi:10.1007/s11004-008-9203-3.
 
 
-## Project Publications
+## <a name="publications"></a>Project Publications
 
 ### Scientific Journals
 
+Ribeiro, S., Caineta, J., Costa, A. C., Henriques, R. (2016) [gsimcli: a geostatistical procedure for the homogenisation of climatic time series](http://doi.org/10.1002/joc.4929). International Journal of Climatology. doi: 10.1002/joc.4929
+
 Ribeiro, S., Caineta, J., Costa, A. C., Henriques, R., Soares, A. (2016) [Detection of inhomogeneities in precipitation time series in Portugal using direct sequential simulation](http://doi.org/10.1016/j.atmosres.2015.11.014). Atmospheric Research 171, 147–158. doi: 10.1016/j.atmosres.2015.11.014
 
-Ribeiro, S., Caineta, J., Costa, A. C., (2015) [Review and discussion of homogenisation methods for climate data. Physics and Chemistry of the Earth](http://doi.org/10.1016/j.pce.2015.08.007). In press. doi: 10.1016/j.pce.2015.08.007
+Ribeiro, S., Caineta, J., Costa, A. C., (2015) [Review and discussion of homogenisation methods for climate data.](http://doi.org/10.1016/j.pce.2015.08.007). Physics and Chemistry of the Earth 94, 167 - 179. doi: 10.1016/j.pce.2015.08.007
 
 ### Proceedings
 
