@@ -2,7 +2,9 @@
 Geostatistical SIMulation for the homogenisation and interpolation of
 CLImate data
 
-[![Documentation Status](https://readthedocs.org/projects/gsimcli/badge/?version=latest)](http://gsimcli.readthedocs.org/en/latest/?badge=latest) [![Code Issues](https://www.quantifiedcode.com/api/v1/project/d5107719f2724f41bc1b18665a164616/snapshot/origin:dev:HEAD/badge.svg)](https://www.quantifiedcode.com/app/project/d5107719f2724f41bc1b18665a164616)
+[![Documentation Status](https://readthedocs.org/projects/gsimcli/badge/?version=latest)](http://gsimcli.readthedocs.org/en/latest/?badge=latest)
+[![Code Issues](https://www.quantifiedcode.com/api/v1/project/d5107719f2724f41bc1b18665a164616/snapshot/origin:dev:HEAD/badge.svg)](https://www.quantifiedcode.com/app/project/d5107719f2724f41bc1b18665a164616)
+[![Project Stats](https://www.openhub.net/p/gsimcli/widgets/project_thin_badge.gif)](https://www.openhub.net/p/gsimcli)
 
 ## What is it
 
